@@ -6,6 +6,9 @@
  * A TypeScript port of fairdraw_entry_code / fairdraw_public_entry_list from FairDraw's guide "Getting to a 10":
  * https://fairdraw.partyofone.quest/guides/getting-to-10.html#entry-lists
  * Keep this credit if you copy or adapt this file. Checked against the PHP original in tests/fairdraw-port.test.ts.
+ * Licence: MIT, copyright (c) 2026 Harrison Jones (FairDraw), free for any use
+ * (https://fairdraw.partyofone.quest/about.html#code). The full MIT text is in NOTICE. This file is not under the
+ * CPAL that covers the rest of the template.
  *
  * ENTRY_CODE_SECRET must be a long random value kept on the server, never published.
  */

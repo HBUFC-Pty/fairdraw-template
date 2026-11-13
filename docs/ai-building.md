@@ -29,7 +29,7 @@ Ask the assistant to leave these alone unless you are fixing a bug, and then rev
 - age checks (`src/lib/auth/age.ts`)
 - security headers and CSP (`src/proxy.ts`, `next.config.ts`)
 - entry lists: ticket numbers and codes only, never names
-- the FairDraw link in the footer and on results pages (a licence condition)
+- the FairDraw link in the footer and on results pages (required by the CPAL attribution term, see docs/licence.md)
 
 ## Prompts that keep the guarantees
 

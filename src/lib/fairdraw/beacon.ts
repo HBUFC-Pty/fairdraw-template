@@ -1,4 +1,9 @@
 /**
+ * Part of src/lib/fairdraw/, FairDraw's MIT-licensed draw code and its port.
+ * Licence: MIT, copyright (c) 2026 Harrison Jones (FairDraw), free for any use
+ * (https://fairdraw.partyofone.quest/about.html#code). The full MIT text is in NOTICE. This file is not under the
+ * CPAL that covers the rest of the template.
+ *
  * Step 2 of the FairDraw method: the drand quicknet randomness for a committed round (PHP: fairdraw_beacon).
  *
  * This template goes further than the PHP original: it asks at least two independent drand relays and refuses to

@@ -12,8 +12,8 @@ with FairDraw's own tools. The database itself refuses to change a committed lis
 **New here and not technical?** Start with [docs/start-here.md](docs/start-here.md): it walks you (and your AI
 assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server.
 
-> **Status:** a template. The legal and GDPR documents are starting points, not legal advice: have them, and this
-> licence, reviewed by a solicitor before you rely on them. See "What has and has not been tested" below.
+> **Status:** a template. The legal and GDPR documents are built from published precedents (listed in
+> [docs/legal/SOURCES.md](docs/legal/SOURCES.md)) but are not legal advice: have them reviewed if you can. See "What has and has not been tested" below.
 
 ## What you get
 
@@ -163,9 +163,11 @@ weaken: the draw, the commitment, caps, spend limits, age checks, security heade
 
 ## Licence
 
-MIT, with one additional condition: any public deployment must keep a visible link to FairDraw
-(https://fairdraw.partyofone.quest), such as "Draw checks by FairDraw", on public results pages or in the site footer.
-Because of that condition this is **not** the OSI-approved MIT licence. Have the licence reviewed by a solicitor before
-you rely on it. Full text: [LICENSE](LICENSE).
+The template is licensed under the Common Public Attribution License 1.0 (CPAL-1.0), an OSI-approved open source
+licence. Its attribution term means every site built from it shows "Draw checks by FairDraw" with a link to
+https://fairdraw.partyofone.quest on its pages (the footer already does). If you run a modified copy publicly, you
+publish the source of the template files you changed; your own new files stay yours. The FairDraw draw code in
+`src/lib/fairdraw/` is under the MIT licence. Plain-English summary: [docs/licence.md](docs/licence.md). Full texts:
+[LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 Security issues: see [SECURITY.md](SECURITY.md).

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "A secure, fair prize-competition site template for UK operators, with draws anyone can verify.",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "CPAL-1.0",
   "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=24"

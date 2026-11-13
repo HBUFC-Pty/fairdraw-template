@@ -45,6 +45,6 @@ that FairDraw's author published the template.
 
 ## The link back
 
-The licence (see `LICENSE`) requires every public deployment to keep a visible link to FairDraw
-(https://fairdraw.partyofone.quest), such as "Draw checks by FairDraw", on every public results page or in the site
-footer. The template already has both. Keep them.
+The template's licence, the CPAL-1.0 (see `LICENSE` and [licence.md](licence.md)), requires every site built from it
+to show the attribution "Draw checks by FairDraw" with a link to https://fairdraw.partyofone.quest on its user
+interface. The template shows it in every footer style and on results pages. Keep both.

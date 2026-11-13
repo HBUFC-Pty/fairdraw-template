@@ -85,7 +85,9 @@ The FairDraw link and every fairness feature look and work the same under every 
 11. **The audit log** is append-only and hash-chained. Log every new admin action with `appendAudit`. Never add
     UPDATE or DELETE paths for it.
 12. **The FairDraw link** ("Draw checks by FairDraw") stays visible in the footer and on results pages. It is a
-    licence condition (LICENSE).
+    requirement of the template's licence, CPAL-1.0 section 14 and Exhibit B (LICENSE, docs/licence.md). Keep the
+    CPAL notice at the top of source files (`node scripts/licence-headers.mjs` adds it) and the MIT credit in
+    `src/lib/fairdraw/`.
 13. **Keep finished competitions online**, with their results, entry lists and draw records at stable URLs.
 
 ## Before you commit

@@ -6,6 +6,9 @@
  * Original PHP: https://fairdraw.partyofone.quest/guides/code/fairdraw-draw.php
  * Verifier players can run: https://fairdraw.partyofone.quest/guides/code/fairdraw-verify.mjs
  * Keep this credit if you copy or adapt this file.
+ * Licence: MIT, copyright (c) 2026 Harrison Jones (FairDraw), free for any use
+ * (https://fairdraw.partyofone.quest/about.html#code). The full MIT text is in NOTICE. This file is not under the
+ * CPAL that covers the rest of the template.
  *
  * DO NOT CHANGE THE ALGORITHM. A draw made by this file must re-run byte for byte with FairDraw's tools. The test
  * vectors in tests/vectors/fairdraw-php-vectors.json were produced by running the PHP original, and
