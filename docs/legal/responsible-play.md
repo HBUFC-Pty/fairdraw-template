@@ -26,8 +26,13 @@ playing. If any of these sound familiar, use the tools above and talk to someone
 
 ## Free, confidential support
 
-- GamCare: [check current contact details at gamcare.org.uk]
-- GambleAware: [check current details at begambleaware.org]
-- Gamblers Anonymous UK: [check current details]
+These include the services the DCMS Voluntary Code of Good Practice for Prize Draw Operators names in clause 1.8
+(checked 13 November 2026; see SOURCES.md). Check each link in a browser before you go live.
 
-Check these details before publishing; organisations change their numbers and websites.
+- GamCare and the National Gambling Helpline: https://www.gamcare.org.uk
+- GambleAware: https://www.gambleaware.org
+- Citizens Advice, for money worries: https://www.citizensadvice.org.uk/debt-and-money/
+- National Debtline, run by the Money Advice Trust: https://nationaldebtline.org
+- Samaritans: https://www.samaritans.org
+- Mind: https://www.mind.org.uk
+

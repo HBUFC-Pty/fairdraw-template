@@ -3,6 +3,11 @@
 > **Template, not legal advice.** Have this assessment reviewed by a qualified solicitor or data protection adviser
 > before you rely on it. Follow the ICO's current DPIA guidance and screening checklist.
 
+The section headings broadly follow the steps in the ICO's DPIA guidance (describe the processing, consultation,
+necessity and proportionality, risks, measures, sign-off). The wording is the template authors' own, not copied from
+the ICO's sample template. The ICO's guidance and sample template:
+https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/accountability-and-governance/data-protection-impact-assessments-dpias/how-do-we-do-a-dpia/
+
 ## 1. Need for a DPIA
 
 [Explain why you are doing one. Online prize competitions involve age checks, payments and potentially vulnerable

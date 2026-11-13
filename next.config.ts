@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ['@node-rs/argon2', 'pg'],
+  // The legal pages read content/*.md at run time; make sure the files ship with the standalone server.
+  outputFileTracingIncludes: { '/terms': ['./content/**/*'], '/privacy': ['./content/**/*'] },
   experimental: {
     serverActions: {
       bodySizeLimit: '256kb',

@@ -3,6 +3,10 @@
 > **Template, not legal advice.** Have this record reviewed by a qualified solicitor or data protection adviser before
 > you rely on it. UK GDPR Article 30 sets out what it must contain; check against the ICO's current guidance.
 
+The columns follow the contents Article 30 requires. The wording is the template authors' own, not copied from a
+precedent. The ICO offers its own documentation templates and guidance:
+https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/accountability-and-governance/documentation/how-do-we-document-our-processing-activities/
+
 Controller: [Operator Ltd], [registered office address], ICO registration [number]. Contact: [privacy@example.com].
 Data protection lead: [name, role].
 

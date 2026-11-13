@@ -19,12 +19,13 @@ FROM node:24.22.2-bookworm-slim AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
-# Next.js standalone server, static assets, the bundled worker and scripts, and the SQL migrations.
+# Next.js standalone server, static assets, the bundled worker and scripts, the SQL migrations and the legal pages.
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 COPY --from=build --chown=app:app /app/dist ./dist
 COPY --from=build --chown=app:app /app/drizzle ./drizzle
+COPY --from=build --chown=app:app /app/content ./content
 USER app
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
