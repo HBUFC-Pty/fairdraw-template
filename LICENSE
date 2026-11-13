@@ -1,6 +1,6 @@
 MIT License with an additional condition (see below)
 
-Copyright (c) 2026 FairDraw (partyofone.quest)
+Copyright (c) 2026 Harrison Jones (FairDraw, https://fairdraw.partyofone.quest)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ NOTE ON src/lib/fairdraw/
 
 The files in src/lib/fairdraw/ are a TypeScript port of the draw and entry
 code published by FairDraw in its guide "Getting to a 10"
-(https://fairdraw.partyofone.quest/guides/getting-to-10.html) under the
-Creative Commons Attribution-NonCommercial 4.0 licence. They are included in
-this repository under the licence above by permission of their author. Keep
-the credit comments at the top of those files.
+(https://fairdraw.partyofone.quest/guides/getting-to-10.html). That code is
+itself MIT licensed by the same author
+(https://fairdraw.partyofone.quest/about.html#code). Keep the credit comments
+at the top of those files.
