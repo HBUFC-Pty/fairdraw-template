@@ -19,7 +19,7 @@ function getTransport(): Transporter {
       host: e.SMTP_HOST,
       port: e.SMTP_PORT,
       secure: e.SMTP_SECURE,
-      requireTLS: e.NODE_ENV === 'production' && !e.SMTP_SECURE,
+      requireTLS: !e.SMTP_SECURE && (e.SMTP_REQUIRE_TLS ?? e.NODE_ENV === 'production'),
       auth: e.SMTP_USER ? { user: e.SMTP_USER, pass: e.SMTP_PASSWORD ?? '' } : undefined,
     });
   }
@@ -29,6 +29,17 @@ function getTransport(): Transporter {
 export const sendMail: MailSender = async (m) => {
   await getTransport().sendMail({ from: env().MAIL_FROM, to: m.to, subject: m.subject, text: m.text });
 };
+
+/** Send, but never fail the user's request because the mail server is down: log it instead (they can ask again). */
+export async function trySendMail(m: Mail): Promise<boolean> {
+  try {
+    await sendMail(m);
+    return true;
+  } catch (e) {
+    console.error(`email to ${m.to.replace(/^(.).*@/, '$1***@')} failed: ${(e as Error).message}`);
+    return false;
+  }
+}
 
 export function verifyEmailMail(to: string, url: string): Mail {
   const site = env().SITE_NAME;

@@ -41,7 +41,7 @@ export async function recordPostalEntry(db: Db, actor: AuditActor, input: Postal
     if (!reason) {
       const taken = await takenNumbers(tx, c.id);
       if (taken.size >= c.maxTickets) reason = 'The competition has sold out.';
-      else [ticket] = allocateRandom(c.maxTickets, taken, 1, opts.rand ?? cryptoRandomInt);
+      else ticket = allocateRandom(c.maxTickets, taken, 1, opts.rand ?? cryptoRandomInt)[0] ?? null;
     }
     const [entry] = await tx
       .insert(postalEntries)

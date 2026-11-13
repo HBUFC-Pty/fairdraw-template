@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Smart watch (demo image)">
+  <rect width="800" height="450" fill="#6d28d9"/>
+  <text x="400" y="215" fill="#ffffff" font-family="system-ui, sans-serif" font-size="44" text-anchor="middle">Smart watch</text>
+  <text x="400" y="270" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" opacity="0.8">Demo image: replace with your own</text>
+</svg>

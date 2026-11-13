@@ -37,6 +37,7 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_SECURE: bool.default(false),
+  SMTP_REQUIRE_TLS: bool.optional(),
   MAIL_FROM: z.string().default('Example Competitions <no-reply@example.com>'),
 
   DRAND_RELAYS: z.string().optional(),
@@ -51,12 +52,15 @@ let cached: Env | undefined;
 
 export function env(): Env {
   if (cached) return cached;
-  const parsed = schema.safeParse(process.env);
+  // Treat empty values (KEY= in .env) as unset, so defaults apply.
+  const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== undefined && v !== ''));
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(`Invalid configuration: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
   }
   if (parsed.data.NODE_ENV === 'production') {
-    if (!parsed.data.APP_URL.startsWith('https://')) throw new Error('APP_URL must use https in production');
+    const local = ['localhost', '127.0.0.1'].includes(new URL(parsed.data.APP_URL).hostname);
+    if (!parsed.data.APP_URL.startsWith('https://') && !local) throw new Error('APP_URL must use https in production');
     if (parsed.data.PAYMENT_PROVIDER === 'test' && !parsed.data.TEST_PAYMENTS_ALLOWED_IN_PRODUCTION) {
       throw new Error('PAYMENT_PROVIDER=test is refused in production');
     }

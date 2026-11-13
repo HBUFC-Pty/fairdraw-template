@@ -14,6 +14,8 @@ const config = [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'react/no-danger': 'error',
+      // Plain <img> keeps image hosts under the CSP's control (IMAGE_HOSTS) without the image optimiser's remote fetching.
+      '@next/next/no-img-element': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },

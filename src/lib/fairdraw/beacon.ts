@@ -10,6 +10,12 @@ import { z } from 'zod';
 import { FAIRDRAW_DRAND_CHAIN, fairdrawRoundTime } from './draw';
 
 /** Public drand HTTP relays run by different organisations. Override with DRAND_RELAYS (comma separated). */
+/** Relays from DRAND_RELAYS (comma separated), or the defaults. */
+export function configuredRelays(value = process.env.DRAND_RELAYS): string[] {
+  const list = (value ?? '').split(',').map((r) => r.trim()).filter((r) => /^https:\/\/[^\s/]+/.test(r));
+  return list.length ? list : DEFAULT_DRAND_RELAYS;
+}
+
 export const DEFAULT_DRAND_RELAYS = [
   'https://api.drand.sh',
   'https://api2.drand.sh',
