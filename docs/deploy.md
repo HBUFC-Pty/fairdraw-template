@@ -9,6 +9,10 @@ refunds and retention, PostgreSQL 16 with a persistent volume, and Caddy for aut
 
 Commands assume Ubuntu or Debian. Replace `example.co.uk` with your domain.
 
+> Prefer a guided, scripted set-up? docs/start-here.md uses scripts/server-setup.sh and scripts/deploy.sh (with
+> automatic rollback) and keeps the app in /srv/site. This page is the manual route and the reference for backups, logs,
+> updates and rollback.
+
 ## 1. Choose a server
 
 - Pick a provider with a **UK or EU region** and put the server there, so personal data stays in the UK or EEA (record
