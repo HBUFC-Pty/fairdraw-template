@@ -1,2 +1,8 @@
 allowBuilds:
   esbuild: true
+# Dev-only tooling advisories patched by overrides (pnpm audit in CI):
+#   GHSA-67mh-4wv8-2f99: esbuild <=0.24.2 pulled in by drizzle-kit's @esbuild-kit loader.
+#   GHSA-g3hv-75wg-m249: minimatch >=7 <11.0.1 pulled in by the ESLint TypeScript parser.
+overrides:
+  '@esbuild-kit/core-utils>esbuild': 0.25.12
+  'minimatch@>=7.0.0 <11.0.1': 11.0.2

@@ -20,10 +20,11 @@
     "test:watch": "vitest",
     "check:dashes": "node scripts/check-dashes.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts",
-    "worker": "tsx scripts/worker.ts",
-    "vectors": "php scripts/vectors/generate.php \"$FAIRDRAW_PHP_DIR\" > tests/vectors/fairdraw-php-vectors.json"
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "worker": "tsx --env-file-if-exists=.env scripts/worker.ts",
+    "vectors": "php scripts/vectors/generate.php \"$FAIRDRAW_PHP_DIR\" > tests/vectors/fairdraw-php-vectors.json",
+    "create-owner": "tsx --env-file-if-exists=.env scripts/create-owner.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.2",
