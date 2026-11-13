@@ -2,7 +2,7 @@
 # Multi-stage build: install, build, then a small runtime image that runs as a non-root user.
 # Base images are pinned to exact versions; Dependabot proposes updates (.github/dependabot.yml).
 
-FROM node:24.22.2-bookworm-slim AS base
+FROM node:26.13.0-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 WORKDIR /app
@@ -15,7 +15,7 @@ FROM deps AS build
 COPY . .
 RUN pnpm build
 
-FROM node:24.22.2-bookworm-slim AS runtime
+FROM node:26.13.0-bookworm-slim AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
