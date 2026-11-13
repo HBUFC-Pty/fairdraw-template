@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { FlashMessage } from '@/components/Flash';
 import { signUpAction } from '../actions/auth';
+import { siteConfig } from '@/lib/site-config';
 
 export const metadata = { title: 'Sign up' };
 
@@ -23,7 +24,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
         <label>
           Monthly spend limit (optional)
           <span className="hint">In pounds. You can set daily and weekly limits too, or change this later. Lowering a limit takes effect at once.</span>
-          <input name="monthlyLimit" inputMode="decimal" placeholder="for example 50" maxLength={12} />
+          <input name="monthlyLimit" inputMode="decimal" maxLength={12} defaultValue={siteConfig.defaults.suggestedMonthlyLimitPounds ?? ''} />
         </label>
         <label><input type="checkbox" name="over18" value="yes" required /> I am 18 or over</label>
         <label><input type="checkbox" name="terms" value="yes" required /> I accept the <Link href="/terms">terms</Link> and have read the <Link href="/privacy">privacy notice</Link></label>

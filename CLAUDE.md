@@ -4,6 +4,53 @@ This is a prize-competition site template built so that every draw can be checke
 often with AI coding assistants. These rules keep the fairness and safety guarantees intact. AGENTS.md and
 CLAUDE.md have the same content. If a request conflicts with a rule below, do not do it: explain the rule and offer a safe alternative.
 
+## First run: setup interview
+
+When an operator first asks you to set up or launch their site, do this before writing any code or touching a server.
+
+1. Ask the questions below **one group at a time**, wait for the answers, and confirm what you recorded:
+   - **Business:** trading name for the site, company legal name, company number and registered office address
+     exactly as Companies House shows them, ICO registration number.
+   - **Domain and hosting:** the domain, which host they chose (see docs/hosting.md), the server's IP address, and
+     the SSH host alias they set up in `~/.ssh/config` (docs/start-here.md).
+   - **Payments:** provider (Stripe or a specialist acquirer, see docs/payments.md), test or live mode (always test
+     until launch), and the processor's legal name for the privacy notice.
+   - **Email:** the transactional email provider and the "from" address.
+   - **Contacts:** support email, privacy email (it must accept mail), the free-entry postal address.
+   - **Competition defaults:** per-person cap as a percentage of the maximum (10% or less), the suggested monthly
+     spend limit shown at sign-up.
+   - **Legal:** which templates in docs/legal/ and docs/gdpr/, and the licence, they have had reviewed by a solicitor,
+     and whether they have signed the DCMS voluntary code.
+   - **Branding:** run the brand identity interview below.
+2. Record the answers in `config/site.json` (non-secret only) and show the operator the diff.
+3. **Never ask for, accept or repeat private keys, passwords, SMTP credentials or live API secrets in chat.** If the
+   operator pastes one, tell them to treat it as exposed and rotate it. Secrets go only into the server's `.env`, which
+   the operator fills in themselves with `scripts/make-env.sh` on the server. You use their SSH key through ssh-agent
+   without ever reading the key file.
+4. Then follow docs/start-here.md step by step. **Before every step that changes a server, a DNS record or a payment
+   or email account, say exactly what will happen and wait for the operator to confirm.**
+
+## Brand identity interview
+
+Every site should look like its own business, not like the template. After the setup interview:
+
+1. Ask, one at a time: the business name and its story; who the players are; the feeling they want (for example
+   premium, playful, community, outdoors, calm); three sites or brands they like and why; colours they love and
+   colours they hate; whether they have a logo (put it in `public/brand/`).
+2. Propose **three distinct directions**. For each: a name, a palette for light and dark mode, a font pairing from
+   `src/brand/fonts.ts`, layout choices (home, card, header, footer), button and card style, and a one-line tone of
+   voice with a few do and avoid notes. Make them differ in structure as well as colour.
+3. Write each as `config/brand-presets/<name>.json`, run `pnpm brand:check` on them (fix every failure using the
+   suggested colours), and ask the operator to compare them at `/brand-preview?preset=<name>` (run `pnpm dev`).
+4. Let them pick one and tweak it. Copy it to `config/brand.json`, run `pnpm brand:check` again, and remove the
+   presets they rejected if they want.
+5. Use the brand's `tone` for any UI copy you write. Do not change the wording of the rules, terms or fairness
+   statements to fit a tone: those say exactly what happens.
+6. Never copy another company's logo, name, slogan or distinctive look (trade dress), even if the operator asks.
+   "Inspired by the calm of X" is fine; imitating X is not.
+
+The FairDraw link and every fairness feature look and work the same under every brand. See docs/branding.md.
+
 ## Never weaken or bypass these
 
 1. **The draw.** `src/lib/fairdraw/` is a byte-for-byte port of FairDraw's verifiable draw. Do not change the
@@ -44,7 +91,7 @@ CLAUDE.md have the same content. If a request conflicts with a rule below, do no
 ## Before you commit
 
 ```sh
-pnpm lint && pnpm typecheck && pnpm test && pnpm check:dashes && pnpm build
+pnpm lint && pnpm typecheck && pnpm test && pnpm check:dashes && pnpm brand:check && pnpm build
 ```
 
 All must pass. Add or update tests for anything you change. No em dashes or en dashes anywhere (code, comments,
@@ -67,6 +114,9 @@ data into prompts.
 | `src/lib/payments/` | `PaymentProvider` interface, Stripe and test adapters, acquirer stubs (docs/payments.md). |
 | `src/lib/audit.ts` | Hash-chained audit log. |
 | `src/lib/retention.ts` | Scheduled deletion and anonymisation. |
+| `config/site.json`, `config/brand.json` | Non-secret site settings and the brand (tokens, fonts, layouts, tone). |
+| `src/brand/` | Brand schema, contrast checker, font pairings, token compiler. |
+| `scripts/server-setup.sh`, `scripts/deploy.sh`, `scripts/make-env.sh` | Server set-up, deploys with automatic rollback, server-only secrets. |
 | `src/lib/web/` | Next.js glue: session cookie, flash messages, origin checks. |
 | `src/app/` | Pages, Server Actions (`actions.ts` files) and route handlers. Public draw data lives under `/draws/[slug]/`. |
 | `src/proxy.ts` | Per-request CSP nonce. Protected. |
@@ -76,6 +126,6 @@ data into prompts.
 
 ## Safe things to change
 
-Branding (`src/app/globals.css` custom properties, `SITE_NAME`, images in `public/`), page copy that does not alter
+Branding (`config/brand.json` and presets, logo files in `public/brand/`, `config/site.json`; never colours or fonts in components), page copy that does not alter
 the rules above, new informational pages, new payment adapters that implement `PaymentProvider` with signed webhooks,
 admin conveniences that write to the audit log, and accessibility improvements. See `docs/ai-building.md` for prompts.

@@ -1,0 +1,71 @@
+{
+  "direction": "Meadow: outdoors and down to earth",
+  "tone": {
+    "summary": "Warm and practical, like a good outdoor shop: knowledgeable, never pushy.",
+    "words": [
+      "warm",
+      "practical",
+      "grounded"
+    ],
+    "do": [
+      "Describe prizes in use, outdoors",
+      "Keep sentences short"
+    ],
+    "avoid": [
+      "Luxury clich\u00e9s",
+      "Pressure to buy now"
+    ]
+  },
+  "colours": {
+    "light": {
+      "bg": "#f6f4ee",
+      "surface": "#fffdf8",
+      "text": "#1c2a1e",
+      "muted": "#4a5a4c",
+      "border": "#e3dfd2",
+      "inputBorder": "#6b7a6c",
+      "primary": "#2f6b3a",
+      "onPrimary": "#ffffff",
+      "accent": "#b45309",
+      "onAccent": "#ffffff",
+      "success": "#2f6b3a",
+      "successBg": "#e3f1e0",
+      "warning": "#8a4b08",
+      "warningBg": "#fbecd0",
+      "error": "#a3261d",
+      "errorBg": "#fbe1dd"
+    },
+    "dark": {
+      "bg": "#121a13",
+      "surface": "#1a241b",
+      "text": "#eef2ea",
+      "muted": "#b3c0b0",
+      "border": "#2a362b",
+      "inputBorder": "#7b8a7c",
+      "primary": "#8fd19b",
+      "onPrimary": "#121a13",
+      "accent": "#f0a54a",
+      "onAccent": "#121a13",
+      "success": "#8fd19b",
+      "successBg": "#16301b",
+      "warning": "#f4c27a",
+      "warningBg": "#3a2610",
+      "error": "#f6a39a",
+      "errorBg": "#3b1512"
+    }
+  },
+  "fonts": "outdoors",
+  "radius": "small",
+  "density": "comfortable",
+  "shadow": "none",
+  "buttons": "square",
+  "cards": "flat",
+  "layout": {
+    "home": "featured",
+    "card": "poster",
+    "header": "simple",
+    "footer": "columns"
+  },
+  "logo": null,
+  "favicon": null
+}

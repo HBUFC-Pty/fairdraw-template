@@ -1,0 +1,71 @@
+{
+  "direction": "Velvet: premium and understated",
+  "tone": {
+    "summary": "Quietly confident and refined: fewer words, chosen carefully.",
+    "words": [
+      "refined",
+      "assured",
+      "discreet"
+    ],
+    "do": [
+      "Let the prize photography lead",
+      "Use calm, complete sentences"
+    ],
+    "avoid": [
+      "Slang",
+      "Capital letters for emphasis"
+    ]
+  },
+  "colours": {
+    "light": {
+      "bg": "#faf7f5",
+      "surface": "#ffffff",
+      "text": "#1f1720",
+      "muted": "#5c5160",
+      "border": "#ece4e8",
+      "inputBorder": "#7a6e7d",
+      "primary": "#5b2a5e",
+      "onPrimary": "#ffffff",
+      "accent": "#8a6d1f",
+      "onAccent": "#ffffff",
+      "success": "#1f6a43",
+      "successBg": "#e2f2e8",
+      "warning": "#7a4a00",
+      "warningBg": "#f7ead1",
+      "error": "#a12828",
+      "errorBg": "#f8e0e0"
+    },
+    "dark": {
+      "bg": "#140f15",
+      "surface": "#1d161f",
+      "text": "#f4eef5",
+      "muted": "#bcaec0",
+      "border": "#2c2330",
+      "inputBorder": "#857889",
+      "primary": "#e0b4e3",
+      "onPrimary": "#140f15",
+      "accent": "#e3c46b",
+      "onAccent": "#140f15",
+      "success": "#9fdcb7",
+      "successBg": "#12301f",
+      "warning": "#f0c983",
+      "warningBg": "#33240c",
+      "error": "#f4a3a3",
+      "errorBg": "#3a1414"
+    }
+  },
+  "fonts": "premium",
+  "radius": "none",
+  "density": "spacious",
+  "shadow": "none",
+  "buttons": "outline",
+  "cards": "bordered",
+  "layout": {
+    "home": "grid",
+    "card": "compact",
+    "header": "centred",
+    "footer": "minimal"
+  },
+  "logo": null,
+  "favicon": null
+}

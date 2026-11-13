@@ -1,0 +1,71 @@
+{
+  "direction": "Carnival: playful and community-minded",
+  "tone": {
+    "summary": "Upbeat and inclusive, like a village f\u00eate: fun, but always fair and straight-talking.",
+    "words": [
+      "upbeat",
+      "inclusive",
+      "straightforward"
+    ],
+    "do": [
+      "Celebrate winners (with their consent)",
+      "Make the free entry route easy to find"
+    ],
+    "avoid": [
+      "Urgency tricks",
+      "Jargon"
+    ]
+  },
+  "colours": {
+    "light": {
+      "bg": "#fffaf3",
+      "surface": "#ffffff",
+      "text": "#24123a",
+      "muted": "#5a4a6e",
+      "border": "#f1e4d3",
+      "inputBorder": "#7d6a8f",
+      "primary": "#6d28d9",
+      "onPrimary": "#ffffff",
+      "accent": "#c2410c",
+      "onAccent": "#ffffff",
+      "success": "#15803d",
+      "successBg": "#dcfce7",
+      "warning": "#9a3412",
+      "warningBg": "#ffedd5",
+      "error": "#be123c",
+      "errorBg": "#ffe4e6"
+    },
+    "dark": {
+      "bg": "#160b24",
+      "surface": "#21122f",
+      "text": "#f7f0ff",
+      "muted": "#c4b5d9",
+      "border": "#33204a",
+      "inputBorder": "#8f7aa8",
+      "primary": "#c4b5fd",
+      "onPrimary": "#160b24",
+      "accent": "#fb923c",
+      "onAccent": "#160b24",
+      "success": "#86efac",
+      "successBg": "#0f2e1a",
+      "warning": "#fdba74",
+      "warningBg": "#3b1d0a",
+      "error": "#fda4af",
+      "errorBg": "#3f0d18"
+    }
+  },
+  "fonts": "playful",
+  "radius": "large",
+  "density": "comfortable",
+  "shadow": "crisp",
+  "buttons": "pill",
+  "cards": "elevated",
+  "layout": {
+    "home": "featured",
+    "card": "classic",
+    "header": "centred",
+    "footer": "minimal"
+  },
+  "logo": null,
+  "favicon": null
+}

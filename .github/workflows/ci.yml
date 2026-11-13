@@ -29,6 +29,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: No em or en dashes
         run: pnpm check:dashes
+      - name: Shell scripts
+        run: shellcheck scripts/*.sh
+      - name: Brand files are valid and meet WCAG 2.2 AA contrast
+        run: pnpm brand:check config/brand.json config/brand-presets/*.json
       - name: Lint
         run: pnpm lint
       - name: Typecheck

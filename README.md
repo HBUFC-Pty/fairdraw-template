@@ -9,6 +9,9 @@ ticket list is frozen and fingerprinted at the close, the winner is picked with 
 exist until the advertised draw time, and the full record is published so anyone can re-run it, in their browser or
 with FairDraw's own tools. The database itself refuses to change a committed list or redo a draw.
 
+**New here and not technical?** Start with [docs/start-here.md](docs/start-here.md): it walks you (and your AI
+assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server.
+
 > **Status:** a template. The legal and GDPR documents are starting points, not legal advice: have them, and this
 > licence, reviewed by a solicitor before you rely on them. See "What has and has not been tested" below.
 
@@ -43,6 +46,14 @@ with FairDraw's own tools. The database itself refuses to change a committed lis
   procedures and the cookie statement are in [docs/gdpr/](docs/gdpr/).
 - **Legal templates** in [docs/legal/](docs/legal/): competition terms (prize competition and free draw exemptions),
   responsible play, complaints, and a checklist for the DCMS voluntary code for prize draw operators.
+
+- **Your own look**: one brand file (`config/brand.json`) sets colours for light and dark mode, self-hosted font
+  pairings, three home layouts, three card styles, two headers and two footers, logo and favicon, and a tone of voice.
+  Every brand is checked for WCAG 2.2 AA contrast. Preview brands side by side at `/brand-preview` in development. See
+  [docs/branding.md](docs/branding.md).
+- **Beginner deployment**: `scripts/server-setup.sh` prepares a fresh Ubuntu server (deploy user, SSH hardening,
+  firewall, automatic updates, fail2ban, Docker, swap), `scripts/make-env.sh` keeps secrets on the server only, and
+  `scripts/deploy.sh` deploys a commit with a health check and automatic rollback.
 
 ## Ten-minute local quickstart
 
@@ -92,7 +103,7 @@ No Docker? Any PostgreSQL 16 works: create a database and point `DATABASE_URL` a
 ## Checks
 
 ```sh
-pnpm lint && pnpm typecheck && pnpm test && pnpm check:dashes && pnpm build
+pnpm lint && pnpm typecheck && pnpm test && pnpm check:dashes && pnpm brand:check && pnpm build
 pnpm audit
 ```
 

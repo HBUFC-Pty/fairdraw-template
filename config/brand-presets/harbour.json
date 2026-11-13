@@ -1,0 +1,71 @@
+{
+  "direction": "Harbour: clear and trustworthy",
+  "tone": {
+    "summary": "Plain, friendly and precise: say exactly what happens and when.",
+    "words": [
+      "clear",
+      "honest",
+      "calm"
+    ],
+    "do": [
+      "Use exact numbers and times",
+      "Explain how to check a draw"
+    ],
+    "avoid": [
+      "Hype and countdown pressure",
+      "Exclamation marks in rules"
+    ]
+  },
+  "colours": {
+    "light": {
+      "bg": "#f8fafc",
+      "surface": "#ffffff",
+      "text": "#0f172a",
+      "muted": "#475569",
+      "border": "#e2e8f0",
+      "inputBorder": "#64748b",
+      "primary": "#1d4ed8",
+      "onPrimary": "#ffffff",
+      "accent": "#0f766e",
+      "onAccent": "#ffffff",
+      "success": "#166534",
+      "successBg": "#dcfce7",
+      "warning": "#92400e",
+      "warningBg": "#fef3c7",
+      "error": "#b91c1c",
+      "errorBg": "#fee2e2"
+    },
+    "dark": {
+      "bg": "#0b1120",
+      "surface": "#111827",
+      "text": "#f1f5f9",
+      "muted": "#a3b1c6",
+      "border": "#1f2937",
+      "inputBorder": "#6b7280",
+      "primary": "#93c5fd",
+      "onPrimary": "#0b1120",
+      "accent": "#2dd4bf",
+      "onAccent": "#0b1120",
+      "success": "#86efac",
+      "successBg": "#052e16",
+      "warning": "#fcd34d",
+      "warningBg": "#422006",
+      "error": "#fca5a5",
+      "errorBg": "#450a0a"
+    }
+  },
+  "fonts": "modern",
+  "radius": "medium",
+  "density": "comfortable",
+  "shadow": "soft",
+  "buttons": "solid",
+  "cards": "bordered",
+  "layout": {
+    "home": "hero",
+    "card": "classic",
+    "header": "simple",
+    "footer": "columns"
+  },
+  "logo": null,
+  "favicon": null
+}

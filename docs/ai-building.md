@@ -33,10 +33,12 @@ Ask the assistant to leave these alone unless you are fixing a bug, and then rev
 
 ## Prompts that keep the guarantees
 
-- "Read AGENTS.md. Change the site's colours and fonts to match our brand: primary #0b5fff, accent #ffb000, headings in
-  a system serif. Only edit `src/app/globals.css`. Keep contrast at WCAG AA."
-- "Read AGENTS.md. Replace the text logo in the header with our SVG logo from `public/logo.svg`, with alt text. Do not
-  load anything from another domain."
+- "Read AGENTS.md and run the brand identity interview with me. Propose three directions as preset files, then
+  run `pnpm brand:check`." (See docs/branding.md.)
+- "Read AGENTS.md. Change our brand's primary colour to a deep teal and the fonts to the editorial pairing. Only edit
+  `config/brand.json`, and run `pnpm brand:check` until it passes in light and dark mode."
+- "Read AGENTS.md. Use our SVG logo from `public/brand/logo.svg` in the header (set `logo` in `config/brand.json`),
+  with alt text. Do not load anything from another domain."
 - "Read AGENTS.md. Add a section to the homepage explaining how our draws can be checked, linking to /fairness and to a
   recent draw's verify page. Do not change any draw code."
 - "Read AGENTS.md. Add an FAQ page at /faq with questions about free postal entry, per-person caps, spend limits and how

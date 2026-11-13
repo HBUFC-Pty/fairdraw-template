@@ -1,0 +1,32 @@
+/*
+ * Self-hosted fonts for every pairing in src/brand/fonts.ts (latin subset, regular and bold). No third-party font
+ * requests. A browser downloads only the files for fonts the page actually uses.
+ */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/playfair-display/latin-400.css';
+@import '@fontsource/playfair-display/latin-700.css';
+@import '@fontsource/source-sans-3/latin-400.css';
+@import '@fontsource/source-sans-3/latin-700.css';
+@import '@fontsource/nunito/latin-400.css';
+@import '@fontsource/nunito/latin-700.css';
+@import '@fontsource/montserrat/latin-400.css';
+@import '@fontsource/montserrat/latin-700.css';
+@import '@fontsource/open-sans/latin-400.css';
+@import '@fontsource/open-sans/latin-700.css';
+@import '@fontsource/merriweather/latin-400.css';
+@import '@fontsource/merriweather/latin-700.css';
+@import '@fontsource/lato/latin-400.css';
+@import '@fontsource/lato/latin-700.css';
+@import '@fontsource/bitter/latin-400.css';
+@import '@fontsource/bitter/latin-700.css';
+@import '@fontsource/poppins/latin-400.css';
+@import '@fontsource/poppins/latin-700.css';
+@import '@fontsource/cormorant-garamond/latin-400.css';
+@import '@fontsource/cormorant-garamond/latin-700.css';
+@import '@fontsource/work-sans/latin-400.css';
+@import '@fontsource/work-sans/latin-700.css';
+@import '@fontsource/fredoka/latin-400.css';
+@import '@fontsource/fredoka/latin-600.css';
+@import '@fontsource/atkinson-hyperlegible/latin-400.css';
+@import '@fontsource/atkinson-hyperlegible/latin-700.css';
