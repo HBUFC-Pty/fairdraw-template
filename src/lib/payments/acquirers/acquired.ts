@@ -15,7 +15,7 @@
  * This file deliberately contains no details of Acquired's API: none have been verified for this template.
  * See docs/payments.md for what a finished adapter must do and how to test it.
  */
-import type { CreateCheckoutInput, CreateCheckoutResult, PaymentEvent, PaymentProvider, PaymentStatus, RefundResult } from '../types';
+import type { CaptureResult, CreateCheckoutInput, CreateCheckoutResult, PaymentEvent, PaymentProvider, PaymentStatus, RefundResult } from '../types';
 
 export interface AcquiredConfig {
   // Add the credentials your Acquired account gives you. Read them from environment variables, never hard-code them.
@@ -27,15 +27,28 @@ export class AcquiredProvider implements PaymentProvider {
   constructor(private readonly config: AcquiredConfig) {}
 
   async createCheckout(_input: CreateCheckoutInput): Promise<CreateCheckoutResult> {
-    // Create a hosted payment page (or equivalent) for _input.totalPence in GBP, carrying _input.orderId so the
-    // webhook can be matched to the order, and return its URL and the provider's reference.
+    // Create a hosted payment page (or equivalent) for _input.totalPence in GBP that only AUTHORISES the payment
+    // (no automatic capture), carrying _input.orderId so the webhook can be matched to the order, and return its URL
+    // and the provider's reference.
     throw new Error('Acquired adapter not implemented');
   }
 
   async verifyWebhook(_rawBody: string, _headers: Headers): Promise<PaymentEvent> {
     // Verify the notification's authenticity exactly as Acquired documents it (for example a signature header checked
-    // in constant time). Throw WebhookSignatureError when it fails. Map success to 'payment_succeeded' with the
-    // amount actually captured, so the order total can be checked.
+    // in constant time). Throw WebhookSignatureError when it fails. Map a successful authorisation to
+    // 'payment_authorised' with the amount held and the card's funding type (credit, debit or prepaid). If Acquired
+    // cannot tell you the funding type, report 'unknown': it is treated as credit, so above the DCMS credit card
+    // limit the operator in effect accepts debit cards only. Never guess 'debit'.
+    throw new Error('Acquired adapter not implemented');
+  }
+
+  async capture(_paymentRef: string, _amountPence: number, _idempotencyKey: string): Promise<CaptureResult> {
+    // Capture up to the authorised amount. Return 'failed' only when the authorisation can never be captured.
+    throw new Error('Acquired adapter not implemented');
+  }
+
+  async cancel(_paymentRef: string, _idempotencyKey: string): Promise<void> {
+    // Release (void) the authorisation without taking any money. Must be safe to call twice.
     throw new Error('Acquired adapter not implemented');
   }
 

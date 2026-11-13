@@ -62,3 +62,15 @@ export function toUkLocalInput(d: Date): string {
   const get = (t: string) => parts.find((p) => p.type === t)!.value;
   return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
 }
+
+/**
+ * The calendar month containing `now`, in UK time: from 00:00 on the 1st (Europe/London) to 00:00 on the 1st of the
+ * next month, as UTC instants. Used for the DCMS credit card limit, which is "per month".
+ */
+export function ukMonthBounds(now: Date): { start: Date; end: Date; label: string } {
+  const [y, m] = ukDate(now).split('-').map(Number) as [number, number];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const ny = m === 12 ? y + 1 : y;
+  const nm = m === 12 ? 1 : m + 1;
+  return { start: fromUkLocalInput(`${y}-${pad(m)}-01T00:00`), end: fromUkLocalInput(`${ny}-${pad(nm)}-01T00:00`), label: `${y}-${pad(m)}` };
+}

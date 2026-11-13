@@ -15,6 +15,9 @@ import { eq } from 'drizzle-orm';
 import { requireUser } from '@/lib/web/session';
 import { getDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { declineMessage } from '@/lib/checkout/service';
+import { creditCardCapPence } from '@/lib/site-config';
+import { creditUsedThisMonth } from '@/lib/checkout/credit-card-rule';
 
 export const metadata = { title: 'Thank you' };
 
@@ -23,6 +26,16 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   const id = (await searchParams).order;
   const [o] = typeof id === 'string' && /^[0-9a-f-]{36}$/.test(id) ? await getDb().select().from(orders).where(eq(orders.id, id)) : [];
   const mine = o && o.userId === s.user.id ? o : null;
+  if (mine && mine.decision && mine.decision !== 'capture') {
+    const used = await creditUsedThisMonth(getDb(), s.user.id);
+    return (
+      <>
+        <h1>Payment not taken</h1>
+        <p className="notice warn">{declineMessage(mine.decision, creditCardCapPence(), used)}</p>
+        <p><Link href="/basket">Back to your basket</Link></p>
+      </>
+    );
+  }
   return (
     <>
       <h1>Thank you</h1>

@@ -55,6 +55,8 @@ export const competitionInputSchema = z
       .refine((q) => q.correctIndex < q.options.length, 'the correct answer must be one of the options')
       .nullable()
       .default(null),
+    // An instant win prize draw: credit cards are refused for it (DCMS code clause 1.3).
+    isInstantWin: z.boolean().default(false),
   })
   .refine((c) => c.perPersonCap <= c.maxTickets, { message: 'the per-person cap cannot exceed the maximum tickets', path: ['perPersonCap'] })
   .refine((c) => c.winnerCount <= c.maxTickets, { message: 'more winners than tickets', path: ['winnerCount'] })
@@ -62,7 +64,7 @@ export const competitionInputSchema = z
   .refine((c) => c.drawAt >= c.closesAt, { message: 'the draw time must be at or after the close time', path: ['drawAt'] })
   .refine((c) => c.drawAt.getTime() - c.closesAt.getTime() <= 7 * 86400_000, { message: 'draw within 7 days of the close', path: ['drawAt'] });
 
-export type CompetitionInput = z.infer<typeof competitionInputSchema>;
+export type CompetitionInput = z.input<typeof competitionInputSchema>;
 
 export function capWarning(input: { perPersonCap: number; maxTickets: number }): string | null {
   return capAboveTenPercent(input.perPersonCap, input.maxTickets)

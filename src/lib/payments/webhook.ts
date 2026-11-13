@@ -10,12 +10,15 @@
  * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
+import { eq } from 'drizzle-orm';
 import type { Db } from '../db';
-import { applyPaymentEvent } from '../checkout/service';
+import { orders, users } from '../db/schema';
+import { declineMessage, processPaymentEvent } from '../checkout/service';
+import { trySendMail } from '../mail';
 import type { PaymentProvider } from './types';
 import { WebhookSignatureError } from './types';
 
-/** Verify and apply one webhook. Returns the HTTP status to answer with. */
+/** Verify and apply one webhook, then capture or release the payment. Returns the HTTP status to answer with. */
 export async function handleWebhook(db: Db, provider: PaymentProvider, rawBody: string, headers: Headers): Promise<{ status: number; body: string }> {
   if (rawBody.length > 1_000_000) return { status: 413, body: 'too large' };
   let event;
@@ -25,6 +28,11 @@ export async function handleWebhook(db: Db, provider: PaymentProvider, rawBody: 
     if (e instanceof WebhookSignatureError) return { status: 400, body: 'invalid signature' };
     return { status: 400, body: 'invalid event' };
   }
-  const outcome = await applyPaymentEvent(db, provider.name, event);
-  return { status: 200, body: outcome };
+  const { outcome, settled } = await processPaymentEvent(db, provider, event);
+  if (outcome.kind === 'decided' && outcome.decision !== 'capture') {
+    const text = declineMessage(outcome.decision, outcome.creditCapPence, outcome.creditUsedPence);
+    const [o] = await db.select({ email: users.email }).from(orders).innerJoin(users, eq(users.id, orders.userId)).where(eq(orders.id, outcome.orderId));
+    if (text && o) await trySendMail({ to: o.email, subject: 'Your payment was not taken', text });
+  }
+  return { status: 200, body: outcome.kind === 'decided' ? `${outcome.decision}:${settled}` : outcome.kind };
 }

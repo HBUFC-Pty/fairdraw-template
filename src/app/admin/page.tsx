@@ -39,6 +39,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         {can('competitions') ? <li><Link href="/admin/competitions">Competitions</Link>: {c.live} live, {c.awaiting} closed and awaiting their draw</li> : null}
         {can('postal') && !can('competitions') ? <li><Link href="/admin/competitions">Record postal entries</Link></li> : null}
         {can('refunds') ? <li><Link href="/admin/refunds">Refunds</Link>: {c.refunds} pending or failed</li> : null}
+        {can('refunds') ? <li><Link href="/admin/credit-cards">Credit card payments</Link>: monthly totals per player (DCMS code clause 1.3)</li> : null}
         {can('users') ? <li><Link href="/admin/users">Player support</Link></li> : null}
         {can('audit') ? <li><Link href="/admin/audit">Audit log</Link>: {chain?.ok ? `chain intact (${chain.entries} entries)` : `CHAIN BROKEN at entry ${chain?.firstBadId}`}</li> : null}
         {can('staff') ? <li><Link href="/admin/staff">Staff and roles</Link></li> : null}

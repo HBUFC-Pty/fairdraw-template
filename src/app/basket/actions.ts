@@ -105,8 +105,9 @@ export async function testPayAction(fd: FormData) {
   if (!id.success) redirect('/basket');
   const [o] = await getDb().select().from(orders).where(eq(orders.id, id.data));
   if (!o || o.userId !== s.user.id) redirect('/basket');
-  const outcome = field(fd, 'outcome') === 'fail' ? 'payment_failed' : 'payment_succeeded';
-  const { body, signature } = provider.makeEvent(o.id, o.totalPence, outcome);
+  const choice = z.enum(['debit', 'credit', 'prepaid', 'unknown', 'fail']).catch('debit').parse(field(fd, 'outcome'));
+  const { body, signature } =
+    choice === 'fail' ? provider.makeEvent(o.id, o.totalPence, { type: 'payment_failed' }) : provider.makeEvent(o.id, o.totalPence, { funding: choice });
   await handleWebhook(getDb(), provider, body, new Headers({ 'x-test-signature': signature }));
-  redirect(outcome === 'payment_failed' ? `/checkout/cancelled?order=${o.id}` : `/checkout/success?order=${o.id}`);
+  redirect(choice === 'fail' ? `/checkout/cancelled?order=${o.id}` : `/checkout/success?order=${o.id}`);
 }

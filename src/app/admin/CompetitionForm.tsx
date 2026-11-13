@@ -46,6 +46,10 @@ export function CompetitionForm({ c }: { c?: C }) {
         <label>Answers, one per line<textarea name="options" rows={4} defaultValue={c?.skillQuestion?.options.join('\n')} /></label>
         <label>Number of the correct answer (1 for the first line)<input name="correct" type="number" min={1} max={6} defaultValue={c?.skillQuestion ? c.skillQuestion.correctIndex + 1 : ''} /></label>
       </fieldset>
+      <label>
+        <input type="checkbox" name="isInstantWin" value="yes" defaultChecked={c?.isInstantWin} /> This is an instant win prize draw
+        <span className="hint">Credit card payments are refused for instant win prize draws (DCMS code clause 1.3). Fixed once published.</span>
+      </label>
       <button type="submit">Save draft</button>
     </form>
   );

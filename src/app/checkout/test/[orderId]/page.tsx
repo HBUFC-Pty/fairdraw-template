@@ -37,10 +37,14 @@ export default async function TestPayPage({ params }: { params: Promise<{ orderI
       <p>Order total: <strong>{formatPence(o.totalPence)}</strong>. Status: {o.status}.</p>
       {o.status === 'pending' ? (
         <>
-          <form action={testPayAction}>
-            <input type="hidden" name="orderId" value={o.id} />
-            <button type="submit">Pay (test)</button>
-          </form>
+          <p>Choose the kind of card to simulate. Credit and unknown cards are subject to the DCMS credit card rule.</p>
+          {(['debit', 'credit', 'prepaid', 'unknown'] as const).map((f) => (
+            <form action={testPayAction} key={f}>
+              <input type="hidden" name="orderId" value={o.id} />
+              <input type="hidden" name="outcome" value={f} />
+              <button type="submit">Pay with a {f === 'unknown' ? 'card of unknown type' : `${f} card`} (test)</button>
+            </form>
+          ))}
           <form action={testPayAction}>
             <input type="hidden" name="orderId" value={o.id} />
             <input type="hidden" name="outcome" value="fail" />

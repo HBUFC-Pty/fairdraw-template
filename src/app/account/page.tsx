@@ -23,6 +23,7 @@ import { formatUk } from '@/lib/time';
 import { logoutAction } from '../actions/auth';
 import { winnerConsentAction } from '../actions/account';
 import { playBlockReason } from '@/lib/checkout/service';
+import { creditAllowance } from '@/lib/checkout/credit-card-rule';
 
 export const metadata = { title: 'Your account' };
 
@@ -44,6 +45,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     .where(eq(winners.userId, s.user.id));
   const secret = env().ENTRY_CODE_SECRET;
   const blocked = playBlockReason(s.user, new Date());
+  const credit = await creditAllowance(db, s.user.id);
   return (
     <>
       <h1>Your account</h1>
@@ -54,6 +56,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <Link href="/account/data">Your data</Link> · <Link href="/account/delete">Delete account</Link>
       </p>
       <form action={logoutAction}><button type="submit" className="secondary">Log out</button></form>
+
+      <h2>Credit card allowance</h2>
+      <p>
+        You can pay up to <strong>{formatPence(credit.capPence)}</strong> by credit card each calendar month. This month you have used{' '}
+        {formatPence(credit.usedPence)}, so <strong>{formatPence(credit.remainingPence)}</strong> is left. It resets on {formatUk(credit.resetsAt)}. Debit
+        cards are not limited by this rule (your own spend limits still apply). Credit cards cannot be used for instant win prize draws.
+      </p>
 
       {ws.length ? (
         <>

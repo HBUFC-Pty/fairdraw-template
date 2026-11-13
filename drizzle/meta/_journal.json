@@ -15,6 +15,20 @@
       "when": 1794556614090,
       "tag": "0001_fairness_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794572054655,
+      "tag": "0002_credit_card_rule",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794572055166,
+      "tag": "0003_instant_win_guard",
+      "breakpoints": true
     }
   ]
 }

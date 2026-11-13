@@ -17,12 +17,27 @@
 import { z } from 'zod';
 import raw from '../../config/site.json';
 
+/** The figure in clause 1.3 of the DCMS Voluntary Code of Good Practice for Prize Draw Operators. */
+export const DCMS_CREDIT_CARD_CAP_POUNDS = 250;
+
 export const siteConfigSchema = z.object({
   siteName: z.string().min(1),
   domain: z.string(),
   operator: z.object({ legalName: z.string(), companyNumber: z.string(), registeredAddress: z.string(), icoNumber: z.string() }),
   contact: z.object({ supportEmail: z.email(), privacyEmail: z.email(), postalEntryAddress: z.string() }),
-  payments: z.object({ provider: z.enum(['test', 'stripe', 'cashflows', 'dna-payments', 'acquired', 'trust-payments']), mode: z.enum(['test', 'live']), processorName: z.string() }),
+  payments: z.object({
+    provider: z.enum(['test', 'stripe', 'cashflows', 'dna-payments', 'acquired', 'trust-payments']),
+    mode: z.enum(['test', 'live']),
+    processorName: z.string(),
+    // DCMS code clause 1.3: credit card payments capped at £250 per player per month. You may lower it, never raise it.
+    creditCardMonthlyCapPounds: z
+      .number()
+      .min(0)
+      .max(DCMS_CREDIT_CARD_CAP_POUNDS, `the DCMS code caps credit card payments at £${DCMS_CREDIT_CARD_CAP_POUNDS} a month; you can lower this but not raise it`)
+      .multipleOf(0.01),
+    // DCMS code clause 1.3: no credit card payments at all for instant win prize draws. Cannot be switched off.
+    instantWinCreditCardBan: z.literal(true, 'the DCMS code bans credit card payments for instant win prize draws; this cannot be switched off'),
+  }),
   email: z.object({ provider: z.string(), from: z.string() }),
   hosting: z.object({ host: z.string(), region: z.string(), serverIp: z.string(), sshHostAlias: z.string() }),
   defaults: z.object({
@@ -53,4 +68,9 @@ export function siteConfigAsEnv(c: SiteConfig = siteConfig): Record<string, stri
     MAIL_FROM: c.email.from,
     VOLUNTARY_CODE_SIGNATORY: String(c.voluntaryCodeSignatory),
   };
+}
+
+/** The credit card cap in pence (never more than the DCMS code's £250). */
+export function creditCardCapPence(c: SiteConfig = siteConfig): number {
+  return Math.round(c.payments.creditCardMonthlyCapPounds * 100);
 }

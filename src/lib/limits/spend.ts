@@ -106,7 +106,7 @@ export async function spentInPeriod(db: Db, userId: string, period: SpendPeriod,
       and(
         eq(orders.userId, userId),
         gt(orders.createdAt, since),
-        sql`(${orders.status} IN ('paid', 'partially_refunded') OR (${orders.status} = 'pending' AND ${orders.expiresAt} > ${now.toISOString()}))`,
+        sql`(${orders.status} IN ('capturing', 'paid', 'partially_refunded') OR (${orders.status} = 'pending' AND ${orders.expiresAt} > ${now.toISOString()}))`,
       ),
     );
   return Number(r?.total ?? 0);

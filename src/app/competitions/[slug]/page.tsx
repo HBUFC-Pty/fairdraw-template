@@ -49,6 +49,7 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
         <p className="hero" key={img.url}><img src={img.url} alt={img.alt} /></p>
       ))}
       <CompetitionFacts c={c} sold={sold} />
+      {c.isInstantWin ? <p className="notice">This is an instant win prize draw: credit cards cannot be used to enter it. Debit cards and free postal entry are fine.</p> : null}
       <DrawnWhateverSold c={c} />
 
       <h2>The prize</h2>

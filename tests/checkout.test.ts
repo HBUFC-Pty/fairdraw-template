@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { addPaidTickets, makeCompetition, makeUser, testDb } from './helpers/db';
 import type { Db } from '../src/lib/db';
 import { orders, refunds, tickets } from '../src/lib/db/schema';
-import { addToBasket, applyPaymentEvent, CheckoutError, expireStaleOrders, placeOrder, processRefunds } from '../src/lib/checkout/service';
+import { addToBasket, CheckoutError, expireStaleOrders, placeOrder, processPaymentEvent } from '../src/lib/checkout/service';
 import { recordPostalEntry } from '../src/lib/competitions/postal';
 import { setLimit } from '../src/lib/limits/spend';
 import { TestProvider } from '../src/lib/payments/test-provider';
@@ -14,7 +14,16 @@ beforeEach(async () => {
 });
 
 const opts = { provider: 'test', reservationMinutes: 30 };
-const paid = (orderId: string, amountPence: number, id = `evt_${orderId}`) => ({ kind: 'payment_succeeded' as const, eventId: id, orderId, providerRef: 'ref', paymentRef: 'pay', amountPence });
+let provider: TestProvider;
+beforeEach(() => {
+  provider = new TestProvider('s'.repeat(32), 'http://x');
+});
+const paid = (orderId: string, amountPence: number, id = `evt_${orderId}`) =>
+  ({ kind: 'payment_authorised' as const, eventId: id, orderId, providerRef: 'ref', paymentRef: `pay_${orderId}`, amountPence, funding: 'debit' as const, brand: 'visa' });
+const pay = async (orderId: string, amountPence: number, id?: string) => {
+  const r = await processPaymentEvent(db, provider, paid(orderId, amountPence, id));
+  return r.outcome.kind === 'decided' ? `${r.outcome.decision}:${r.settled}` : r.outcome.kind;
+};
 
 describe('checkout', () => {
   it('reserves random tickets, then activates them on a verified payment', async () => {
@@ -26,7 +35,8 @@ describe('checkout', () => {
     let ts = await db.select().from(tickets).where(eq(tickets.orderId, o.orderId));
     expect(ts.map((t) => t.status)).toEqual(['reserved', 'reserved', 'reserved']);
     expect(ts.every((t) => t.allocation === 'random')).toBe(true);
-    expect(await applyPaymentEvent(db, 'test', paid(o.orderId, 750))).toBe('paid');
+    expect(await pay(o.orderId, 750)).toBe('capture:paid');
+    expect(provider.captures).toEqual([{ paymentRef: `pay_${o.orderId}`, amountPence: 750, key: o.orderId }]);
     ts = await db.select().from(tickets).where(eq(tickets.orderId, o.orderId));
     expect(ts.every((t) => t.status === 'active')).toBe(true);
   });
@@ -94,7 +104,7 @@ describe('checkout', () => {
     expect(t!.answerCorrect).toBe(false);
   });
 
-  it('refunds a payment that arrives after the reservation lapsed and the number went to someone else', async () => {
+  it('releases (does not take) a payment that arrives after the reservation lapsed and the number went to someone else', async () => {
     const u = await makeUser(db);
     const v = await makeUser(db);
     const c = await makeCompetition(db);
@@ -102,13 +112,12 @@ describe('checkout', () => {
     const o = await placeOrder(db, u.id, opts);
     expect(await expireStaleOrders(db, new Date(Date.now() + 31 * 60_000))).toBe(1);
     await addPaidTickets(db, c.id, v.id, [5]);
-    expect(await applyPaymentEvent(db, 'test', paid(o.orderId, 250))).toBe('refund_due');
-    const [r] = await db.select().from(refunds).where(eq(refunds.orderId, o.orderId));
-    expect(r!.amountPence).toBe(250);
-    const res = await processRefunds(db, new TestProvider('s'.repeat(32), 'http://x'));
-    expect(res).toEqual({ done: 1, failed: 0 });
+    expect(await pay(o.orderId, 250)).toBe('decline_unavailable:declined');
+    expect(provider.captures).toEqual([]);
+    expect(provider.cancels).toHaveLength(1);
+    expect(await db.select().from(refunds).where(eq(refunds.orderId, o.orderId))).toHaveLength(0);
     const [ord] = await db.select().from(orders).where(eq(orders.id, o.orderId));
-    expect(ord!.status).toBe('refunded');
+    expect(ord!.status).toBe('declined');
   });
 
   it('is idempotent and checks the amount', async () => {
@@ -116,16 +125,18 @@ describe('checkout', () => {
     const c = await makeCompetition(db);
     await addToBasket(db, u.id, { competitionId: c.id, quantity: 2, chosenNumbers: null, answerIndex: null });
     const o = await placeOrder(db, u.id, opts);
-    expect(await applyPaymentEvent(db, 'test', paid(o.orderId, 500))).toBe('paid');
-    expect(await applyPaymentEvent(db, 'test', paid(o.orderId, 500))).toBe('already_processed');
-    expect(await applyPaymentEvent(db, 'test', paid(o.orderId, 500, 'another-event'))).toBe('already_processed');
-    expect(await applyPaymentEvent(db, 'stripe', paid(o.orderId, 500, 'x'))).toBe('unknown_order');
+    expect(await pay(o.orderId, 500)).toBe('capture:paid');
+    expect(await pay(o.orderId, 500)).toBe('already_processed');
+    expect(await pay(o.orderId, 500, 'another-event')).toBe('already_processed');
+    expect(provider.captures).toHaveLength(1);
+    const stripeLike = Object.assign(new TestProvider('s'.repeat(32), 'http://x'), { name: 'stripe' as const });
+    expect((await processPaymentEvent(db, stripeLike as unknown as TestProvider, paid(o.orderId, 500, 'x'))).outcome.kind).toBe('unknown_order');
 
     await addToBasket(db, u.id, { competitionId: c.id, quantity: 1, chosenNumbers: null, answerIndex: null });
     const o2 = await placeOrder(db, u.id, opts);
-    expect(await applyPaymentEvent(db, 'test', paid(o2.orderId, 1))).toBe('amount_mismatch');
+    expect(await pay(o2.orderId, 1)).toBe('decline_amount:declined');
     const ts = await db.select().from(tickets).where(eq(tickets.orderId, o2.orderId));
-    expect(ts.every((t) => t.status === 'refunded')).toBe(true);
+    expect(ts.every((t) => t.status === 'expired')).toBe(true);
   });
 
   it('never sells the same number twice under concurrent checkouts', async () => {

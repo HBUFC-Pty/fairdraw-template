@@ -160,6 +160,8 @@ export const competitions = pgTable(
     closesAt: ts('closes_at').notNull(),
     drawAt: ts('draw_at').notNull(),
     skillQuestion: jsonb('skill_question').$type<SkillQuestion | null>(),
+    // An instant win prize draw. DCMS code clause 1.3: no credit card payments at all for these. Fixed once live.
+    isInstantWin: boolean('is_instant_win').notNull().default(false),
     status: text('status', { enum: COMPETITION_STATUSES }).notNull().default('draft'),
     closedAt: ts('closed_at'),
     drawnAt: ts('drawn_at'),
@@ -176,7 +178,13 @@ export const competitions = pgTable(
   ],
 );
 
-export const ORDER_STATUSES = ['pending', 'paid', 'failed', 'expired', 'refunded', 'partially_refunded'] as const;
+// pending: waiting for the player to pay. capturing: authorised, decided to capture, capture call in progress.
+// cancelling: authorised but declined (for example the credit card rule), release in progress. declined: released.
+export const ORDER_STATUSES = ['pending', 'capturing', 'cancelling', 'declined', 'paid', 'failed', 'expired', 'refunded', 'partially_refunded'] as const;
+export const FUNDING_TYPES = ['credit', 'debit', 'prepaid', 'unknown'] as const;
+export type FundingType = (typeof FUNDING_TYPES)[number];
+export const ORDER_DECISIONS = ['capture', 'decline_credit_cap', 'decline_instant_win_credit', 'decline_unavailable', 'decline_amount'] as const;
+export type OrderDecision = (typeof ORDER_DECISIONS)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const orders = pgTable(
@@ -194,8 +202,18 @@ export const orders = pgTable(
     createdAt: ts('created_at').notNull().defaultNow(),
     expiresAt: ts('expires_at').notNull(),
     paidAt: ts('paid_at'),
+    // What the provider reported when the payment was authorised. Funding type and brand only: never card numbers.
+    paymentFunding: text('payment_funding', { enum: FUNDING_TYPES }),
+    paymentBrand: text('payment_brand'),
+    authorisedPence: integer('authorised_pence'),
+    capturePence: integer('capture_pence'),
+    decision: text('decision', { enum: ORDER_DECISIONS }),
+    decidedAt: ts('decided_at'),
+    settledAt: ts('settled_at'),
+    settleAttempts: integer('settle_attempts').notNull().default(0),
+    settleError: text('settle_error'),
   },
-  (t) => [index('orders_user_idx').on(t.userId, t.createdAt), check('order_total_non_negative', sql`${t.totalPence} >= 0`)],
+  (t) => [index('orders_user_idx').on(t.userId, t.createdAt), index('orders_credit_idx').on(t.userId, t.paymentFunding, t.decidedAt), check('order_total_non_negative', sql`${t.totalPence} >= 0`)],
 );
 
 export const basketItems = pgTable(

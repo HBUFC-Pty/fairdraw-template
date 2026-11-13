@@ -51,6 +51,7 @@ const sample = (style: string): Competition => ({
   closesAt: new Date(Date.now() + 5 * 86400_000),
   drawAt: new Date(Date.now() + 5 * 86400_000),
   skillQuestion: null,
+  isInstantWin: false,
   status: 'live',
   closedAt: null,
   drawnAt: null,

@@ -11,12 +11,25 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 /**
- * Stripe adapter: Checkout Sessions and signed webhooks. Works in test mode with sk_test_ keys.
+ * Stripe adapter: Checkout Sessions with manual capture, and signed webhooks. Works in test mode with sk_test_ keys.
  * Stripe often declines prize-competition merchants: read docs/payments.md before relying on it.
+ *
+ * Why manual capture: a card's funding type (credit, debit, prepaid) is only known once the player has entered it.
+ * Checkout authorises the payment (payment_intent_data.capture_method = "manual", see
+ * https://docs.stripe.com/payments/place-a-hold-on-a-payment-method); the webhook reads the funding type from the
+ * PaymentIntent's charge; the site then captures it or cancels it under the DCMS credit card rule. An online card
+ * authorisation normally lasts 7 days (4 days 18 hours for some Visa transactions); the site settles within seconds and
+ * the worker retries within minutes.
  */
 import Stripe from 'stripe';
-import type { CreateCheckoutInput, CreateCheckoutResult, PaymentEvent, PaymentProvider, PaymentStatus, RefundResult } from './types';
+import type { CaptureResult, CreateCheckoutInput, CreateCheckoutResult, FundingType, PaymentEvent, PaymentProvider, PaymentStatus, RefundResult } from './types';
 import { WebhookSignatureError } from './types';
+
+const FUNDING: readonly FundingType[] = ['credit', 'debit', 'prepaid', 'unknown'];
+
+export function toFunding(value: string | null | undefined): FundingType {
+  return FUNDING.includes(value as FundingType) ? (value as FundingType) : 'unknown';
+}
 
 export class StripeProvider implements PaymentProvider {
   readonly name = 'stripe';
@@ -34,10 +47,13 @@ export class StripeProvider implements PaymentProvider {
     const session = await this.stripe.checkout.sessions.create(
       {
         mode: 'payment',
+        // Cards only (including wallets such as Apple Pay), so the funding type is known. Other methods, such as buy now
+        // pay later, are credit in substance.
+        allowed_payment_method_types: ['card'],
         client_reference_id: input.orderId,
         customer_email: input.customerEmail,
         metadata: { order_id: input.orderId },
-        payment_intent_data: { metadata: { order_id: input.orderId } },
+        payment_intent_data: { capture_method: 'manual', metadata: { order_id: input.orderId } },
         line_items: input.lines.map((l) => ({
           quantity: l.quantity,
           price_data: { currency: input.currency, unit_amount: l.unitPence, product_data: { name: l.name } },
@@ -65,10 +81,23 @@ export class StripeProvider implements PaymentProvider {
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       const s = event.data.object;
       const orderId = s.client_reference_id ?? s.metadata?.order_id;
-      if (!orderId) return { kind: 'ignored', eventId: event.id, type: event.type };
-      if (s.payment_status !== 'paid') return { kind: 'ignored', eventId: event.id, type: `${event.type}:${s.payment_status}` };
-      const paymentRef = typeof s.payment_intent === 'string' ? s.payment_intent : (s.payment_intent?.id ?? '');
-      return { kind: 'payment_succeeded', eventId: event.id, orderId, providerRef: s.id, paymentRef, amountPence: s.amount_total ?? 0 };
+      const piId = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent?.id;
+      if (!orderId || !piId) return { kind: 'ignored', eventId: event.id, type: event.type };
+      // With manual capture a completed session is "unpaid" and its PaymentIntent is "requires_capture".
+      const pi = await this.stripe.paymentIntents.retrieve(piId, { expand: ['latest_charge'] });
+      if (pi.status !== 'requires_capture' && pi.status !== 'succeeded') return { kind: 'ignored', eventId: event.id, type: `${event.type}:${pi.status}` };
+      const charge = typeof pi.latest_charge === 'object' && pi.latest_charge ? pi.latest_charge : null;
+      const card = charge?.payment_method_details?.card;
+      return {
+        kind: 'payment_authorised',
+        eventId: event.id,
+        orderId,
+        providerRef: s.id,
+        paymentRef: pi.id,
+        amountPence: pi.status === 'requires_capture' ? pi.amount_capturable : pi.amount_received,
+        funding: toFunding(card?.funding),
+        brand: card?.brand ?? null,
+      };
     }
     if (event.type === 'checkout.session.async_payment_failed') {
       const s = event.data.object;
@@ -85,6 +114,26 @@ export class StripeProvider implements PaymentProvider {
     return { kind: 'ignored', eventId: event.id, type: event.type };
   }
 
+  async capture(paymentRef: string, amountPence: number, idempotencyKey: string): Promise<CaptureResult> {
+    const pi = await this.stripe.paymentIntents.retrieve(paymentRef);
+    if (pi.status === 'succeeded') return { status: 'succeeded' };
+    if (pi.status !== 'requires_capture') return { status: 'failed' };
+    // A partial capture releases the rest of the hold automatically.
+    const done = await this.stripe.paymentIntents.capture(paymentRef, { amount_to_capture: amountPence }, { idempotencyKey: `capture-${idempotencyKey}` });
+    return { status: done.status === 'succeeded' ? 'succeeded' : 'failed' };
+  }
+
+  async cancel(paymentRef: string, idempotencyKey: string): Promise<void> {
+    const pi = await this.stripe.paymentIntents.retrieve(paymentRef);
+    if (pi.status === 'canceled') return;
+    if (pi.status === 'succeeded') {
+      // Captured by mistake (for example a session created outside this site): give the money back in full.
+      await this.stripe.refunds.create({ payment_intent: paymentRef }, { idempotencyKey: `cancel-refund-${idempotencyKey}` });
+      return;
+    }
+    await this.stripe.paymentIntents.cancel(paymentRef, {}, { idempotencyKey: `cancel-${idempotencyKey}` });
+  }
+
   async refund(paymentRef: string, amountPence: number, idempotencyKey: string): Promise<RefundResult> {
     const r = await this.stripe.refunds.create({ payment_intent: paymentRef, amount: amountPence }, { idempotencyKey: `refund-${idempotencyKey}` });
     const status = r.status === 'succeeded' ? 'succeeded' : r.status === 'failed' || r.status === 'canceled' ? 'failed' : 'pending';
@@ -92,8 +141,10 @@ export class StripeProvider implements PaymentProvider {
   }
 
   async getStatus(providerRef: string): Promise<PaymentStatus> {
-    const s = await this.stripe.checkout.sessions.retrieve(providerRef);
-    if (s.payment_status === 'paid') return 'paid';
+    const s = await this.stripe.checkout.sessions.retrieve(providerRef, { expand: ['payment_intent'] });
+    const pi = typeof s.payment_intent === 'object' ? s.payment_intent : null;
+    if (pi?.status === 'requires_capture') return 'authorised';
+    if (pi?.status === 'succeeded') return 'paid';
     if (s.status === 'expired') return 'expired';
     if (s.status === 'open') return 'pending';
     return 'unknown';

@@ -18,6 +18,7 @@ import { basketItems, competitions } from '@/lib/db/schema';
 import { FlashMessage } from '@/components/Flash';
 import { formatPence } from '@/lib/money';
 import { playBlockReason } from '@/lib/checkout/service';
+import { creditAllowance } from '@/lib/checkout/credit-card-rule';
 import { checkoutAction, removeFromBasketAction } from './actions';
 
 export const metadata = { title: 'Basket' };
@@ -31,6 +32,8 @@ export default async function BasketPage({ searchParams }: { searchParams: Promi
     .where(eq(basketItems.userId, s.user.id));
   const total = items.reduce((t, { b, c }) => t + b.quantity * c.ticketPricePence, 0);
   const blocked = playBlockReason(s.user, new Date());
+  const credit = await creditAllowance(getDb(), s.user.id);
+  const instantWin = items.some(({ c }) => c.isInstantWin);
   return (
     <>
       <h1>Basket</h1>
@@ -61,6 +64,14 @@ export default async function BasketPage({ searchParams }: { searchParams: Promi
           </div>
           <p><strong>Total: {formatPence(total)}</strong></p>
           <p className="muted">Your tickets are reserved while you pay. Your spend limits and the per-person maximum are checked now.</p>
+          <div className="notice">
+            <p>
+              <strong>Paying by credit card?</strong> Under the industry&apos;s voluntary code we can accept at most {formatPence(credit.capPence)} by credit card
+              from you each calendar month. You have {formatPence(credit.remainingPence)} left this month. If a credit card payment would go over that, we do not
+              take it: the hold on your card is released and we ask you to pay by debit card instead. Debit cards are fine.
+            </p>
+            {instantWin ? <p><strong>Your basket includes an instant win prize draw, so credit cards cannot be used for this order.</strong> Please pay by debit card.</p> : null}
+          </div>
           <form action={checkoutAction}><button type="submit" disabled={Boolean(blocked)}>Pay securely</button></form>
         </>
       )}

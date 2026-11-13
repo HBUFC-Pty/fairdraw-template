@@ -27,6 +27,8 @@ import { checkSpend, PERIOD_LABEL } from '../limits/spend';
 import { isAdult } from '../auth/age';
 import { formatPence } from '../money';
 import type { PaymentEvent, PaymentProvider } from '../payments/types';
+import { creditCardCapPence } from '../site-config';
+import { creditUsedThisMonth, decideCredit } from './credit-card-rule';
 
 export class CheckoutError extends Error {}
 
@@ -184,51 +186,71 @@ export async function abandonOrder(db: Db, orderId: string) {
   });
 }
 
-export type ConfirmOutcome = 'paid' | 'already_processed' | 'refund_due' | 'amount_mismatch' | 'unknown_order';
+export type Decision = 'capture' | 'decline_credit_cap' | 'decline_instant_win_credit' | 'decline_unavailable' | 'decline_amount';
+
+export type EventOutcome =
+  | { kind: 'decided'; orderId: string; decision: Decision; capturePence: number; creditUsedPence: number; creditCapPence: number }
+  | { kind: 'already_processed' | 'unknown_order' | 'ignored' | 'failed' };
+
+/** What the player is told when an authorised payment is released instead of taken. */
+export function declineMessage(decision: Decision, creditCapPence: number, creditUsedPence: number): string | null {
+  switch (decision) {
+    case 'decline_credit_cap':
+      return `We have not taken this payment: it was made with a credit card and would take your credit card payments this month over the ${formatPence(creditCapPence)} limit (you have used ${formatPence(creditUsedPence)}). Under the industry's voluntary code we cannot accept more by credit card this month. The hold on your card has been released. Please pay by debit card instead.`;
+    case 'decline_instant_win_credit':
+      return 'We have not taken this payment: credit cards cannot be used for instant win prize draws under the industry\'s voluntary code. The hold on your card has been released. Please pay by debit card instead.';
+    case 'decline_unavailable':
+      return 'We have not taken this payment: your reserved tickets were no longer available (the reservation lapsed or the competition closed). The hold on your card has been released.';
+    case 'decline_amount':
+      return 'We have not taken this payment because the amount did not match your order. The hold on your card has been released. Please try again.';
+    default:
+      return null;
+  }
+}
 
 /**
- * Apply a verified payment event. Idempotent: each provider event id is processed once, and a paid order is never
- * processed again. A payment that arrives after its reservation lapsed or after the competition closed is refunded
- * in full rather than added to a draw.
+ * Apply a verified payment event. Idempotent: each provider event id is processed once, and only a pending (or lapsed)
+ * order is ever decided. For an authorisation, in one transaction that locks the player:
+ *   1. work out which reserved tickets can still be entered (late payments lose tickets that went to someone else or
+ *      whose competition closed); the capture amount is their price;
+ *   2. apply the DCMS credit card rule (src/lib/checkout/credit-card-rule.ts) to credit and unknown funding;
+ *   3. record the decision: "capturing" (tickets stay reserved until the money is taken) or "cancelling".
+ * The provider call happens afterwards in settleOrder, which the worker retries until it succeeds.
  */
-export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEvent, now = new Date()): Promise<ConfirmOutcome | 'ignored' | 'failed'> {
+export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEvent, now = new Date(), capPence = creditCardCapPence()): Promise<EventOutcome> {
   return db.transaction(async (tx) => {
     const inserted = await tx.insert(webhookEvents).values({ provider, eventId: ev.eventId, receivedAt: now }).onConflictDoNothing().returning();
-    if (inserted.length === 0) return 'already_processed';
-    if (ev.kind === 'ignored') return 'ignored';
+    if (inserted.length === 0) return { kind: 'already_processed' } as const;
+    if (ev.kind === 'ignored') return { kind: 'ignored' } as const;
 
     const [order] = await tx.select().from(orders).where(eq(orders.id, ev.orderId)).for('update');
-    if (!order || order.provider !== provider) return 'unknown_order';
+    if (!order || order.provider !== provider) return { kind: 'unknown_order' } as const;
 
     if (ev.kind === 'payment_failed' || ev.kind === 'checkout_expired') {
       if (order.status === 'pending') {
         await tx.update(orders).set({ status: ev.kind === 'payment_failed' ? 'failed' : 'expired' }).where(eq(orders.id, order.id));
         await tx.update(tickets).set({ status: 'expired' }).where(and(eq(tickets.orderId, order.id), eq(tickets.status, 'reserved')));
       }
-      return 'failed';
+      return { kind: 'failed' } as const;
     }
 
-    if (order.status === 'paid' || order.status === 'refunded' || order.status === 'partially_refunded') return 'already_processed';
-    if (ev.amountPence !== order.totalPence) {
-      // Never activate tickets for the wrong amount. Record the payment and refund what was taken.
-      await tx.update(orders).set({ status: 'paid', paidAt: now, paymentRef: ev.paymentRef, providerRef: ev.providerRef }).where(eq(orders.id, order.id));
-      await tx.update(tickets).set({ status: 'refunded' }).where(and(eq(tickets.orderId, order.id), inArray(tickets.status, ['reserved', 'expired'])));
-      if (ev.amountPence > 0) await tx.insert(refunds).values({ orderId: order.id, amountPence: ev.amountPence, reason: 'Amount paid did not match the order total', createdAt: now });
-      return 'amount_mismatch';
-    }
+    if (order.status !== 'pending' && order.status !== 'expired') return { kind: 'already_processed' } as const;
 
-    await tx.update(orders).set({ status: 'paid', paidAt: now, paymentRef: ev.paymentRef, providerRef: ev.providerRef }).where(eq(orders.id, order.id));
+    // One decision at a time per player, so two orders cannot both fit under the credit card limit.
+    await tx.select({ id: users.id }).from(users).where(eq(users.id, order.userId)).for('update');
+
     const ts = await tx.select().from(tickets).where(eq(tickets.orderId, order.id));
     const compIds = [...new Set(ts.map((t) => t.competitionId))];
     const comps = compIds.length ? await tx.select().from(competitions).where(inArray(competitions.id, compIds)).for('update') : [];
-    let refundPence = 0;
+    const keep: number[] = [];
+    let capturePence = 0;
     for (const t of ts) {
       const comp = comps.find((c) => c.id === t.competitionId)!;
       let ok = false;
-      if (comp.status === 'live') {
+      if (comp.status === 'live' && (t.status === 'reserved' || t.status === 'expired')) {
         if (t.status === 'reserved') ok = true;
-        else if (t.status === 'expired') {
-          // The reservation lapsed: take the number back only if nobody else holds it.
+        else {
+          // The reservation lapsed: take the number back only if nobody else holds it and the cap still allows it.
           const clash = await tx
             .select({ id: tickets.id })
             .from(tickets)
@@ -239,18 +261,116 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
         }
       }
       if (ok) {
-        await tx.update(tickets).set({ status: 'active', reservedUntil: null }).where(eq(tickets.id, t.id));
-      } else {
-        await tx.update(tickets).set({ status: 'refunded' }).where(eq(tickets.id, t.id));
-        refundPence += comp.ticketPricePence;
+        keep.push(t.id);
+        capturePence += comp.ticketPricePence;
       }
     }
-    if (refundPence > 0) {
-      await tx.insert(refunds).values({ orderId: order.id, amountPence: refundPence, reason: 'Payment arrived after the tickets were released or the competition closed', createdAt: now });
-      return 'refund_due';
+
+    const funding = ev.funding;
+    const hasInstantWin = comps.some((c) => c.isInstantWin && ts.some((t) => t.competitionId === c.id && keep.includes(t.id)));
+    const used = await creditUsedThisMonth(tx, order.userId, now);
+    let decision: Decision;
+    if (ev.amountPence !== order.totalPence) decision = 'decline_amount';
+    else if (capturePence === 0) decision = 'decline_unavailable';
+    else {
+      const credit = decideCredit({ funding, hasInstantWin, usedPence: used, amountPence: capturePence, capPence });
+      decision = credit.ok ? 'capture' : credit.reason === 'instant_win' ? 'decline_instant_win_credit' : 'decline_credit_cap';
     }
-    return 'paid';
+
+    const base = {
+      paymentRef: ev.paymentRef,
+      providerRef: ev.providerRef,
+      paymentFunding: funding,
+      paymentBrand: ev.brand,
+      authorisedPence: ev.amountPence,
+      decision,
+      decidedAt: now,
+    };
+    if (decision === 'capture') {
+      // Held with no expiry until the money is taken, so a slow capture cannot lose them to the basket clean-up.
+      if (keep.length) await tx.update(tickets).set({ status: 'reserved', reservedUntil: null }).where(inArray(tickets.id, keep));
+      const drop = ts.filter((t) => !keep.includes(t.id) && (t.status === 'reserved' || t.status === 'expired')).map((t) => t.id);
+      if (drop.length) await tx.update(tickets).set({ status: 'expired' }).where(inArray(tickets.id, drop));
+      // The database re-checks the credit card rule on this update (drizzle/0003_instant_win_guard.sql).
+      await tx.update(orders).set({ ...base, status: 'capturing', capturePence }).where(eq(orders.id, order.id));
+    } else {
+      await tx.update(tickets).set({ status: 'expired' }).where(and(eq(tickets.orderId, order.id), inArray(tickets.status, ['reserved', 'expired'])));
+      await tx.update(orders).set({ ...base, status: 'cancelling', capturePence: 0 }).where(eq(orders.id, order.id));
+    }
+    return { kind: 'decided', orderId: order.id, decision, capturePence: decision === 'capture' ? capturePence : 0, creditUsedPence: used, creditCapPence: capPence } as const;
   });
+}
+
+export type SettleOutcome = 'paid' | 'declined' | 'failed' | 'retry' | 'nothing_to_do';
+
+/**
+ * Carry out a recorded decision with the provider: capture (then enter the tickets) or cancel (release the hold).
+ * Safe to repeat: the provider calls use the order id as idempotency key and the final update only runs once.
+ */
+export async function settleOrder(db: Db, provider: PaymentProvider, orderId: string, now = new Date()): Promise<SettleOutcome> {
+  const [o] = await db.select().from(orders).where(eq(orders.id, orderId));
+  if (!o || o.provider !== provider.name || !o.paymentRef || o.settledAt) return 'nothing_to_do';
+  try {
+    if (o.status === 'capturing') {
+      const r = await provider.capture(o.paymentRef, o.capturePence ?? 0, o.id);
+      return await db.transaction(async (tx) => {
+        const [cur] = await tx.select().from(orders).where(eq(orders.id, o.id)).for('update');
+        if (!cur || cur.status !== 'capturing') return 'nothing_to_do' as const;
+        if (r.status === 'failed') {
+          await tx.update(orders).set({ status: 'failed', settledAt: now, settleError: 'authorisation could not be captured' }).where(eq(orders.id, o.id));
+          await tx.update(tickets).set({ status: 'expired' }).where(and(eq(tickets.orderId, o.id), eq(tickets.status, 'reserved')));
+          return 'failed' as const;
+        }
+        await tx.update(orders).set({ status: 'paid', paidAt: now, settledAt: now, settleError: null }).where(eq(orders.id, o.id));
+        const ts = await tx.select().from(tickets).where(and(eq(tickets.orderId, o.id), eq(tickets.status, 'reserved')));
+        const comps = ts.length ? await tx.select().from(competitions).where(inArray(competitions.id, [...new Set(ts.map((t) => t.competitionId))])) : [];
+        let enteredPence = 0;
+        for (const t of ts) {
+          const comp = comps.find((c) => c.id === t.competitionId)!;
+          if (comp.status === 'live') {
+            await tx.update(tickets).set({ status: 'active', reservedUntil: null }).where(eq(tickets.id, t.id));
+            enteredPence += comp.ticketPricePence;
+          } else await tx.update(tickets).set({ status: 'refunded' }).where(eq(tickets.id, t.id));
+        }
+        // Anything taken but not entered (a competition closed between the decision and the capture) is refunded.
+        const refundPence = (cur.capturePence ?? 0) - enteredPence;
+        if (refundPence > 0) {
+          await tx.insert(refunds).values({ orderId: o.id, amountPence: refundPence, reason: 'The competition closed before the payment was completed', createdAt: now });
+        }
+        return 'paid' as const;
+      });
+    }
+    if (o.status === 'cancelling') {
+      await provider.cancel(o.paymentRef, o.id);
+      await db.update(orders).set({ status: 'declined', settledAt: now, settleError: null }).where(and(eq(orders.id, o.id), eq(orders.status, 'cancelling')));
+      return 'declined';
+    }
+    return 'nothing_to_do';
+  } catch (e) {
+    await db
+      .update(orders)
+      .set({ settleAttempts: sql`${orders.settleAttempts} + 1`, settleError: (e as Error).message.slice(0, 500) })
+      .where(eq(orders.id, o.id));
+    return 'retry';
+  }
+}
+
+/** Apply a verified event and, if it produced a decision, settle it straight away. */
+export async function processPaymentEvent(db: Db, provider: PaymentProvider, ev: PaymentEvent, now = new Date()) {
+  const outcome = await applyPaymentEvent(db, provider.name, ev, now);
+  const settled = outcome.kind === 'decided' ? await settleOrder(db, provider, outcome.orderId, now) : null;
+  return { outcome, settled };
+}
+
+/** Retry decisions whose provider call has not gone through yet (run by the worker). */
+export async function settlePendingOrders(db: Db, provider: PaymentProvider, now = new Date()): Promise<number> {
+  const due = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(and(eq(orders.provider, provider.name), inArray(orders.status, ['capturing', 'cancelling']), sql`${orders.settledAt} IS NULL`))
+    .limit(50);
+  for (const d of due) await settleOrder(db, provider, d.id, now);
+  return due.length;
 }
 
 /** Expire unpaid orders and release their numbers (run every minute by the worker). */

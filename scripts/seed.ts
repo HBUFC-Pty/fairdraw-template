@@ -22,7 +22,8 @@ import { getDb, getPool } from '../src/lib/db';
 import { competitions, users } from '../src/lib/db/schema';
 import { hashPassword } from '../src/lib/auth/password';
 import { createCompetition, publishCompetition } from '../src/lib/competitions/service';
-import { addToBasket, applyPaymentEvent, placeOrder } from '../src/lib/checkout/service';
+import { addToBasket, placeOrder, processPaymentEvent } from '../src/lib/checkout/service';
+import { TestProvider } from '../src/lib/payments/test-provider';
 import { recordPostalEntry } from '../src/lib/competitions/postal';
 import { closeCompetition, runDraw } from '../src/lib/draw/service';
 
@@ -61,12 +62,13 @@ for (let i = 0; i < 24; i++) {
   players.push(await user(`player${i + 1}@example.test`, `demo-player-${i + 1}-password`, { firstName: FIRST[i % FIRST.length], lastName: LAST[i % LAST.length] }));
 }
 const actor = { id: owner.id, role: 'owner' };
+const seedProvider = new TestProvider(process.env.APP_SECRET ?? 'seed-only-secret-not-used-for-anything-real', 'http://localhost:3000');
 
 /** Buy tickets as a player would (basket, order, signed payment), at time `at`. */
 async function buy(competitionId: string, userId: string, quantity: number, at = new Date()) {
   await addToBasket(db, userId, { competitionId, quantity, chosenNumbers: null, answerIndex: null }, at);
   const o = await placeOrder(db, userId, { provider: 'test', reservationMinutes: 30, now: at });
-  await applyPaymentEvent(db, 'test', { kind: 'payment_succeeded', eventId: `seed_${o.orderId}`, orderId: o.orderId, providerRef: `seed_${o.orderId}`, paymentRef: `seed_pay_${o.orderId}`, amountPence: o.totalPence }, at);
+  await processPaymentEvent(db, seedProvider, { kind: 'payment_authorised', eventId: `seed_${o.orderId}`, orderId: o.orderId, providerRef: `seed_${o.orderId}`, paymentRef: `seed_pay_${o.orderId}`, amountPence: o.totalPence, funding: 'debit', brand: 'testcard' }, at);
 }
 
 // 1. A live competition.

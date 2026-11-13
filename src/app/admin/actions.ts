@@ -61,6 +61,7 @@ function readCompetitionForm(fd: FormData): CompetitionInput {
     closesAt: fromUkLocalInput(field(fd, 'closesAt')),
     drawAt: fromUkLocalInput(field(fd, 'drawAt')),
     skillQuestion: question ? { question, options, correctIndex: Number(field(fd, 'correct')) - 1 } : null,
+    isInstantWin: field(fd, 'isInstantWin') === 'yes',
   });
 }
 

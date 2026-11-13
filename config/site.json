@@ -16,7 +16,9 @@
   "payments": {
     "provider": "stripe",
     "mode": "test",
-    "processorName": "[payment processor]"
+    "processorName": "[payment processor]",
+    "creditCardMonthlyCapPounds": 250,
+    "instantWinCreditCardBan": true
   },
   "email": {
     "provider": "[email provider]",

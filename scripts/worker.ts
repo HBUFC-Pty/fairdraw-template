@@ -14,7 +14,8 @@
  * The scheduled worker. Runs as its own process (the `worker` service in docker-compose.yml).
  *
  * Every 15 seconds: expire unpaid orders, close competitions at their close time (or when sold out) and publish the
- * commitment, make due draws once the committed drand round exists, and send pending refunds.
+ * commitment, make due draws once the committed drand round exists, finish captures and releases of authorised
+ * payments, and send pending refunds.
  * Every night at 03:30 UK time: the retention job.
  *
  * Only one worker should run. A Postgres advisory lock makes a second copy wait rather than double up.
@@ -24,7 +25,7 @@ import { eq, sql } from 'drizzle-orm';
 import { getDb, getPool } from '../src/lib/db';
 import { jobRuns, postalEntries, users, competitions } from '../src/lib/db/schema';
 import { closeCompetition, competitionsDueToClose, competitionsDueToDraw, runDraw } from '../src/lib/draw/service';
-import { expireStaleOrders, processRefunds } from '../src/lib/checkout/service';
+import { expireStaleOrders, processRefunds, settlePendingOrders } from '../src/lib/checkout/service';
 import { getPaymentProvider } from '../src/lib/payments';
 import { runRetention } from '../src/lib/retention';
 import { sendMail, winnerMail } from '../src/lib/mail';
@@ -93,6 +94,8 @@ async function tick() {
         }
       }
 
+      // Captures and releases that did not go through when the webhook arrived (authorisations last about 7 days).
+      await settlePendingOrders(db, getPaymentProvider()).catch((e) => errors.push(`settle: ${e.message}`));
       await processRefunds(db, getPaymentProvider()).catch((e) => errors.push(`refunds: ${e.message}`));
       if (errors.length) console.error(errors.join('\n'));
       await record('tick', errors.length === 0, errors.join('\n').slice(0, 2000) || undefined);
