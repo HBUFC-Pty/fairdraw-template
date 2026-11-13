@@ -57,6 +57,8 @@ const schema = z.object({
   RESERVATION_MINUTES: z.coerce.number().int().min(30).max(120).default(30),
   IMAGE_HOSTS: z.string().default(''),
   TRUST_PROXY_HEADERS: bool.default(true),
+  // Serverless hosts only (Vercel): the bearer secret for POST /api/cron/tick. Unset, the endpoint does not exist.
+  CRON_SECRET: z.string().min(32, 'CRON_SECRET must be at least 32 characters').optional(),
 });
 
 export type Env = z.infer<typeof schema>;

@@ -1,0 +1,21 @@
+# Serverless hosts only (docs/deploy-vercel.md): calls POST /api/cron/tick every 5 minutes, which closes competitions,
+# makes due draws and settles payments. Docker installs run the worker service instead and do not need this.
+# Set the repository variable TICK_URL (for example https://competitions.example.co.uk) and the secret CRON_SECRET
+# (the same value as the site's CRON_SECRET). Without TICK_URL the job does nothing.
+name: Scheduled work (serverless)
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  tick:
+    if: ${{ vars.TICK_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run one cycle
+        env:
+          TICK_URL: ${{ vars.TICK_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: curl -fsS --max-time 70 -X POST -H "Authorization: Bearer $CRON_SECRET" "$TICK_URL/api/cron/tick"
