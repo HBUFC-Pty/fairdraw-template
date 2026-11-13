@@ -1,0 +1,107 @@
+# Production stack: Postgres 16, the app (runs migrations on start), the scheduled worker and Caddy for TLS.
+#   docker compose up -d --build
+# Development extras (Mailpit) only with:  docker compose --profile dev up -d
+# Only Caddy publishes ports. Never publish Postgres or the app directly. See docs/deploy.md.
+
+name: fairdraw
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "10"
+
+x-app: &app
+  build: .
+  image: fairdraw-template-app:latest
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgres://fairdraw:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/fairdraw
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp
+    - /app/.next/cache
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging: *logging
+
+services:
+  postgres:
+    image: postgres:16.15-bookworm
+    environment:
+      POSTGRES_USER: fairdraw
+      POSTGRES_DB: fairdraw
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fairdraw -d fairdraw"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [backend]
+    logging: *logging
+
+  app:
+    <<: *app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend, frontend]
+
+  worker:
+    <<: *app
+    command: ["node", "dist/worker.mjs"]
+    healthcheck:
+      disable: true
+    depends_on:
+      app:
+        condition: service_healthy
+    # frontend gives outbound internet access: the worker fetches drand randomness and sends refunds and email.
+    networks: [backend, frontend]
+
+  caddy:
+    image: caddy:2.11.6-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [frontend]
+    logging: *logging
+
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    profiles: [dev]
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+    networks: [backend, frontend]
+    logging: *logging
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  # No route to the internet: Postgres lives only here.
+  backend:
+    internal: true
+  # Caddy, the app and the worker, with outbound access (payments, email, drand).
+  frontend:

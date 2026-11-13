@@ -1,0 +1,26 @@
+# Caddy: automatic HTTPS (Let's Encrypt) in front of the app. SITE_DOMAIN and ACME_EMAIL come from .env.
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Security headers are set by the app (next.config.ts and src/proxy.ts). Caddy only removes its own banner.
+	header -Server
+
+	reverse_proxy app:3000 {
+		# Replace any client-supplied X-Forwarded-For with the real client address.
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# Redirect www to the main domain if you use one: uncomment and set.
+# www.{$SITE_DOMAIN} {
+# 	redir https://{$SITE_DOMAIN}{uri} permanent
+# }

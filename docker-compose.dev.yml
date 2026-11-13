@@ -1,0 +1,11 @@
+# Local development only: publishes Postgres on 127.0.0.1:5432 so `pnpm dev` on your machine can reach it.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev up -d postgres mailpit
+# Never use this file on a server.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks: [backend, devhost]
+
+networks:
+  devhost:
