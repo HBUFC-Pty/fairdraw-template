@@ -10,3 +10,10 @@ next-env.d.ts
 backups/
 *.log
 .DS_Store
+# Private keys must never be committed (public .pub files are fine).
+*.pem
+*.key
+id_*
+!id_*.pub
+*_deploy
+*_admin

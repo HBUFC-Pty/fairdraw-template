@@ -1,0 +1,44 @@
+{
+  "$comment": "Non-secret site settings, filled in during the setup interview (AGENTS.md). Never put passwords, private keys or API secrets here: those go only in the server's .env (scripts/make-env.sh). Environment variables override these values.",
+  "siteName": "Example Competitions",
+  "domain": "competitions.example.co.uk",
+  "operator": {
+    "legalName": "[Operator Ltd]",
+    "companyNumber": "[company number]",
+    "registeredAddress": "[registered office address]",
+    "icoNumber": "[ICO registration number]"
+  },
+  "contact": {
+    "supportEmail": "hello@example.co.uk",
+    "privacyEmail": "privacy@example.co.uk",
+    "postalEntryAddress": "[postal entry address]"
+  },
+  "payments": {
+    "provider": "stripe",
+    "mode": "test",
+    "processorName": "[payment processor]"
+  },
+  "email": {
+    "provider": "[email provider]",
+    "from": "Example Competitions <no-reply@example.co.uk>"
+  },
+  "hosting": {
+    "host": "",
+    "region": "",
+    "serverIp": "",
+    "sshHostAlias": ""
+  },
+  "defaults": {
+    "perPersonCapPercent": 10,
+    "suggestedMonthlyLimitPounds": 50
+  },
+  "voluntaryCodeSignatory": false,
+  "legalReviewed": {
+    "terms": false,
+    "privacyNotice": false,
+    "cookieStatement": false,
+    "responsiblePlay": false,
+    "complaints": false,
+    "licence": false
+  }
+}

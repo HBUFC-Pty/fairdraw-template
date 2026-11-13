@@ -1,8 +1,9 @@
 /**
  * Configuration, read from environment variables and validated with Zod. Every variable is documented in
- * .env.example. Read lazily so that `next build` works without a full production environment.
+ * .env.example. Non-secret site details default to config/site.json; an environment variable overrides them. Read lazily so that `next build` works without a full production environment.
  */
 import { z } from 'zod';
+import { siteConfigAsEnv } from './site-config';
 
 const bool = z
   .enum(['true', 'false', '1', '0'])
@@ -54,7 +55,7 @@ export function env(): Env {
   if (cached) return cached;
   // Treat empty values (KEY= in .env) as unset, so defaults apply.
   const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== undefined && v !== ''));
-  const parsed = schema.safeParse(raw);
+  const parsed = schema.safeParse({ ...siteConfigAsEnv(), ...raw });
   if (!parsed.success) {
     throw new Error(`Invalid configuration: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
   }
