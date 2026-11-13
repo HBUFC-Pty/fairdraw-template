@@ -15,6 +15,8 @@ import 'server-only';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { env } from '../env';
+import { creditCardCapPence } from '../site-config';
+import { formatPence } from '../money';
 
 export const CONTENT_DIR = path.join(process.cwd(), 'content');
 
@@ -30,6 +32,7 @@ export function placeholderValues(): Record<string, string> {
     PRIVACY_EMAIL: e.PRIVACY_EMAIL,
     POSTAL_ENTRY_ADDRESS: e.POSTAL_ENTRY_ADDRESS,
     PAYMENT_PROCESSOR_NAME: e.PAYMENT_PROCESSOR_NAME,
+    CREDIT_CARD_CAP: formatPence(creditCardCapPence()),
   };
 }
 

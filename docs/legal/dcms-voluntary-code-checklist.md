@@ -7,6 +7,9 @@ The Department for Culture, Media and Sport's
 was checked for this checklist on 13 November 2026, when the page said "Updated 19 October 2026". Clause numbers below
 are from that version. **Read the current gov.uk text before relying on this list**: the code can change. The exact
 words of the clauses the template meets are quoted in clause 15 of [content/terms.md](../../content/terms.md).
+Clause 1.3 also mentions credit card payments made through a money service business: the template only takes card
+payments, so if you add another payment method (a wallet funded by a card, for example), make sure it reports the
+funding type or refuse it.
 
 To sign the code, email the address the code gives (prizedrawcode@dcms.gov.uk). FairDraw's rubric checks the gov.uk
 signatory list; set `voluntaryCodeSignatory` to `true` in `config/site.json` once you are on it.
@@ -15,7 +18,7 @@ signatory list; set `voluntaryCodeSignatory` to `true` in `config/site.json` onc
 | --- | --- | --- | --- |
 | 1.1 | Players 18 or over; age verification; no advertising aimed at under-18s | Date of birth checked at sign-up and every checkout; hook for a third-party verifier (docs/age-verification.md) | Decide whether self-declared date of birth is a "reasonable" process for you; never target ads at under-18s |
 | 1.2 | Complaints process and dispute resolution | Complaints clause in the terms; [complaints.md](complaints.md) | Run the process; choose a dispute resolution route |
-| 1.3 | Credit card limits (£250 a month; none for instant wins) | **Not enforced** | Configure your payment provider before you claim it |
+| 1.3 | Credit card limits (£250 a month per player; none for instant win prize draws) | **Enforced**: payments are authorised first, the card's funding type checked, and credit (or unknown) payments over the limit in the UK calendar month, or for an instant win, are released instead of taken. A database trigger backs it up. Admin, Credit card payments shows monthly totals | Use a payment provider that reports the funding type (the Stripe adapter does); mark instant win competitions as such |
 | 1.4 | Monthly spend limits, settable at registration, down to £0 | Daily, weekly and monthly limits, offered at sign-up, down to £0 | Nothing |
 | 1.5 | Temporary suspension (at least 6 months) and permanent closure; optional shorter pause; no marketing during suspension | Self-exclusion from 6 months, take-a-break from 24 hours, account deletion, no marketing at all | Nothing |
 | 1.6 | Monitoring players for signs of harm | Staff can see limits, breaks and orders in player support | Put a monitoring process in place |

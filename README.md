@@ -33,6 +33,9 @@ assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosti
 - **Accounts**: sign-up with date of birth and an 18+ check (with a hook for third-party age verification), email
   confirmation, password reset, optional TOTP 2FA (mandatory for staff), spend limits (daily, weekly, monthly, down
   to £0, increases after 24 hours), take a break, self-exclusion, JSON data export and account deletion.
+- **Credit card rule** (DCMS code clause 1.3): at most £250 of credit card payments per player per calendar month and
+  none for instant win prize draws. Payments are authorised, the card's funding type checked, then captured or
+  released; a database trigger backs it up. See [docs/payments.md](docs/payments.md).
 - **Payments** through a `PaymentProvider` interface: a Stripe adapter (Checkout Sessions, signed and idempotent
   webhooks, test mode), a test adapter for local development, and stubs for specialist UK acquirers. Read
   [docs/payments.md](docs/payments.md): Stripe often refuses prize-competition merchants.

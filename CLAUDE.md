@@ -89,6 +89,12 @@ The FairDraw link and every fairness feature look and work the same under every 
     CPAL notice at the top of source files (`node scripts/licence-headers.mjs` adds it) and the MIT credit in
     `src/lib/fairdraw/`.
 13. **Keep finished competitions online**, with their results, entry lists and draw records at stable URLs.
+14. **The credit card rule** (DCMS code clause 1.3): at most £250 of credit card payments per player per calendar
+    month in UK time, and none at all for instant win prize draws. Payments are authorised, the funding type is checked,
+    then captured or released (`src/lib/checkout/credit-card-rule.ts`, `applyPaymentEvent`). Never capture before the
+    check, never treat "unknown" funding as debit, never raise `creditCardMonthlyCapPounds` above 250 or switch off
+    `instantWinCreditCardBan`, and never drop the `orders_credit_card_rule` trigger (`drizzle/0003_instant_win_guard.sql`).
+    Any new payment adapter must authorise only and report the funding type.
 
 ## Before you commit
 

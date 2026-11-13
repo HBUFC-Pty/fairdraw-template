@@ -52,10 +52,11 @@ describe('competition terms (content/terms.md)', () => {
   it('quotes the DCMS code with the Open Government Licence attribution', () => {
     expect(terms).toContain('Contains public sector information licensed under the Open Government Licence v3.0.');
     expect(terms).toMatch(/^> 2\.5 Operators should promptly provide the winning player/m);
+    expect(terms).toMatch(/^> 1\.3 Operators should not accept credit card payments in excess of £250 per month per player/m);
   });
 
   it('uses only placeholders the site can fill, and starts with the template notice', () => {
-    const known = ['SITE_NAME', 'OPERATOR_LEGAL_NAME', 'OPERATOR_COMPANY_NUMBER', 'OPERATOR_REGISTERED_ADDRESS', 'OPERATOR_ICO_NUMBER', 'CONTACT_EMAIL', 'PRIVACY_EMAIL', 'POSTAL_ENTRY_ADDRESS', 'PAYMENT_PROCESSOR_NAME'];
+    const known = ['SITE_NAME', 'OPERATOR_LEGAL_NAME', 'OPERATOR_COMPANY_NUMBER', 'OPERATOR_REGISTERED_ADDRESS', 'OPERATOR_ICO_NUMBER', 'CONTACT_EMAIL', 'PRIVACY_EMAIL', 'POSTAL_ENTRY_ADDRESS', 'PAYMENT_PROCESSOR_NAME', 'CREDIT_CARD_CAP'];
     for (const f of ['terms.md', 'privacy.md']) {
       const text = fs.readFileSync(path.join(root, 'content', f), 'utf8');
       const shown = text.replace(/<!--[\s\S]*?-->/g, ''); // comments never reach the page

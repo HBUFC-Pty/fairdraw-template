@@ -73,6 +73,15 @@ entry route.
 Any spend limits you have set apply to every order. Lowering a limit takes effect at once; raising or removing one
 takes effect 24 hours later.
 
+<!-- DCMS Voluntary Code clause 1.3, enforced by the site: see src/lib/checkout/credit-card-rule.ts. -->
+
+**Paying by credit card.** We accept at most {{CREDIT_CARD_CAP}} by credit card from each player in each calendar month
+(UK time), across all their cards and orders, and we never accept a credit card for an instant win prize draw. When
+you pay, your card is authorised first and charged only after we have checked its type. If a credit card payment
+would break either rule, we do not take it: the hold on your card is released, your reserved tickets are released,
+and we ask you to pay by debit card instead. A card whose type cannot be identified is treated as a credit card. Debit
+and prepaid cards are not affected. Your account shows how much of this month's credit card allowance is left.
+
 ## 5. Free entry by post
 
 <!--
@@ -179,10 +188,12 @@ will give it the winner's details.
 
 <!--
 Copied word for word from the Voluntary Code of Good Practice for Prize Draw Operators (Department for Culture, Media and
-Sport, updated 19 October 2026, checked 13 November 2026), clauses 1.1, 1.2, 1.4, 1.5, 1.8, 1.9 and 2.1 to 2.5, under
+Sport, updated 19 October 2026, checked 13 November 2026), clauses 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 1.9 and 2.1 to 2.5, under
 the Open Government Licence v3.0. Keep the attribution line below.
+Clause 1.3 (credit cards) is enforced by the site itself (src/lib/checkout/credit-card-rule.ts and a database
+trigger), so it is quoted below. Keep it only if your payment provider reports the card's funding type, as the Stripe
+adapter does; otherwise every card counts as credit (docs/payments.md).
 Clauses left out because this template does not carry them out for you; add them back once you do:
-- 1.3 (credit card limits): configure your payment provider first.
 - 1.6 and 1.7 (monitoring players for signs of harm and intervening): put a process in place first.
 - 1.10 (instant win prize draws): the template has none.
 - 1.11 (marketing): your own advertising must follow it.
@@ -197,6 +208,8 @@ We follow these commitments from the Voluntary Code of Good Practice for Prize D
 > 1.1 Operators should only make prize draws available for players aged 18 or over. Operators should implement a reasonable age verification process. Advertisements for prize draws should not be targeted at anyone below the age of 18.
 
 > 1.2 Operators should have an appropriate, transparent and robust complaints process for players and, where required to resolve a complaint, an appropriate dispute resolution process for players.
+
+> 1.3 Operators should not accept credit card payments in excess of £250 per month per player (“credit card limit”). Operators should not accept any credit card payments whatsoever for any instant win prize draws. To ensure a smooth transition, operators who currently accept credit card payments should not accept credit card payments beyond this credit card limit, or accept credit card payments for any instant win prize draws, by the implementation date.  This includes any payments made to operators by credit card through a money service business.
 
 > 1.4 Subject to the credit card limit in clause 1.3, operators should set suitable and proportionate maximum monthly totals spend limits for all players, or provide the facility for players to set individual monthly total spend limits (in either case across all prize draws offered by the operator) which cannot be exceeded. For player-set limits, players should be reasonably able to set such limits either when they first register an account on an operator’s website, or following completion of their first entry or purchase, and in any event before further entries are permitted. Operators should allow customers to set their individual spend limit at £0.
 
