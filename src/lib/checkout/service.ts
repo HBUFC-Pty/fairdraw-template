@@ -247,7 +247,8 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
     for (const t of ts) {
       const comp = comps.find((c) => c.id === t.competitionId)!;
       let ok = false;
-      if (comp.status === 'live' && (t.status === 'reserved' || t.status === 'expired')) {
+      // Open, not merely 'live': the entries are fixed at the advertised close, even before the worker commits them.
+      if (isOpen(comp, now) && (t.status === 'reserved' || t.status === 'expired')) {
         if (t.status === 'reserved') ok = true;
         else {
           // The reservation lapsed: take the number back only if nobody else holds it and the cap still allows it.
@@ -327,7 +328,7 @@ export async function settleOrder(db: Db, provider: PaymentProvider, orderId: st
         let enteredPence = 0;
         for (const t of ts) {
           const comp = comps.find((c) => c.id === t.competitionId)!;
-          if (comp.status === 'live') {
+          if (isOpen(comp, now)) {
             await tx.update(tickets).set({ status: 'active', reservedUntil: null }).where(eq(tickets.id, t.id));
             enteredPence += comp.ticketPricePence;
           } else await tx.update(tickets).set({ status: 'refunded' }).where(eq(tickets.id, t.id));

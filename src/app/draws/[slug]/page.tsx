@@ -13,7 +13,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { drawBySlug } from '@/lib/public/draw-files';
-import { configuredRelays } from '@/lib/fairdraw/beacon';
+import { DEFAULT_DRAND_RELAYS } from '@/lib/fairdraw/beacon';
 import { FairDrawLink } from '@/components/SiteFooter';
 import { VerifyDraw } from './VerifyDraw';
 
@@ -22,7 +22,8 @@ export const metadata = { title: 'Verify this draw' };
 export default async function VerifyPage({ params }: { params: Promise<{ slug: string }> }) {
   const r = await drawBySlug((await params).slug);
   if (!r) notFound();
-  const relays = configuredRelays();
+  // Always the public relays, never this site's own setting: the check must not depend on the operator.
+  const relays = DEFAULT_DRAND_RELAYS;
   return (
     <>
       <h1>Verify this draw: {r.c.title}</h1>

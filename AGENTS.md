@@ -59,10 +59,13 @@ The FairDraw link and every fairness feature look and work the same under every 
 2. **The commitment.** The ticket list is frozen at the close and published before the randomness exists. Never draw
    before the committed drand round exists, never change a committed list, never redo a draw, never pick winners any
    other way, never let anyone (admin included) trigger, delay or choose a draw. `src/lib/draw/service.ts` and the
-   triggers in `drizzle/0001_fairness_guards.sql` enforce this. Do not edit or drop those triggers; do not add
-   migrations that disable them.
-3. **At least two drand relays must agree** (`src/lib/fairdraw/beacon.ts`). Do not lower `minAgreeing` or skip the
-   signature hash check.
+   triggers in `drizzle/0001_fairness_guards.sql` and `drizzle/0004_draw_integrity_guards.sql` enforce this (0004:
+   the committed drand round must be the one the rules give and must not exist yet; entries are fixed at the
+   advertised close; ticket and winner owners never change; prize text is fixed from the close). Do not edit or drop
+   those triggers; do not add migrations that disable them; never make `fd_clock()` return anything but `now()` outside tests.
+3. **At least two drand relays must agree** (`src/lib/fairdraw/beacon.ts`). Do not lower `minAgreeing`, skip the
+   signature hash check, or remove `verifyBeaconSignature` (every beacon is checked against drand quicknet's public
+   key). The browser verifier always asks the public relays, never the site's own `DRAND_RELAYS`.
 4. **Drawn at the advertised time whatever sells.** No extensions, rollovers, reduced prizes, or cash alternatives
    because a competition undersold. Published competitions keep their price, maximum, cap, prize value, question and
    times. Do not add features that change these after publishing.

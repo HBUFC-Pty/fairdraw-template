@@ -103,8 +103,8 @@ pnpm worker         # in another terminal: closes and draws competitions on sche
 
 Emails (sign-up confirmation, password reset) appear in Mailpit at http://localhost:8025. Demo logins (all data is
 fictional): `owner@example.test` / `demo-owner-password` (you will be asked to set up 2FA) and `player@example.test` /
-`demo-player-password`. The seed includes a competition already drawn with a real drand round: open it and press
-"Verify this draw".
+`demo-player-password`. The seed includes a competition that closes five minutes later: keep `pnpm worker` running to
+watch it close, commit to a future drand round and draw at the advertised time, then press "Verify this draw".
 
 No Docker? Any PostgreSQL 16 works: create a database and point `DATABASE_URL` at it.
 
