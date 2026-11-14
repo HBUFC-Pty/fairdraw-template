@@ -14,6 +14,7 @@
  * Player account controls: take a break, self-exclusion, winner consent, data export and account deletion.
  * Retention periods are set out in docs/gdpr/retention.md and the privacy notice; keep them in step.
  */
+import { createHash } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { basketItems, competitions, exclusions, orders, postalEntries, refunds, sessions, spendLimits, tickets, users, winners, authTokens } from '../db/schema';
@@ -57,13 +58,23 @@ export async function selfExclude(db: Db, userId: string, days: number, now = ne
 export async function setWinnerConsent(db: Db, userId: string, competitionId: string, consent: boolean, now = new Date()) {
   const [u] = await db.select({ first: users.firstName, last: users.lastName }).from(users).where(eq(users.id, userId));
   if (!u) throw new Error('user not found');
-  const display = consent ? publicWinnerName(u.first, u.last) : null;
+  // Demo sites never publish what a visitor typed as their name: anyone can sign up there, so it could say anything.
+  const display = consent ? (env().DEMO_MODE ? demoWinnerName(userId) : publicWinnerName(u.first, u.last)) : null;
   const rows = await db
     .update(winners)
     .set({ publicConsent: consent, displayName: display, consentAt: now })
     .where(and(eq(winners.userId, userId), eq(winners.competitionId, competitionId)))
     .returning();
   return rows.length > 0;
+}
+
+const DEMO_FIRST = ['Alex', 'Sam', 'Jordan', 'Robin', 'Casey', 'Morgan', 'Riley', 'Jamie', 'Charlie', 'Frankie', 'Kit', 'Ash'];
+const DEMO_INITIALS = 'ABCDEFGHJKLMNPRSTW';
+
+/** A made-up winner name for demo sites, the same every time for one account ("Robin T."). */
+export function demoWinnerName(userId: string): string {
+  const h = createHash('sha256').update(userId).digest();
+  return `${DEMO_FIRST[h[0]! % DEMO_FIRST.length]} ${DEMO_INITIALS[h[1]! % DEMO_INITIALS.length]}.`;
 }
 
 /** "Sam T." from "Sam" and "Taylor". Never more than a first name and an initial. */

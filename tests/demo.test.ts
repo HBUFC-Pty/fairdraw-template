@@ -29,6 +29,9 @@ import {
 import { capAboveTenPercent } from '../src/lib/competitions/allocation';
 import { isValidDateOfBirth } from '../src/lib/auth/age';
 import { nextDueAt } from '../src/lib/worker';
+import { demoWinnerName, publicWinnerName } from '../src/lib/account/service';
+import { DEMO_MAX_OPENED_PER_DAY } from '../src/lib/demo';
+import { makeCompetition } from './helpers/db';
 import { formatPence, moneyUnit, parsePounds, zeroAmount } from '../src/lib/money';
 
 const H = 3600_000;
@@ -170,5 +173,19 @@ describe('demo mode', () => {
       expect(p.prizeDescription).toMatch(/no value and cannot be claimed/);
       expect(p.prizeDescription).not.toMatch(/£|cash/i);
     }
+  });
+
+  it('never publishes a visitor-typed name as a demo winner', () => {
+    const a = demoWinnerName('0b9f6c1e-1111-4222-8333-444455556666');
+    expect(a).toMatch(/^[A-Z][a-z]+ [A-Z]\.$/);
+    expect(demoWinnerName('0b9f6c1e-1111-4222-8333-444455556666')).toBe(a);
+    expect(publicWinnerName('Sam', 'Taylor')).toBe('Sam T.');
+  });
+
+  it('opens no more than the daily limit of demo competitions, however often they sell out', async () => {
+    demoOn();
+    const now = new Date();
+    for (let i = 0; i < DEMO_MAX_OPENED_PER_DAY; i++) await makeCompetition(db);
+    expect(await topUpDemoCompetitions(db, now, seq())).toBe(0);
   });
 });

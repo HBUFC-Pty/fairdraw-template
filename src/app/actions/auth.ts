@@ -67,6 +67,7 @@ export async function signUpAction(fd: FormData) {
   await assertSameOrigin();
   const db = getDb();
   if (!(await hit(db, `signup:${await clientIp()}`, RATE_RULES.signup))) redirect(flashUrl('/signup', { error: 'Too many sign-ups from this connection. Try again later.' }));
+  if (demoMode() && !(await hit(db, 'demo-signups', RATE_RULES.demoSignupsSiteWide))) redirect(flashUrl('/signup', { error: 'The demo has had a lot of visitors today. Please try again tomorrow.' }));
   const parsed = signUpSchema.safeParse(Object.fromEntries(['email', 'password', 'confirm', 'firstName', 'lastName', 'dateOfBirth', 'monthlyLimit', 'over18', 'terms'].map((k) => [k, field(fd, k)])));
   if (!parsed.success) redirect(flashUrl('/signup', { error: firstError(parsed.error) }));
   let monthlyLimitPence: number | null = null;

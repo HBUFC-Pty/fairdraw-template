@@ -52,6 +52,8 @@ export const DEMO_QUICK_WINDOW_MS = 6 * H;
 export const DEMO_LONG_TARGET = 2;
 export const DEMO_LONG_LEAD_MS = 12 * H;
 export const DEMO_FICTIONAL_PLAYERS = 24;
+/** At most this many demo competitions open in any 24 hours, however often visitors sell them out. */
+export const DEMO_MAX_OPENED_PER_DAY = 16;
 const DEMO_ACTOR: AuditActor = { id: null, role: 'system' };
 
 export function demoMode(): boolean {
@@ -206,6 +208,8 @@ export async function topUpDemoCompetitions(db: Db, now = new Date(), random: ()
   const t = now.getTime();
   const [all] = await db.select({ n: count() }).from(competitions);
   const total = all?.n ?? 0;
+  const [recent] = await db.select({ n: count() }).from(competitions).where(gt(competitions.createdAt, new Date(t - D)));
+  if ((recent?.n ?? 0) >= DEMO_MAX_OPENED_PER_DAY) return 0;
   let made = 0;
 
   const [soon] = await db.select({ n: count() }).from(competitions).where(and(eq(competitions.status, 'live'), gt(competitions.closesAt, now), lt(competitions.closesAt, new Date(t + DEMO_QUICK_WINDOW_MS + 1))));
