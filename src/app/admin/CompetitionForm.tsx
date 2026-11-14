@@ -13,6 +13,7 @@
 import { toUkLocalInput } from '@/lib/time';
 import type { competitions } from '@/lib/db/schema';
 import { saveCompetitionAction } from './actions';
+import { moneyAsPoints, moneyUnit } from '@/lib/money';
 
 type C = typeof competitions.$inferSelect;
 
@@ -45,6 +46,22 @@ export function CompetitionForm({ c }: { c?: C }) {
         <label>Question<input name="question" maxLength={300} defaultValue={c?.skillQuestion?.question} /></label>
         <label>Answers, one per line<textarea name="options" rows={4} defaultValue={c?.skillQuestion?.options.join('\n')} /></label>
         <label>Number of the correct answer (1 for the first line)<input name="correct" type="number" min={1} max={6} defaultValue={c?.skillQuestion ? c.skillQuestion.correctIndex + 1 : ''} /></label>
+      </fieldset>
+      <fieldset>
+        <legend>Instant prizes (optional)</legend>
+        <label>
+          One line per prize: how many, the prize, its value in {moneyUnit()}
+          <span className="hint">For example &quot;5 | £10 voucher | 10&quot;. Each prize is fixed to a ticket number chosen at random when you publish, and the numbers are committed publicly before anything is sold. Ticket numbers are then always given out at random. Fixed once published.</span>
+          <textarea name="instantPrizes" rows={4} defaultValue={c?.instantPrizes.map((t) => `${t.count} | ${t.title} | ${moneyAsPoints() ? t.valuePence : (t.valuePence / 100).toFixed(2)}`).join('\n')} />
+        </label>
+        <label>
+          How players reveal an instant win
+          <select name="instantReveal" defaultValue={c?.instantReveal ?? 'scratch'}>
+            <option value="scratch">Scratch card</option>
+            <option value="spin">Prize wheel</option>
+            <option value="coin">Coin drop</option>
+          </select>
+        </label>
       </fieldset>
       <label>
         <input type="checkbox" name="isInstantWin" value="yes" defaultChecked={c?.isInstantWin} /> This is an instant win prize draw

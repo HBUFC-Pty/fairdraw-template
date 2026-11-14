@@ -36,6 +36,13 @@
       "when": 1794682051504,
       "tag": "0004_draw_integrity_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794685241432,
+      "tag": "0005_instant_wins",
+      "breakpoints": true
     }
   ]
 }

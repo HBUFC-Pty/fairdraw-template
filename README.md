@@ -29,6 +29,9 @@ with `DEMO_MODE=true`.
 - **Drawn whatever sells**: every competition is drawn at its advertised time for the full prize. No extensions,
   rollovers or reduced prizes. Published terms and times are locked by database triggers.
 - **Free entry by post**: recorded by staff, same chance, same cap, shown in the entry list.
+- **Instant wins anyone can check**: winning numbers chosen at random and committed publicly before anything is sold,
+  awarded by the database the moment a winning number is entered, and published in full at the close, with a scratch
+  card, prize wheel or coin drop to reveal them. See [docs/instant-wins.md](docs/instant-wins.md).
 - **Verifiable draws**: commitment at close, drand randomness confirmed by at least two relays, winners picked with
   HMAC-SHA256 and rejection sampling, records as JSON at stable URLs, and a "verify this draw" page that re-runs the
   draw in the browser. A scheduled worker closes and draws on time and records scheduled and actual times.

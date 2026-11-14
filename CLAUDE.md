@@ -99,6 +99,13 @@ The FairDraw link and every fairness feature look and work the same under every 
     `instantWinCreditCardBan`, and never drop the `orders_credit_card_rule` trigger (`drizzle/0003_instant_win_guard.sql`).
     Any new payment adapter must authorise only and report the funding type.
 
+15. **Instant wins** (`src/lib/competitions/instant.ts`, `drizzle/0005_instant_wins.sql`): the winning numbers are
+    chosen at random and committed when a competition is published, the database awards a prize the moment a winning
+    number is entered, and the salt and full list are published at the close. Never let anyone choose, add, move or
+    remove an instant-win number, award an instant prize by hand, let players choose numbers in a competition with
+    instant prizes, or release a winning ticket. Never build a separate paid game of chance (that is gaming under the
+    Gambling Act 2005): reveal games only show the result of a ticket already bought.
+
 ## Before you commit
 
 ```sh

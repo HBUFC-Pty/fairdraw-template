@@ -52,6 +52,9 @@ export function playBlockReason(u: typeof users.$inferSelect, now: Date): string
 export async function addToBasket(db: Db, userId: string, item: BasketAdd, now = new Date()) {
   const [c] = await db.select().from(competitions).where(eq(competitions.id, item.competitionId));
   if (!c || !isOpen(c, now)) throw new CheckoutError('This competition is not open for entries.');
+  if (item.chosenNumbers?.length && c.instantPrizes.length) {
+    throw new CheckoutError('Ticket numbers are always picked at random in competitions with instant prizes, so nobody can choose a winning number.');
+  }
   if (!Number.isInteger(item.quantity) || item.quantity < 1) throw new CheckoutError('Choose at least one ticket.');
   if (item.quantity > c.perPersonCap) throw new CheckoutError(`The maximum is ${c.perPersonCap} tickets per person.`);
   if (item.chosenNumbers && item.chosenNumbers.length !== item.quantity) throw new CheckoutError('Choose one number for each ticket.');
@@ -129,13 +132,14 @@ export async function placeOrder(
       const taken = await takenNumbers(tx, comp.id);
       let numbers: number[];
       try {
-        numbers = item.chosenNumbers?.length ? allocateChosen(comp.maxTickets, taken, item.chosenNumbers) : allocateRandom(comp.maxTickets, taken, item.quantity, rand);
+        const chosen = item.chosenNumbers?.length && !comp.instantPrizes.length ? item.chosenNumbers : null;
+        numbers = chosen ? allocateChosen(comp.maxTickets, taken, chosen) : allocateRandom(comp.maxTickets, taken, item.quantity, rand);
       } catch (e) {
         if (e instanceof AllocationError) throw new CheckoutError(`"${comp.title}": ${e.message}.`);
         throw e;
       }
       const answerCorrect = comp.skillQuestion ? item.answerIndex === comp.skillQuestion.correctIndex : null;
-      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length ? 'chosen' : 'random', answerCorrect });
+      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length && !comp.instantPrizes.length ? 'chosen' : 'random', answerCorrect });
       total += comp.ticketPricePence * item.quantity;
     }
 

@@ -24,6 +24,7 @@ import { logoutAction } from '../actions/auth';
 import { winnerConsentAction } from '../actions/account';
 import { playBlockReason } from '@/lib/checkout/service';
 import { creditAllowance } from '@/lib/checkout/credit-card-rule';
+import { myInstantWins } from '@/lib/public/instant';
 
 export const metadata = { title: 'Your account' };
 
@@ -43,6 +44,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     .from(winners)
     .innerJoin(competitions, eq(competitions.id, winners.competitionId))
     .where(eq(winners.userId, s.user.id));
+  const instant = await myInstantWins(s.user.id);
+  const titles = new Map(ts.map(({ t, title }) => [t.competitionId, title]));
   const secret = env().ENTRY_CODE_SECRET;
   const blocked = playBlockReason(s.user, new Date());
   const credit = await creditAllowance(db, s.user.id);
@@ -76,6 +79,19 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <button type="submit" className="secondary">{w.publicConsent ? 'Stop showing my name' : 'Show my first name and initial on the results'}</button>
             </form>
           ))}
+        </>
+      ) : null}
+
+      {instant.length ? (
+        <>
+          <h2>Your instant wins</h2>
+          <ul>
+            {instant.map((w) => (
+              <li key={`${w.competitionId}-${w.ticket}`}>
+                <strong>{w.title}</strong> ({formatPence(w.valuePence)}) with ticket {w.ticket} in {titles.get(w.competitionId) ?? 'a competition'}, {formatUk(w.wonAt!)}.
+              </li>
+            ))}
+          </ul>
         </>
       ) : null}
 
