@@ -4,9 +4,11 @@
 # (the same value as the site's CRON_SECRET). Without TICK_URL the job does nothing. Calling every 5 minutes keeps a
 # free database that sleeps when idle (Neon Free) awake all month: on one of those use scripts/tick.sh instead.
 name: Scheduled work (serverless)
+# The schedule is off by default, so copies of the template that do not use it do not log a skipped run every 5
+# minutes. To use it, remove the # from the two schedule lines below.
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  # schedule:
+  #   - cron: '*/5 * * * *'
   workflow_dispatch:
 permissions: {}
 jobs:
