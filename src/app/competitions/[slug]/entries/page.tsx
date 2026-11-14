@@ -12,7 +12,7 @@
  */
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { competitionBySlug, publicEntryList } from '@/lib/public/queries';
+import { competitionBySlug, postalEntryCounts, publicEntryList } from '@/lib/public/queries';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -24,12 +24,18 @@ export default async function EntriesPage({ params }: Props) {
   if (!r) notFound();
   const list = await publicEntryList(r.c, r.draw?.ticketList ?? null);
   const free = list.filter((e) => e.free).length;
+  const postal = await postalEntryCounts(r.c.id);
   return (
     <>
       <h1>Entry list: {r.c.title}</h1>
       <p>
         {r.draw ? `The frozen list committed at the close: ${list.length} tickets.` : `${list.length} tickets so far.`} {free} of them are free postal entries,
         with exactly the same chance as paid entries. Each ticket shows a short code instead of a name; you can see your own codes in your account.
+      </p>
+      <p>
+        Postal entries recorded: {postal.received}. Entered: {postal.accepted}.
+        {postal.rejected.length ? <> Not entered: {postal.rejected.map((x) => `${x.n} (${x.reason.replace(/\.$/, '')})`).join('; ')}.</> : null} Every
+        postal entrant is emailed their ticket and code, or the reason.
       </p>
       <p><Link href={`/competitions/${r.c.slug}`}>Back to the competition</Link>{r.draw ? <> · <a href={`/draws/${r.c.slug}/tickets.txt`}>Plain ticket list</a></> : null}</p>
       <div className="table-wrap">

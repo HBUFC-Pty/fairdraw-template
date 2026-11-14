@@ -14,7 +14,7 @@
 import 'server-only';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../db';
-import { competitions, draws, tickets, winners } from '../db/schema';
+import { competitions, draws, postalEntries, tickets, winners } from '../db/schema';
 import { env } from '../env';
 import { fairdrawEntryCode } from '../fairdraw/entry-codes';
 
@@ -65,6 +65,18 @@ export async function finishedCompetitions(limit = 200) {
  * The public entry list: ticket number and a short code per ticket, never a name. Before the close it lists the
  * active tickets; from the close it lists exactly the committed (frozen) list.
  */
+/** How many postal entries were recorded for a competition, and why any were not entered (no names or addresses). */
+export async function postalEntryCounts(competitionId: string) {
+  const rows = await getDb()
+    .select({ status: postalEntries.status, reason: postalEntries.rejectionReason, n: sql<number>`count(*)::int` })
+    .from(postalEntries)
+    .where(eq(postalEntries.competitionId, competitionId))
+    .groupBy(postalEntries.status, postalEntries.rejectionReason);
+  const accepted = rows.filter((r) => r.status === 'accepted').reduce((s, r) => s + r.n, 0);
+  const rejected = rows.filter((r) => r.status === 'rejected').map((r) => ({ reason: r.reason ?? 'No reason recorded', n: r.n }));
+  return { received: accepted + rejected.reduce((s, r) => s + r.n, 0), accepted, rejected };
+}
+
 export async function publicEntryList(c: Competition, committed: number[] | null) {
   const secret = env().ENTRY_CODE_SECRET;
   const rows = await getDb()

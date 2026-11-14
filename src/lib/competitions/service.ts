@@ -88,11 +88,27 @@ export async function updateDraft(db: Db, actor: AuditActor, id: string, input: 
   await appendAudit(db, actor, { action: 'competition.update', targetType: 'competition', targetId: id, details: { slug: data.slug } }, now);
 }
 
-/** Text-only edits allowed after publishing: the description and images (for typos and better photos). */
+/**
+ * Text-only edits allowed after publishing, while the competition is open: the summary, description and images (for
+ * typos and better photos). From the close they are fixed (drizzle/0004). The audit log keeps the old and new text.
+ */
 export async function updatePublishedText(db: Db, actor: AuditActor, id: string, patch: { summary: string; prizeDescription: string; images: z.infer<typeof imageSchema>[] }, now = new Date()) {
   const data = z.object({ summary: z.string().trim().max(300), prizeDescription: z.string().trim().min(10).max(5000), images: z.array(imageSchema).max(10) }).parse(patch);
+  const [cur] = await db.select().from(competitions).where(eq(competitions.id, id));
+  if (!cur) throw new Error('competition not found');
+  if (cur.status !== 'live' || now >= cur.closesAt) throw new Error('The prize text can only be edited while the competition is open. After the close it is fixed.');
   await db.update(competitions).set({ ...data, updatedAt: now }).where(eq(competitions.id, id));
-  await appendAudit(db, actor, { action: 'competition.update_text', targetType: 'competition', targetId: id }, now);
+  await appendAudit(
+    db,
+    actor,
+    {
+      action: 'competition.update_text',
+      targetType: 'competition',
+      targetId: id,
+      details: { old: { summary: cur.summary, prizeDescription: cur.prizeDescription, images: cur.images }, new: data },
+    },
+    now,
+  );
 }
 
 export async function publishCompetition(db: Db, actor: AuditActor, id: string, now = new Date()) {

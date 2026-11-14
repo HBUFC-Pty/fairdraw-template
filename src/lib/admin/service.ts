@@ -44,20 +44,34 @@ export async function issueRefund(db: Db, actor: AuditActor, input: { orderId: s
       .where(and(eq(refunds.orderId, o.id), inArray(refunds.status, ['pending', 'succeeded'])));
     const left = o.totalPence - Number(done?.s ?? 0);
     if (!Number.isInteger(input.amountPence) || input.amountPence < 1 || input.amountPence > left) throw new AdminError(`Refund must be between 1p and the ${left}p not yet refunded.`);
-    const [r] = await tx.insert(refunds).values({ orderId: o.id, amountPence: input.amountPence, reason: input.reason, requestedBy: actor.id, createdAt: now }).returning();
     let released = 0;
+    let releaseIds: number[] = [];
     if (input.releaseTickets) {
       // Only competitions still open: after the advertised close the entries are fixed (drizzle/0004).
-      const live = await tx.select({ id: competitions.id }).from(competitions).where(and(eq(competitions.status, 'live'), gt(competitions.closesAt, now)));
-      const liveIds = live.map((l) => l.id);
-      if (liveIds.length) {
-        const rel = await tx
-          .update(tickets)
-          .set({ status: 'refunded' })
-          .where(and(eq(tickets.orderId, o.id), inArray(tickets.status, ['active', 'reserved']), inArray(tickets.competitionId, liveIds), sql`NOT EXISTS (SELECT 1 FROM draws d WHERE d.competition_id = ${tickets.competitionId})`))
-          .returning({ id: tickets.id });
-        released = rel.length;
+      const open = await tx
+        .select({ id: tickets.id, price: competitions.ticketPricePence })
+        .from(tickets)
+        .innerJoin(competitions, eq(competitions.id, tickets.competitionId))
+        .where(
+          and(
+            eq(tickets.orderId, o.id),
+            inArray(tickets.status, ['active', 'reserved']),
+            eq(competitions.status, 'live'),
+            gt(competitions.closesAt, now),
+            sql`NOT EXISTS (SELECT 1 FROM draws d WHERE d.competition_id = ${tickets.competitionId})`,
+          ),
+        );
+      // Taking a player's tickets away must refund exactly what they paid for them, never 1p for the lot.
+      const value = open.reduce((s, t) => s + t.price, 0);
+      if (open.length && input.amountPence !== value) {
+        throw new AdminError(`Releasing this order's ${open.length} open tickets means refunding their full value, ${value}p. Refund ${value}p, or do not release them.`);
       }
+      releaseIds = open.map((t) => t.id);
+    }
+    const [r] = await tx.insert(refunds).values({ orderId: o.id, amountPence: input.amountPence, reason: input.reason, requestedBy: actor.id, createdAt: now }).returning();
+    if (releaseIds.length) {
+      const rel = await tx.update(tickets).set({ status: 'refunded' }).where(inArray(tickets.id, releaseIds)).returning({ id: tickets.id });
+      released = rel.length;
     }
     return { refundId: r!.id, released };
   });
