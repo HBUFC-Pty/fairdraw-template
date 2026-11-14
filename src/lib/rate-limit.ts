@@ -30,6 +30,8 @@ export const RATE_RULES = {
   verifyResend: { limit: 5, windowSeconds: 60 * 60 },
   totp: { limit: 10, windowSeconds: 15 * 60 },
   checkout: { limit: 20, windowSeconds: 10 * 60 },
+  // Demo sites only: every visitor sign-up on the whole site, per day (src/lib/demo.ts).
+  demoSignupsSiteWide: { limit: 300, windowSeconds: 24 * 60 * 60 },
 } satisfies Record<string, RateRule>;
 
 /** Count one attempt against `key`. Returns false when the limit for the current window is exceeded. */
