@@ -22,6 +22,9 @@ exactly the same whatever the brand.
 | `logo` | path in `public/brand/`, alt text, whether to show the site name too | Header logo |
 | `favicon` | path in `public/brand/` or `null` | Browser tab icon (a monogram in your colours is generated otherwise) |
 | `tone` | summary, words, do, avoid | How UI copy should sound (used by AI assistants writing copy) |
+| `extras.countdown` | `true` or `false` (default) | A live countdown to the close on each competition card |
+| `extras.badges` | `true` or `false` (default) | Factual badges on cards: "Ending soon" (within 24 hours of the close), "Almost sold out" (80% of the maximum or more), "Sold out", "New" (opened in the last 24 hours), "Coming soon". Never invented: each follows from the competition's own times and counts |
+| `extras.glow` | `true` or `false` (default) | A soft glow and lift on competition cards (still for people who prefer reduced motion) |
 
 The social sharing image and the default favicon are drawn from your colours and site name automatically.
 
@@ -51,8 +54,12 @@ motion, and the carousel never moves by itself.
 ## Trying brands side by side
 
 Run `pnpm dev` and open `/brand-preview`. It shows every component in the current brand in light and dark mode. Add
-`?preset=<name>` to preview any file in `config/brand-presets/` (four example directions ship with the template:
-harbour, meadow, velvet and carnival). The page is only available in development (or with `BRAND_PREVIEW=true`).
+`?preset=<name>` to preview any file in `config/brand-presets/` (five example directions ship with the template:
+harbour, meadow, velvet, carnival and showtime, the bold dark look many prize-competition sites use). The page is only
+available in development (or with `BRAND_PREVIEW=true`).
+
+To run a whole site in a preset without copying it to `config/brand.json`, set `BRAND_PRESET=<name>` (the public demo
+uses `showtime`). A new preset file must also be added to `BRAND_PRESETS` in `src/brand/index.ts`.
 
 ## With an AI assistant
 

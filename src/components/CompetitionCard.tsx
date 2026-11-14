@@ -15,8 +15,40 @@ import { formatPence } from '@/lib/money';
 import { formatUk } from '@/lib/time';
 import type { Competition } from '@/lib/public/queries';
 import { progressClass } from './CompetitionFacts';
+import { Countdown } from './Countdown';
+import { brand } from '@/brand';
 
 export type CardStyle = 'classic' | 'compact' | 'poster';
+
+const DAY = 24 * 3600_000;
+
+/**
+ * Factual badges for brands with extras.badges: nothing invented, every badge follows from the competition's own times
+ * and ticket counts. "Ending soon" within 24 hours of the close, "Almost sold out" from 80% of the maximum.
+ */
+export function cardBadges(c: { opensAt: Date; closesAt: Date; maxTickets: number }, sold: number, now: Date): string[] {
+  if (now < c.opensAt) return ['Coming soon'];
+  const out: string[] = [];
+  if (sold >= c.maxTickets) out.push('Sold out');
+  else if (sold >= c.maxTickets * 0.8) out.push('Almost sold out');
+  if (c.closesAt.getTime() - now.getTime() <= DAY && now < c.closesAt) out.push('Ending soon');
+  if (now.getTime() - c.opensAt.getTime() <= DAY) out.push('New');
+  return out;
+}
+
+function Extras({ c, sold, now }: { c: Competition; sold: number; now: Date }) {
+  const badges = brand.extras.badges ? cardBadges(c, sold, now) : [];
+  return (
+    <>
+      {badges.length ? (
+        <p className="badges">
+          {badges.map((b) => <span key={b} className="badge-pill">{b}</span>)}
+        </p>
+      ) : null}
+      {brand.extras.countdown && c.opensAt <= now ? <Countdown to={c.closesAt.toISOString()} label="Closes in" /> : null}
+    </>
+  );
+}
 
 /** A live competition in a list. Three structural styles, chosen by brand.layout.card. */
 export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold: number; style: CardStyle; now: Date }) {
@@ -35,6 +67,7 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
         <div>
           <h3><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h3>
           <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
+          <Extras c={c} sold={sold} now={now} />
           {progress}
         </div>
       </article>
@@ -49,7 +82,10 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
           <p>{c.summary}</p>
           <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
         </div>
-        <div className="card">{progress}</div>
+        <div className="card">
+          <Extras c={c} sold={sold} now={now} />
+          {progress}
+        </div>
       </article>
     );
   }
@@ -59,6 +95,7 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
       <h3><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h3>
       <p className="muted">{c.summary}</p>
       <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
+      <Extras c={c} sold={sold} now={now} />
       {progress}
     </article>
   );

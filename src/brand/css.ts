@@ -46,5 +46,11 @@ export function brandCss(b: Brand, scope = ':root'): string {
 
 /** Data attributes on <body> that select structural styles in globals.css. */
 export function brandAttributes(b: Brand) {
-  return { 'data-buttons': b.buttons, 'data-cards': b.cards, 'data-header': b.layout.header, 'data-card-style': b.layout.card } as const;
+  return {
+    'data-buttons': b.buttons,
+    'data-cards': b.cards,
+    'data-header': b.layout.header,
+    'data-card-style': b.layout.card,
+    ...(b.extras.glow ? { 'data-glow': 'on' } : {}),
+  } as const;
 }

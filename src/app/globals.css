@@ -75,6 +75,15 @@ footer.site h2 { font-size: 1rem; margin: 0 0 8px; color: var(--c-text); }
 .comp-card.poster .poster-body { background: var(--c-primary); color: var(--c-on-primary); padding: var(--space); }
 .comp-card.poster .poster-body a, .comp-card.poster .poster-body .muted { color: var(--c-on-primary); }
 .comp-card.poster img { border-radius: 0; }
+/* Brand extras (brand.extras): factual badges, a live countdown, and a glow on cards. */
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.badge-pill { background: var(--c-accent); color: var(--c-on-accent); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; }
+.countdown { font-weight: 700; margin: 4px 0 8px; }
+.countdown .num { font-variant-numeric: tabular-nums; color: var(--c-primary); font-size: 1.1rem; }
+.countdown-label { color: var(--c-muted); font-weight: 600; }
+[data-glow] .comp-card { transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 0 0 1px var(--c-border), 0 10px 30px -12px var(--c-primary); }
+[data-glow] .comp-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--c-primary), 0 16px 40px -12px var(--c-primary); }
+@media (prefers-reduced-motion: reduce) { [data-glow] .comp-card, [data-glow] .comp-card:hover { transition: none; transform: none; } }
 
 /* Home layouts: hero, grid or featured (a carousel that never moves on its own) */
 .home-hero { display: grid; gap: calc(var(--space) * 1.5); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: center; margin-bottom: calc(var(--space) * 2); }
