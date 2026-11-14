@@ -14,7 +14,8 @@ assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosti
 without a server, [docs/deploy-vercel.md](docs/deploy-vercel.md) puts it on Vercel and Neon's free plans.
 
 **See it running:** [demo.fairdraw.partyofone.quest](https://demo.fairdraw.partyofone.quest) is a public demo in test
-mode (no real prizes, payments or people), set up exactly as in that guide with `DEMO_MODE=true`.
+mode (prices and prizes are points with no value, and no real payments or people), set up exactly as in that guide
+with `DEMO_MODE=true`.
 
 > **Status:** a template. The legal and GDPR documents are built from published precedents (listed in
 > [docs/legal/SOURCES.md](docs/legal/SOURCES.md)) but are not legal advice: have them reviewed if you can. See "What has and has not been tested" below.

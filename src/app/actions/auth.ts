@@ -38,7 +38,7 @@ import {
 import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
 import { isValidDateOfBirth } from '@/lib/auth/age';
 import { accountExistsMail, resetMail, trySendMail, verifyEmailMail } from '@/lib/mail';
-import { parsePounds } from '@/lib/money';
+import { moneyAsPoints, parsePounds } from '@/lib/money';
 import { checkTotp } from '@/lib/auth/totp';
 import { decryptSecret } from '@/lib/crypto';
 import { demoMode, DEMO_NO_EMAIL, DEMO_WELCOME } from '@/lib/demo';
@@ -74,7 +74,7 @@ export async function signUpAction(fd: FormData) {
     try {
       monthlyLimitPence = parsePounds(parsed.data.monthlyLimit);
     } catch {
-      redirect(flashUrl('/signup', { error: 'Enter the monthly limit in pounds, for example 50.' }));
+      redirect(flashUrl('/signup', { error: moneyAsPoints() ? 'Enter the monthly limit in points, for example 5000.' : 'Enter the monthly limit in pounds, for example 50.' }));
     }
   }
   const r = await signUp(db, { ...parsed.data, monthlyLimitPence });

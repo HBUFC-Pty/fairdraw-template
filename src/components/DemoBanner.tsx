@@ -18,8 +18,8 @@ export function DemoBanner() {
   return (
     <div className="demo-banner" role="note">
       <p className="wrap">
-        <strong>Demo for operators: nothing here is real.</strong> Payments are test only, the prizes and other players are made up, and
-        accounts you create are deleted after 24 hours. <a href={TEMPLATE_REPO_URL}>Get the template</a>
+        <strong>Demo for operators: nothing here is real.</strong> Prices and prizes are points with no value, payments are test only, the
+        other players are made up, and accounts you create are deleted after 24 hours. <a href={TEMPLATE_REPO_URL}>Get the template</a>
       </p>
     </div>
   );

@@ -131,6 +131,8 @@ With `DEMO_MODE=true` (and `PAYMENT_PROVIDER=test`, which it requires) the site 
 who want to try the player experience. It looks after itself:
 
 - a banner on every page and a hero on the home page say it is a demo and that nothing is real;
+- every amount shows as points (one per penny) and every prize is demo points with no value, so nothing looks like
+  real money or a prize anyone could claim;
 - anyone can sign up: the form suggests made-up details, the real sign-up runs (age check included), and the email
   step is skipped because a demo sends no email. Password resets are off for the same reason;
 - visitors' accounts are deleted 24 hours after sign-up, through the normal account deletion;

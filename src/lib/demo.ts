@@ -17,6 +17,8 @@
  * - a banner on every page and a hero on the home page say it is a demo and nothing is real;
  * - anyone can sign up with made-up details (the form suggests some). The real sign-up runs, age check included, but
  *   the email step is skipped because a demo sends no email. Visitors' accounts are deleted after 24 hours;
+ * - every amount shows as points (src/lib/money.ts) and every prize is demo points with no value, so nothing looks
+ *   like real money or a prize anyone could claim;
  * - the scheduled work keeps a short competition that draws within a few hours, plus two longer ones, each with
  *   entries from fictional players who cannot log in. Every draw is a real draw, so finished ones can be checked.
  *
@@ -36,7 +38,7 @@ import type { AuditActor } from './audit';
 /** Where the template lives, linked from the demo banner and hero. */
 export const TEMPLATE_REPO_URL = 'https://github.com/HBUFC-Pty/fairdraw-template';
 export const DEMO_NO_EMAIL = 'This demo does not send email, so password resets are off. Sign up again with new made-up details: it only takes a moment.';
-export const DEMO_WELCOME = 'You are in. Enter any competition and pay with the test card: nothing is charged. This account is deleted after 24 hours.';
+export const DEMO_WELCOME = 'You are in. Enter any competition and pay with the test card: nothing is charged, and prices and prizes are points with no value. This account is deleted after 24 hours.';
 export const DEMO_SIGNUP_NOTE = 'This is a demo, so please do not use your real details. We have made some up for you: keep them or change them, and choose any password. Nothing is emailed, and the account is deleted after 24 hours.';
 
 const MIN = 60_000;
@@ -80,108 +82,41 @@ interface DemoPrize {
   skillQuestion: { question: string; options: string[]; correctIndex: number } | null;
 }
 
-/** Short competitions (a few hours). Fictional prizes; every per-person cap is 10% of the maximum or less. */
+/**
+ * A prize of demo points. On a demo site every amount shows as points, one per penny (src/lib/money.ts), so a value
+ * of 1000 shows as "1,000 points". Points have no value, so there is never anything for a winner to claim.
+ */
+function pointsPrize(points: number, image: string, alt: string, price: number, maxTickets: number, question: DemoPrize['skillQuestion'] = null): DemoPrize {
+  const shown = new Intl.NumberFormat('en-GB').format(points);
+  return {
+    key: `points-${points}`,
+    title: `${shown} demo points`,
+    summary: 'Made-up points with no value: nothing to claim.',
+    prizeDescription: `${shown} demo points. The points are made up for this demo: they have no value and cannot be claimed, exchanged or withdrawn. Everything else runs exactly as it would on a real site: the close, the commitment, the draw and the record anyone can check.`,
+    prizeValuePence: points,
+    image: { url: image, alt },
+    ticketPricePence: price,
+    maxTickets,
+    perPersonCap: Math.floor(maxTickets / 10),
+    skillQuestion: question,
+  };
+}
+
+/** Short competitions (a few hours). Every per-person cap is 10% of the maximum. */
 export const DEMO_QUICK_PRIZES: DemoPrize[] = [
-  {
-    key: 'drill-set',
-    title: 'Cordless drill set',
-    summary: 'An 18V drill driver with two batteries.',
-    prizeDescription: 'An 18V cordless drill driver set with two batteries and a case (fictional demo prize). Cash alternative £180.',
-    prizeValuePence: 18_000,
-    image: { url: '/images/demo-drill.svg', alt: 'A cordless drill (demo image)' },
-    ticketPricePence: 50,
-    maxTickets: 300,
-    perPersonCap: 30,
-    skillQuestion: null,
-  },
-  {
-    key: 'smart-watch',
-    title: 'Smart watch',
-    summary: 'A fitness smart watch with GPS.',
-    prizeDescription: 'A fitness smart watch with GPS (fictional demo prize). Cash alternative £250.',
-    prizeValuePence: 25_000,
-    image: { url: '/images/demo-watch.svg', alt: 'A smart watch (demo image)' },
-    ticketPricePence: 50,
-    maxTickets: 400,
-    perPersonCap: 40,
-    skillQuestion: null,
-  },
-  {
-    key: 'games-console',
-    title: 'Games console bundle',
-    summary: 'A games console with a second controller.',
-    prizeDescription: 'A games console with a second controller and two games (fictional demo prize). Cash alternative £400.',
-    prizeValuePence: 40_000,
-    image: { url: '/images/demo-console.svg', alt: 'A games console and controller (demo image)' },
-    ticketPricePence: 75,
-    maxTickets: 500,
-    perPersonCap: 50,
-    skillQuestion: null,
-  },
-  {
-    key: 'picnic-hamper',
-    title: 'Picnic hamper',
-    summary: 'A wicker hamper packed for four.',
-    prizeDescription: 'A wicker picnic hamper with plates, glasses and a blanket for four (fictional demo prize). Cash alternative £120.',
-    prizeValuePence: 12_000,
-    image: { url: '/images/demo-hamper.svg', alt: 'A picnic hamper (demo image)' },
-    ticketPricePence: 25,
-    maxTickets: 400,
-    perPersonCap: 40,
-    skillQuestion: null,
-  },
-  {
-    key: 'cash-250',
-    title: '£250 cash',
-    summary: '£250, paid by bank transfer.',
-    prizeDescription: '£250 paid by bank transfer to the winner (fictional demo prize: nothing is paid in this demo).',
-    prizeValuePence: 25_000,
-    image: { url: '/images/demo-cash.svg', alt: 'A stack of banknotes (demo image)' },
-    ticketPricePence: 50,
-    maxTickets: 600,
-    perPersonCap: 60,
-    skillQuestion: null,
-  },
+  pointsPrize(500, '/images/demo-points-star.svg', 'A star: 500 demo points (demo image)', 5, 200),
+  pointsPrize(1000, '/images/demo-points-medal.svg', 'A medal: 1,000 demo points (demo image)', 10, 200),
+  pointsPrize(2500, '/images/demo-points-gem.svg', 'A gem: 2,500 demo points (demo image)', 25, 200),
 ];
 
-/** Longer competitions (two to four days). */
+/** Longer competitions (two to four days), one with a question to show how that works. */
 export const DEMO_LONG_PRIZES: DemoPrize[] = [
-  {
-    key: 'lakes-weekend',
-    title: 'A weekend in the Lake District',
-    summary: 'Two nights for two in a lakeside cottage, plus £300 spending money.',
-    prizeDescription: 'Two nights for two people in a lakeside cottage (fictional demo prize), with £300 spending money. Cash alternative £1,500.',
-    prizeValuePence: 150_000,
-    image: { url: '/images/demo-lakes.svg', alt: 'A lake below hills with a small cottage (demo image)' },
-    ticketPricePence: 100,
-    maxTickets: 2000,
-    perPersonCap: 100,
-    skillQuestion: null,
-  },
-  {
-    key: 'electric-bike',
-    title: 'Electric bike',
-    summary: 'A commuter e-bike with a 60 mile range.',
-    prizeDescription: 'A commuter electric bike (fictional demo prize). Cash alternative £1,400.',
-    prizeValuePence: 140_000,
-    image: { url: '/images/demo-bike.svg', alt: 'An electric bike (demo image)' },
-    ticketPricePence: 150,
-    maxTickets: 1500,
-    perPersonCap: 150,
-    skillQuestion: { question: 'Which of these is the capital of Scotland?', options: ['Glasgow', 'Edinburgh', 'Aberdeen'], correctIndex: 1 },
-  },
-  {
-    key: 'camera-kit',
-    title: 'Mirrorless camera kit',
-    summary: 'A mirrorless camera with two lenses.',
-    prizeDescription: 'A mirrorless camera with a standard zoom and a portrait lens (fictional demo prize). Cash alternative £900.',
-    prizeValuePence: 90_000,
-    image: { url: '/images/demo-camera.svg', alt: 'A camera (demo image)' },
-    ticketPricePence: 100,
-    maxTickets: 1200,
-    perPersonCap: 120,
-    skillQuestion: null,
-  },
+  pointsPrize(10000, '/images/demo-points-trophy.svg', 'A trophy: 10,000 demo points (demo image)', 50, 400, {
+    question: 'Which of these is the capital of Scotland?',
+    options: ['Glasgow', 'Edinburgh', 'Aberdeen'],
+    correctIndex: 1,
+  }),
+  pointsPrize(25000, '/images/demo-points-trophy.svg', 'A trophy: 25,000 demo points (demo image)', 100, 500),
 ];
 
 const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));

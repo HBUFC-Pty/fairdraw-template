@@ -12,6 +12,7 @@
  */
 import Link from 'next/link';
 import { FlashMessage } from '@/components/Flash';
+import { moneyUnit } from '@/lib/money';
 import { signUpAction } from '../actions/auth';
 import { siteConfig } from '@/lib/site-config';
 import { demoMode, demoSignUpDefaults, DEMO_SIGNUP_NOTE } from '@/lib/demo';
@@ -39,7 +40,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
         <label>Confirm password<input name="confirm" type="password" autoComplete="new-password" required minLength={12} maxLength={256} /></label>
         <label>
           Monthly spend limit (optional)
-          <span className="hint">In pounds. You can set daily and weekly limits too, or change this later. Lowering a limit takes effect at once.</span>
+          <span className="hint">In {moneyUnit()}. You can set daily and weekly limits too, or change this later. Lowering a limit takes effect at once.</span>
           <input name="monthlyLimit" inputMode="decimal" maxLength={12} defaultValue={siteConfig.defaults.suggestedMonthlyLimitPounds ?? ''} />
         </label>
         <label><input type="checkbox" name="over18" value="yes" required /> I am 18 or over</label>

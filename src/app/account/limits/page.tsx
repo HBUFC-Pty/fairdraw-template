@@ -14,7 +14,7 @@ import { requireUser } from '@/lib/web/session';
 import { getDb } from '@/lib/db';
 import { getLimits, PERIOD_LABEL, spentInPeriod, SPEND_PERIODS } from '@/lib/limits/spend';
 import { FlashMessage } from '@/components/Flash';
-import { formatPence } from '@/lib/money';
+import { formatPence, moneyUnit, zeroAmount } from '@/lib/money';
 import { formatUk } from '@/lib/time';
 import { cancelIncreaseAction, setLimitAction } from '../../actions/account';
 
@@ -29,7 +29,7 @@ export default async function LimitsPage({ searchParams }: { searchParams: Promi
       <h1>Spend limits</h1>
       <FlashMessage searchParams={await searchParams} />
       <p>
-        Set how much you can spend in a rolling day, week and month. Any amount down to £0. Lowering a limit, or setting one, takes effect at once. Raising
+        Set how much you can spend in a rolling day, week and month. Any amount down to {zeroAmount()}. Lowering a limit, or setting one, takes effect at once. Raising
         or removing a limit takes effect after 24 hours, and you can cancel it in that time.
       </p>
       {SPEND_PERIODS.map((p) => {
@@ -51,7 +51,7 @@ export default async function LimitsPage({ searchParams }: { searchParams: Promi
             ) : null}
             <form className="stack" action={setLimitAction}>
               <input type="hidden" name="period" value={p} />
-              <label>New limit in pounds<span className="hint">Leave blank to remove the limit (takes 24 hours).</span><input name="amount" inputMode="decimal" maxLength={12} /></label>
+              <label>New limit in {moneyUnit()}<span className="hint">Leave blank to remove the limit (takes 24 hours).</span><input name="amount" inputMode="decimal" maxLength={12} /></label>
               <button type="submit">Save</button>
             </form>
           </section>

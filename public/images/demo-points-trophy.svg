@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="A trophy: a big demo points prize (demo image)">
+  <title>A trophy: a big demo points prize (demo image)</title>
+  <rect width="800" height="450" fill="#dcfce7"/>
+  <path d="M150 70 h180 v90 a90 90 0 0 1 -180 0 Z" fill="#fbbf24" stroke="#b45309" stroke-width="8"/>
+  <path d="M150 95 h-45 a40 40 0 0 0 45 75 M330 95 h45 a40 40 0 0 1 -45 75" fill="none" stroke="#b45309" stroke-width="12"/>
+  <rect x="222" y="245" width="36" height="60" fill="#d97706"/>
+  <rect x="170" y="300" width="140" height="28" rx="6" fill="#92400e"/>
+  <rect x="150" y="328" width="180" height="40" rx="8" fill="#78350f"/>
+  <circle cx="200" cy="120" r="14" fill="#ffffff" opacity="0.5"/>
+  <text x="560" y="250" fill="#1f2937" font-family="system-ui, sans-serif" font-size="56" font-weight="800" text-anchor="middle">Top prize</text>
+  <text x="560" y="300" fill="#1f2937" fill-opacity="0.7" font-family="system-ui, sans-serif" font-size="30" font-weight="600" text-anchor="middle">demo points</text>
+  <text x="784" y="436" fill="#000" fill-opacity="0.45" font-family="system-ui, sans-serif" font-size="16" text-anchor="end">Demo image: points have no value</text>
+</svg>

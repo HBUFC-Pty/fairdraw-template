@@ -29,6 +29,7 @@ import {
 import { capAboveTenPercent } from '../src/lib/competitions/allocation';
 import { isValidDateOfBirth } from '../src/lib/auth/age';
 import { nextDueAt } from '../src/lib/worker';
+import { formatPence, moneyUnit, parsePounds, zeroAmount } from '../src/lib/money';
 
 const H = 3600_000;
 let db: Db;
@@ -147,5 +148,27 @@ describe('demo mode', () => {
 
   it('uses fair demo prizes: caps at 10% of the maximum or less', () => {
     for (const p of [...DEMO_QUICK_PRIZES, ...DEMO_LONG_PRIZES]) expect(capAboveTenPercent(p.perPersonCap, p.maxTickets)).toBe(false);
+  });
+
+  it('shows money as points on a demo site, and only there', () => {
+    expect(formatPence(150)).toBe('£1.50');
+    expect(parsePounds('2.50')).toBe(250);
+    expect([moneyUnit(), zeroAmount()]).toEqual(['pounds', '£0']);
+    demoOn();
+    expect(formatPence(150)).toBe('150 points');
+    expect(formatPence(1)).toBe('1 point');
+    expect(formatPence(25000)).toBe('25,000 points');
+    expect(parsePounds('500')).toBe(500);
+    expect(parsePounds('500 points')).toBe(500);
+    expect(() => parsePounds('2.50')).toThrow(/whole number of points/);
+    expect([moneyUnit(), zeroAmount()]).toEqual(['points', '0 points']);
+  });
+
+  it('only ever offers demo points as prizes', () => {
+    for (const p of [...DEMO_QUICK_PRIZES, ...DEMO_LONG_PRIZES]) {
+      expect(p.title).toMatch(/^[\d,]+ demo points$/);
+      expect(p.prizeDescription).toMatch(/no value and cannot be claimed/);
+      expect(p.prizeDescription).not.toMatch(/£|cash/i);
+    }
   });
 });

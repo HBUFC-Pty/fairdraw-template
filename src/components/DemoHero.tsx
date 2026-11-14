@@ -26,7 +26,7 @@ export function DemoHero() {
         </p>
         <ol className="demo-steps">
           <li>Sign up with made-up details (we suggest some).</li>
-          <li>Enter a competition and pay with the test card.</li>
+          <li>Enter a competition and pay with the test card. Prices are in points.</li>
           <li>Watch it close and draw at the advertised time, then check the draw yourself.</li>
         </ol>
         <p className="demo-actions">
@@ -35,8 +35,9 @@ export function DemoHero() {
           <a className="button secondary" href={TEMPLATE_REPO_URL}>Get the template</a>
         </p>
         <p className="muted">
-          Nothing here is real: no prizes, no payments, no real people. A short competition draws every few hours, and every draw is a real
-          one made with public drand randomness.
+          Nothing here is real: prices and prizes are points with no value, so there is nothing to win or claim, payments are test only, and
+          the other players are made up. A short competition draws every few hours, and every draw is a real one made with public drand
+          randomness.
         </p>
       </div>
       <div className="hero">
