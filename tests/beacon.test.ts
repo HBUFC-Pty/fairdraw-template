@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
-import { BeaconDisagreementError, BeaconNotReadyError, fetchBeacon } from '../src/lib/fairdraw/beacon';
+import { BeaconNotReadyError, fetchBeacon, verifyBeaconSignature } from '../src/lib/fairdraw/beacon';
 import { fairdrawRoundTime } from '../src/lib/fairdraw/draw';
 
 // Real quicknet round 1000, as published by every drand relay.
@@ -41,11 +41,23 @@ describe('drand beacon from several relays', () => {
     await expect(fetchBeacon(ROUND, { relays: ['https://a', 'https://b'], fetchImpl: fakeFetch({ 'https://a': good }), nowUnix: now })).rejects.toBeInstanceOf(BeaconNotReadyError);
   });
 
-  it('refuses when relays disagree', async () => {
-    const other = { round: ROUND, randomness: createHash('sha256').update(Buffer.from('ab', 'hex')).digest('hex'), signature: 'ab' };
-    await expect(
-      fetchBeacon(ROUND, { relays: ['https://a', 'https://b', 'https://c'], fetchImpl: fakeFetch({ 'https://a': good, 'https://b': good, 'https://c': other }), nowUnix: now }),
-    ).rejects.toBeInstanceOf(BeaconDisagreementError);
+  it('real data: the signature is drand quicknet\'s for this round, and for no other', () => {
+    expect(verifyBeaconSignature(ROUND, SIG)).toBe(true);
+    expect(verifyBeaconSignature(ROUND + 1, SIG)).toBe(false);
+    expect(verifyBeaconSignature(ROUND, 'ab')).toBe(false);
+  });
+
+  it('ignores relays serving made-up randomness, even when they agree with each other', async () => {
+    // Two operator-run "relays" with a self-consistent beacon (randomness = sha256(signature)) that drand never signed.
+    const sig = 'a'.repeat(96);
+    const madeUp = { round: ROUND, randomness: createHash('sha256').update(Buffer.from(sig, 'hex')).digest('hex'), signature: sig };
+    await expect(fetchBeacon(ROUND, { relays: ['https://x', 'https://y'], fetchImpl: fakeFetch({ 'https://x': madeUp, 'https://y': madeUp }), nowUnix: now })).rejects.toBeInstanceOf(
+      BeaconNotReadyError,
+    );
+    // With genuine relays alongside, only the genuine beacon counts.
+    const r = await fetchBeacon(ROUND, { relays: ['https://a', 'https://b', 'https://x'], fetchImpl: fakeFetch({ 'https://a': good, 'https://b': good, 'https://x': madeUp }), nowUnix: now });
+    expect(r.randomness).toBe(RAND);
+    expect(r.relays).toEqual(['https://a', 'https://b']);
   });
 
   it('ignores a relay whose randomness is not the hash of its signature', async () => {

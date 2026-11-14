@@ -12,20 +12,20 @@
  */
 /**
  * Fictional demo data for local development: two accounts, four competitions (draft, live, live with a question, and
- * one already drawn with a real drand round), random ticket sales and a postal entry. Every name is made up.
+ * one that closes five minutes after seeding, for the worker to draw), random ticket sales and a postal entry. Every
+ * name is made up.
  * Refuses to run in production.
  *
  *   pnpm db:seed
  */
 import { eq, sql } from 'drizzle-orm';
 import { getDb, getPool } from '../src/lib/db';
-import { competitions, users } from '../src/lib/db/schema';
+import { users } from '../src/lib/db/schema';
 import { hashPassword } from '../src/lib/auth/password';
 import { createCompetition, publishCompetition } from '../src/lib/competitions/service';
 import { addToBasket, placeOrder, processPaymentEvent } from '../src/lib/checkout/service';
 import { TestProvider } from '../src/lib/payments/test-provider';
 import { recordPostalEntry } from '../src/lib/competitions/postal';
-import { closeCompetition, runDraw } from '../src/lib/draw/service';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Refusing to seed demo data in production.');
@@ -111,40 +111,29 @@ const bike = await createCompetition(db, actor, {
 });
 await publishCompetition(db, actor, bike.id);
 
-// 3. A finished competition, drawn with a real, already published drand round.
-const closesAt = new Date(now - 2 * D);
-const [drill] = await db
-  .insert(competitions)
-  .values({
-    slug: 'cordless-drill-set',
-    title: 'Cordless drill set',
-    summary: 'An 18V drill driver with two batteries.',
-    prizeDescription: 'An 18V cordless drill driver set with two batteries and a case (fictional demo prize). Cash alternative £180.',
-    prizeValuePence: 18_000,
-    images: [{ url: '/images/demo-drill.svg', alt: 'A cordless drill (demo image)' }],
-    ticketPricePence: 100,
-    maxTickets: 250,
-    perPersonCap: 25,
-    winnerCount: 1,
-    opensAt: new Date(now - 9 * D),
-    closesAt,
-    drawAt: closesAt,
-    status: 'live',
-  })
-  .returning();
-const sold: number[] = [];
-for (const p of players) {
-  const k = 1 + Math.floor(Math.random() * 8);
-  await buy(drill!.id, p.id, k, new Date(closesAt.getTime() - 3 * D));
-  sold.push(k);
-}
-await closeCompetition(db, drill!.id, new Date(closesAt.getTime() + 1000));
-try {
-  const out = await runDraw(db, drill!.id);
-  console.info(`demo draw made with real drand randomness: winning ticket ${out.record.winning_tickets.join(', ')}`);
-} catch (e) {
-  console.warn(`could not reach drand (${(e as Error).message}); the worker will make the demo draw when it can`);
-}
+// 3. A competition that closes a few minutes from now. Run the worker (pnpm worker) to watch it close, commit to a
+//    future drand round and draw at the advertised time. A draw can never be backdated: the database refuses a
+//    commitment to a round that was already published (drizzle/0004).
+const closesAt = new Date(Math.ceil((now + 5 * 60_000) / 60_000) * 60_000);
+const drill = await createCompetition(db, actor, {
+  slug: 'cordless-drill-set',
+  title: 'Cordless drill set',
+  summary: 'An 18V drill driver with two batteries.',
+  prizeDescription: 'An 18V cordless drill driver set with two batteries and a case (fictional demo prize). Cash alternative £180.',
+  prizeValuePence: 18_000,
+  images: [{ url: '/images/demo-drill.svg', alt: 'A cordless drill (demo image)' }],
+  ticketPricePence: 100,
+  maxTickets: 250,
+  perPersonCap: 25,
+  winnerCount: 1,
+  opensAt: new Date(now - D),
+  closesAt,
+  drawAt: closesAt,
+  skillQuestion: null,
+});
+await publishCompetition(db, actor, drill.id);
+for (const p of players) await buy(drill.id, p.id, 1 + Math.floor(Math.random() * 8));
+console.info(`"Cordless drill set" closes and draws at ${closesAt.toISOString()}: run the worker to see it happen.`);
 
 // 4. A draft.
 await createCompetition(db, actor, {

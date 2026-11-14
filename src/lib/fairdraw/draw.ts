@@ -165,6 +165,14 @@ export interface VerifyResult {
 export async function fairdrawVerify(record: FairdrawRecord, tickets: readonly number[], beaconRandomness: string | null): Promise<VerifyResult> {
   const problems: string[] = [];
   const t = fairdrawNormalise(tickets);
+  // The randomness must not have existed at the close, or whoever closed the draw could have picked a round that
+  // suits them (the same check as FairDraw's fairdraw-verify.mjs). Compare closed_at with the advertised close too.
+  const close = Date.parse(record.closed_at) / 1000;
+  if (record.drand_chain !== FAIRDRAW_DRAND_CHAIN) problems.push(`record uses drand chain ${record.drand_chain}, not quicknet`);
+  if (!Number.isFinite(close)) problems.push('record has no valid closed_at');
+  else if (fairdrawRoundTime(record.drand_round) <= close) {
+    problems.push(`drand round ${record.drand_round} was published before the close at ${record.closed_at}: the randomness already existed when the list was committed`);
+  }
   if (t.length !== record.tickets_sold) problems.push(`list has ${t.length} tickets, record says ${record.tickets_sold}`);
   const hash = await fairdrawEntriesHash(t);
   if (hash !== record.entries_hash) problems.push('entries hash does not match the published list');

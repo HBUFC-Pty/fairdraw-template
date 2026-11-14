@@ -17,10 +17,11 @@
  * that sets cookies or reads device storage, prior consent under PECR (docs/gdpr/cookie-statement.md).
  */
 import { NextResponse, type NextRequest } from 'next/server';
-import { configuredRelays } from '@/lib/fairdraw/beacon';
+import { DEFAULT_DRAND_RELAYS } from '@/lib/fairdraw/beacon';
 
 function drandOrigins(): string {
-  return configuredRelays().map((r) => new URL(r).origin).join(' ');
+  // The browser verifier only ever asks the public relays, whatever DRAND_RELAYS says (src/app/draws/[slug]).
+  return DEFAULT_DRAND_RELAYS.map((r) => new URL(r).origin).join(' ');
 }
 
 function imageHosts(): string {

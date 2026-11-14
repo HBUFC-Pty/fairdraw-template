@@ -11,7 +11,7 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 /** Admin operations. Every one writes to the hash-chained audit log. */
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { competitions, orders, refunds, sessions, tickets, users, type Role } from '../db/schema';
 import { appendAudit, type AuditActor } from '../audit';
@@ -47,7 +47,8 @@ export async function issueRefund(db: Db, actor: AuditActor, input: { orderId: s
     const [r] = await tx.insert(refunds).values({ orderId: o.id, amountPence: input.amountPence, reason: input.reason, requestedBy: actor.id, createdAt: now }).returning();
     let released = 0;
     if (input.releaseTickets) {
-      const live = await tx.select({ id: competitions.id }).from(competitions).where(eq(competitions.status, 'live'));
+      // Only competitions still open: after the advertised close the entries are fixed (drizzle/0004).
+      const live = await tx.select({ id: competitions.id }).from(competitions).where(and(eq(competitions.status, 'live'), gt(competitions.closesAt, now)));
       const liveIds = live.map((l) => l.id);
       if (liveIds.length) {
         const rel = await tx

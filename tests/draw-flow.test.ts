@@ -70,8 +70,9 @@ describe('close, commit and draw', () => {
   it('excludes wrong skill answers from the draw and refunds them; unpaid reservations lapse', async () => {
     const u = await makeUser(db);
     const c = await makeCompetition(db, { skillQuestion: { question: 'What is 2 + 2?', options: ['3', '4'], correctIndex: 1 } });
-    const o = await addPaidTickets(db, c.id, u.id, [1, 2]);
-    await db.update(tickets).set({ answerCorrect: false }).where(eq(tickets.number, 2));
+    const o = await addPaidTickets(db, c.id, u.id, [1]);
+    // Ticket 2 answered the question wrongly (answers are recorded when the ticket is created and never change).
+    await db.insert(tickets).values({ competitionId: c.id, number: 2, userId: u.id, orderId: o.id, source: 'paid', allocation: 'random', status: 'active', answerCorrect: false });
     await db.insert(tickets).values({ competitionId: c.id, number: 9, userId: u.id, orderId: o.id, source: 'paid', allocation: 'random', status: 'reserved', reservedUntil: new Date(Date.now() + 600_000) });
     const closesAt = new Date(Date.now() - 3600_000);
     await backdate(db, c.id, closesAt);

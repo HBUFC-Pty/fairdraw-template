@@ -29,6 +29,13 @@
       "when": 1794572055166,
       "tag": "0003_instant_win_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794682051504,
+      "tag": "0004_draw_integrity_guards",
+      "breakpoints": true
     }
   ]
 }

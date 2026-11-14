@@ -104,7 +104,8 @@ describe('credit card limit (£250 per player per calendar month)', () => {
     expect(ukMonthBounds(new Date('2026-12-31T23:59:00Z')).end.toISOString()).toBe('2027-01-01T00:00:00.000Z');
 
     const u = await makeUser(db);
-    const c = await comp();
+    // Open across the simulated September and October payments (payments only enter open competitions).
+    const c = await comp({ opensAt: new Date('2026-09-01T00:00:00Z') });
     expect(await authorise((await order(u.id, c.id, 4)).orderId, 20000, 'credit', septLate)).toBe('capture:paid');
     expect(await authorise((await order(u.id, c.id, 2)).orderId, 10000, 'credit', new Date('2026-09-30T22:45:00Z'))).toBe('decline_credit_cap:declined');
     expect(await authorise((await order(u.id, c.id, 2)).orderId, 10000, 'credit', octEarly)).toBe('capture:paid');
