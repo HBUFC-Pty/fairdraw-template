@@ -1,7 +1,8 @@
 # Serverless hosts only (docs/deploy-vercel.md): calls POST /api/cron/tick every 5 minutes, which closes competitions,
 # makes due draws and settles payments. Docker installs run the worker service instead and do not need this.
 # Set the repository variable TICK_URL (for example https://competitions.example.co.uk) and the secret CRON_SECRET
-# (the same value as the site's CRON_SECRET). Without TICK_URL the job does nothing.
+# (the same value as the site's CRON_SECRET). Without TICK_URL the job does nothing. Calling every 5 minutes keeps a
+# free database that sleeps when idle (Neon Free) awake all month: on one of those use scripts/tick.sh instead.
 name: Scheduled work (serverless)
 on:
   schedule:

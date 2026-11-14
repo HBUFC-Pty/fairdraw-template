@@ -10,7 +10,8 @@ exist until the advertised draw time, and the full record is published so anyone
 with FairDraw's own tools. The database itself refuses to change a committed list or redo a draw.
 
 **New here and not technical?** Start with [docs/start-here.md](docs/start-here.md): it walks you (and your AI
-assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server.
+assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server. To try it
+without a server, [docs/deploy-vercel.md](docs/deploy-vercel.md) puts it on Vercel and Neon's free plans.
 
 > **Status:** a template. The legal and GDPR documents are built from published precedents (listed in
 > [docs/legal/SOURCES.md](docs/legal/SOURCES.md)) but are not legal advice: have them reviewed if you can. See "What has and has not been tested" below.

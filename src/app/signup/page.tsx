@@ -14,10 +14,20 @@ import Link from 'next/link';
 import { FlashMessage } from '@/components/Flash';
 import { signUpAction } from '../actions/auth';
 import { siteConfig } from '@/lib/site-config';
+import { demoMode, DEMO_NO_EMAIL } from '@/lib/demo';
 
 export const metadata = { title: 'Sign up' };
 
 export default async function SignUpPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  if (demoMode()) {
+    return (
+      <>
+        <h1>Sign up</h1>
+        <p className="notice warn">{DEMO_NO_EMAIL}</p>
+        <p><Link href="/login">Log in with the demo account</Link></p>
+      </>
+    );
+  }
   return (
     <>
       <h1>Sign up</h1>

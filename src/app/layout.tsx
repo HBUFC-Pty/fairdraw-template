@@ -17,6 +17,7 @@ import { env } from '@/lib/env';
 import { currentSession, isStaff } from '@/lib/web/session';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
+import { DemoBanner } from '@/components/DemoBanner';
 import { cspNonce } from '@/lib/web/request';
 import { brand, brandAttributes, brandCss } from '@/brand';
 
@@ -39,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body {...brandAttributes(brand)}>
         <a className="skip" href="#main">Skip to content</a>
+        <DemoBanner />
         <SiteHeader brand={brand} loggedIn={Boolean(s)} staff={Boolean(s && isStaff(s.user.role))} />
         <main id="main" className="wrap">{children}</main>
         <SiteFooter style={brand.layout.footer} />

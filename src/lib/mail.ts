@@ -39,6 +39,8 @@ function getTransport(): Transporter {
 }
 
 export const sendMail: MailSender = async (m) => {
+  // A public demo has no mail server and its addresses are fictional: never try.
+  if (env().DEMO_MODE) return;
   await getTransport().sendMail({ from: env().MAIL_FROM, to: m.to, subject: m.subject, text: m.text });
 };
 

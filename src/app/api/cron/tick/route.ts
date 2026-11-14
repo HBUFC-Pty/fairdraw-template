@@ -12,11 +12,11 @@
  */
 import { timingSafeEqual } from 'node:crypto';
 import { env } from '@/lib/env';
-import { retentionIfDue, runTick } from '@/lib/worker';
+import { nextDueAt, retentionIfDue, runTick } from '@/lib/worker';
 
 /**
  * Serverless trigger for the scheduled work, for hosts that cannot run the worker process (docs/deploy-vercel.md).
- * POST with "Authorization: Bearer <CRON_SECRET>"; called every 5 minutes by .github/workflows/tick.yml. With
+ * POST with "Authorization: Bearer <CRON_SECRET>"; called by scripts/tick.sh or .github/workflows/tick.yml. With
  * CRON_SECRET unset (every Docker install) the endpoint answers 404, so it only exists where it is configured.
  */
 export const dynamic = 'force-dynamic';
@@ -35,5 +35,7 @@ export async function POST(req: Request) {
   if (!authorised(req.headers.get('authorization'), secret)) return new Response('Unauthorised', { status: 401, headers });
   const ran = await runTick();
   const retention = ran ? await retentionIfDue() : false;
-  return Response.json({ ok: true, ran, retention }, { headers });
+  // When to call next (scripts/tick.sh uses it to let a free database sleep). Null: nothing is scheduled.
+  const next = await nextDueAt();
+  return Response.json({ ok: true, ran, retention, next_due_at: next ? next.toISOString() : null }, { headers });
 }
