@@ -1,0 +1,77 @@
+{
+  "direction": "Showtime: bold prize nights",
+  "tone": {
+    "summary": "Big, bright and exciting, like a prize night on stage: lively about the prizes, exact about the rules.",
+    "words": [
+      "bold",
+      "lively",
+      "exact"
+    ],
+    "do": [
+      "Make the prizes the star",
+      "Show real close times and real ticket counts",
+      "Keep the free entry route easy to find"
+    ],
+    "avoid": [
+      "Made-up scarcity or fake counters",
+      "Exclamation marks in rules"
+    ]
+  },
+  "colours": {
+    "light": {
+      "bg": "#0d0a1f",
+      "surface": "#18122e",
+      "text": "#f5f3ff",
+      "muted": "#bdb5d8",
+      "border": "#2f2654",
+      "inputBorder": "#8478b3",
+      "primary": "#fbbf24",
+      "onPrimary": "#1a1205",
+      "accent": "#f472b6",
+      "onAccent": "#1f0a16",
+      "success": "#86efac",
+      "successBg": "#052e16",
+      "warning": "#fcd34d",
+      "warningBg": "#422006",
+      "error": "#fca5a5",
+      "errorBg": "#450a0a"
+    },
+    "dark": {
+      "bg": "#0d0a1f",
+      "surface": "#18122e",
+      "text": "#f5f3ff",
+      "muted": "#bdb5d8",
+      "border": "#2f2654",
+      "inputBorder": "#8478b3",
+      "primary": "#fbbf24",
+      "onPrimary": "#1a1205",
+      "accent": "#f472b6",
+      "onAccent": "#1f0a16",
+      "success": "#86efac",
+      "successBg": "#052e16",
+      "warning": "#fcd34d",
+      "warningBg": "#422006",
+      "error": "#fca5a5",
+      "errorBg": "#450a0a"
+    }
+  },
+  "fonts": "bold",
+  "radius": "large",
+  "density": "comfortable",
+  "shadow": "crisp",
+  "buttons": "pill",
+  "cards": "elevated",
+  "layout": {
+    "home": "featured",
+    "card": "poster",
+    "header": "centred",
+    "footer": "columns"
+  },
+  "extras": {
+    "countdown": true,
+    "badges": true,
+    "glow": true
+  },
+  "logo": null,
+  "favicon": null
+}

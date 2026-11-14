@@ -7,7 +7,8 @@ import { brandSchema, type Brand } from '../src/brand/schema';
 import { checkBrandContrast } from '../src/brand/check';
 import { contrastRatio, nearestPassing } from '../src/brand/contrast';
 import { brandCss } from '../src/brand/css';
-import { brand, parseBrand } from '../src/brand';
+import { activeBrand, brand, parseBrand } from '../src/brand';
+import { cardBadges } from '../src/components/CompetitionCard';
 import { SiteFooter } from '../src/components/SiteFooter';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -84,5 +85,25 @@ describe('the FairDraw link survives every footer style', () => {
       expect(html).toContain('href="https://fairdraw.partyofone.quest"');
       expect(html).toContain('Draw checks by FairDraw');
     }
+  });
+
+  it('BRAND_PRESET picks a preset at run time, and refuses one that does not exist', () => {
+    expect(activeBrand('showtime').direction).toMatch(/^Showtime/);
+    expect(activeBrand('showtime').extras).toEqual({ countdown: true, badges: true, glow: true });
+    expect(activeBrand('').direction).toBe(activeBrand(undefined).direction);
+    expect(activeBrand(undefined).extras).toEqual({ countdown: false, badges: false, glow: false });
+    expect(() => activeBrand('neon-nights')).toThrow(/not one of/);
+  });
+
+  it('only shows badges that follow from the competition itself', () => {
+    const now = new Date('2026-11-14T12:00:00Z');
+    const H = 3600_000;
+    const c = (opens: number, closes: number) => ({ opensAt: new Date(now.getTime() + opens * H), closesAt: new Date(now.getTime() + closes * H), maxTickets: 100 });
+    expect(cardBadges(c(-48, 72), 10, now)).toEqual([]);
+    expect(cardBadges(c(-48, 72), 80, now)).toEqual(['Almost sold out']);
+    expect(cardBadges(c(-48, 72), 100, now)).toEqual(['Sold out']);
+    expect(cardBadges(c(-48, 5), 10, now)).toEqual(['Ending soon']);
+    expect(cardBadges(c(-2, 72), 0, now)).toEqual(['New']);
+    expect(cardBadges(c(3, 72), 0, now)).toEqual(['Coming soon']);
   });
 });

@@ -11,10 +11,16 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 /**
- * The active brand: config/brand.json, validated and contrast-checked. A brand that fails WCAG 2.2 AA is refused
- * (the site will not start), with the nearest passing colours suggested. Run `pnpm brand:check` to see why.
+ * The active brand: config/brand.json, or the preset named by BRAND_PRESET (config/brand-presets/<name>.json), validated
+ * and contrast-checked. A brand that fails WCAG 2.2 AA is refused (the site will not start), with the nearest passing
+ * colours suggested. Run `pnpm brand:check` to see why.
  */
 import raw from '../../config/brand.json';
+import carnival from '../../config/brand-presets/carnival.json';
+import harbour from '../../config/brand-presets/harbour.json';
+import meadow from '../../config/brand-presets/meadow.json';
+import showtime from '../../config/brand-presets/showtime.json';
+import velvet from '../../config/brand-presets/velvet.json';
 import { brandSchema, type Brand } from './schema';
 import { checkBrandContrast, describeProblems } from './check';
 
@@ -25,6 +31,17 @@ export function parseBrand(input: unknown, source = 'brand'): Brand {
   return b;
 }
 
-export const brand: Brand = parseBrand(raw, 'config/brand.json');
+/** The presets BRAND_PRESET can choose (add a new preset file here as well). */
+export const BRAND_PRESETS: Record<string, unknown> = { carnival, harbour, meadow, showtime, velvet };
+
+/** config/brand.json, unless BRAND_PRESET names one of the presets (for trying a look, or a demo, without editing files). */
+export function activeBrand(preset = process.env.BRAND_PRESET): Brand {
+  const name = (preset ?? '').trim();
+  if (!name) return parseBrand(raw, 'config/brand.json');
+  if (!(name in BRAND_PRESETS)) throw new Error(`BRAND_PRESET "${name}" is not one of: ${Object.keys(BRAND_PRESETS).join(', ')}`);
+  return parseBrand(BRAND_PRESETS[name], `config/brand-presets/${name}.json`);
+}
+
+export const brand: Brand = activeBrand();
 export { brandCss, brandAttributes } from './css';
 export type { Brand } from './schema';
