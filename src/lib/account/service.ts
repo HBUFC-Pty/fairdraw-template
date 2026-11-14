@@ -26,6 +26,14 @@ export const BREAK_OPTIONS = { '1d': 1, '7d': 7, '30d': 30, '42d': 42 } as const
 export const EXCLUSION_OPTIONS = { '6m': 182, '1y': 365, '2y': 730, '5y': 1826 } as const;
 
 /** A break cannot be shortened once started. A longer break replaces a shorter one. */
+/** Cancel the player's orders still waiting for payment, so nothing placed before a break or exclusion goes through. */
+async function cancelPendingOrders(db: Db, userId: string) {
+  const pending = await db.update(orders).set({ status: 'expired' }).where(and(eq(orders.userId, userId), eq(orders.status, 'pending'))).returning({ id: orders.id });
+  if (pending.length) {
+    await db.update(tickets).set({ status: 'expired' }).where(and(inArray(tickets.orderId, pending.map((o) => o.id)), eq(tickets.status, 'reserved')));
+  }
+}
+
 export async function takeBreak(db: Db, userId: string, days: number, now = new Date()) {
   const until = new Date(now.getTime() + days * 86400_000);
   await db
@@ -33,6 +41,7 @@ export async function takeBreak(db: Db, userId: string, days: number, now = new 
     .set({ breakUntil: sql`greatest(coalesce(${users.breakUntil}, ${now.toISOString()}::timestamptz), ${until.toISOString()}::timestamptz)` })
     .where(eq(users.id, userId));
   await db.delete(basketItems).where(eq(basketItems.userId, userId));
+  await cancelPendingOrders(db, userId);
   return until;
 }
 
@@ -51,6 +60,7 @@ export async function selfExclude(db: Db, userId: string, days: number, now = ne
     .values({ emailHash: exclusionKey(u.email), until: finalUntil, createdAt: now })
     .onConflictDoUpdate({ target: exclusions.emailHash, set: { until: sql`greatest(${exclusions.until}, ${finalUntil.toISOString()}::timestamptz)` } });
   await db.delete(basketItems).where(eq(basketItems.userId, userId));
+  await cancelPendingOrders(db, userId);
   return finalUntil;
 }
 

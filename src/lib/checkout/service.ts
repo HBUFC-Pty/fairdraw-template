@@ -186,7 +186,7 @@ export async function abandonOrder(db: Db, orderId: string) {
   });
 }
 
-export type Decision = 'capture' | 'decline_credit_cap' | 'decline_instant_win_credit' | 'decline_unavailable' | 'decline_amount';
+export type Decision = 'capture' | 'decline_credit_cap' | 'decline_instant_win_credit' | 'decline_unavailable' | 'decline_amount' | 'decline_play_blocked' | 'decline_spend_limit';
 
 export type EventOutcome =
   | { kind: 'decided'; orderId: string; decision: Decision; capturePence: number; creditUsedPence: number; creditCapPence: number }
@@ -203,6 +203,10 @@ export function declineMessage(decision: Decision, creditCapPence: number, credi
       return 'We have not taken this payment: your reserved tickets were no longer available (the reservation lapsed or the competition closed). The hold on your card has been released.';
     case 'decline_amount':
       return 'We have not taken this payment because the amount did not match your order. The hold on your card has been released. Please try again.';
+    case 'decline_play_blocked':
+      return 'We have not taken this payment: your account cannot enter competitions at the moment (for example during a break or self-exclusion). The hold on your card has been released.';
+    case 'decline_spend_limit':
+      return 'We have not taken this payment: it would take you over one of your spend limits. The hold on your card has been released.';
     default:
       return null;
   }
@@ -271,8 +275,15 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
     const hasInstantWin = comps.some((c) => c.isInstantWin && ts.some((t) => t.competitionId === c.id && keep.includes(t.id)));
     const used = await creditUsedThisMonth(tx, order.userId, now);
     let decision: Decision;
+    // Re-check the player when the money arrives, not only at checkout: a break, a self-exclusion or a spend limit
+    // that applies by now wins over an order placed earlier (including a lapsed order paid late).
+    const [player] = await tx.select().from(users).where(eq(users.id, order.userId));
+    const blocked = player ? playBlockReason(player, now) : 'Account not found.';
+    const spend = capturePence > 0 ? await checkSpend(tx, order.userId, capturePence, now, order.id) : { ok: true };
     if (ev.amountPence !== order.totalPence) decision = 'decline_amount';
     else if (capturePence === 0) decision = 'decline_unavailable';
+    else if (blocked) decision = 'decline_play_blocked';
+    else if (!spend.ok) decision = 'decline_spend_limit';
     else {
       const credit = decideCredit({ funding, hasInstantWin, usedPence: used, amountPence: capturePence, capPence });
       decision = credit.ok ? 'capture' : credit.reason === 'instant_win' ? 'decline_instant_win_credit' : 'decline_credit_cap';

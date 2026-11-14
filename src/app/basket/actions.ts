@@ -104,7 +104,8 @@ export async function testPayAction(fd: FormData) {
   const id = z.uuid().safeParse(field(fd, 'orderId'));
   if (!id.success) redirect('/basket');
   const [o] = await getDb().select().from(orders).where(eq(orders.id, id.data));
-  if (!o || o.userId !== s.user.id) redirect('/basket');
+  // Only an order still waiting for payment (a lapsed or decided order is never paid from this page).
+  if (!o || o.userId !== s.user.id || o.status !== 'pending') redirect('/basket');
   const choice = z.enum(['debit', 'credit', 'prepaid', 'unknown', 'fail']).catch('debit').parse(field(fd, 'outcome'));
   const { body, signature } =
     choice === 'fail' ? provider.makeEvent(o.id, o.totalPence, { type: 'payment_failed' }) : provider.makeEvent(o.id, o.totalPence, { funding: choice });
