@@ -16,11 +16,11 @@
  *
  * runTick: expire unpaid orders, close competitions at their close time (or when sold out) and publish the commitment,
  * make due draws once the committed drand round exists, settle authorised payments and send pending refunds, and (demo
- * sites only) keep demo competitions open.
+ * sites only) remove old visitor accounts and keep demo competitions open.
  * runRetention: the nightly retention job. retentionIfDue runs it when it last ran over 23 hours ago.
  * A Postgres advisory lock means two cycles never overlap, whichever process starts them.
  */
-import { and, eq, gt, min } from 'drizzle-orm';
+import { eq, min } from 'drizzle-orm';
 import { getDb, getPool, type Db } from '@/lib/db';
 import { draws, jobRuns, orders, postalEntries, users, competitions } from '@/lib/db/schema';
 import { closeCompetition, competitionsDueToClose, competitionsDueToDraw, runDraw } from '@/lib/draw/service';
@@ -31,7 +31,7 @@ import { sendMail, winnerMail } from '@/lib/mail';
 import { env } from '@/lib/env';
 import { configuredRelays, fetchBeacon } from '@/lib/fairdraw/beacon';
 import { formatUk } from '@/lib/time';
-import { DEMO_OPEN_TARGET, DEMO_TOP_UP_LEAD_MS, topUpDemoCompetitions } from '@/lib/demo';
+import { demoNextDueAt, demoUpkeep } from '@/lib/demo';
 
 const LOCK_KEY = 727275;
 
@@ -98,8 +98,8 @@ export async function runTick(): Promise<boolean> {
       // Captures and releases that did not go through when the webhook arrived (authorisations last about 7 days).
       await settlePendingOrders(db, getPaymentProvider()).catch((e) => errors.push(`settle: ${e.message}`));
       await processRefunds(db, getPaymentProvider()).catch((e) => errors.push(`refunds: ${e.message}`));
-      // Demo sites only (DEMO_MODE): keep competitions open to enter. A no-op everywhere else.
-      await topUpDemoCompetitions(db).catch((e) => errors.push(`demo: ${e.message}`));
+      // Demo sites only (DEMO_MODE): remove old visitor accounts and keep competitions open. A no-op elsewhere.
+      await demoUpkeep(db).catch((e) => errors.push(`demo: ${e.message}`));
       if (errors.length) console.error(errors.join('\n'));
       await record('tick', errors.length === 0, errors.join('\n').slice(0, 2000) || undefined);
       return true;
@@ -151,14 +151,7 @@ export async function nextDueAt(db: Db = getDb(), now = new Date()): Promise<Dat
     .where(eq(competitions.status, 'closed'));
   const [order] = await db.select({ t: min(orders.expiresAt) }).from(orders).where(eq(orders.status, 'pending'));
   const times = [live?.t, draw?.t, order?.t].filter((t): t is Date => t instanceof Date);
-  if (env().DEMO_MODE) {
-    // topUpDemoCompetitions counts competitions closing beyond the lead time: due now when too few, otherwise when
-    // the first of them comes within the lead time.
-    const later = await db
-      .select({ t: competitions.closesAt })
-      .from(competitions)
-      .where(and(eq(competitions.status, 'live'), gt(competitions.closesAt, new Date(now.getTime() + DEMO_TOP_UP_LEAD_MS))));
-    times.push(later.length < DEMO_OPEN_TARGET ? now : new Date(Math.min(...later.map((r) => r.t.getTime())) - DEMO_TOP_UP_LEAD_MS));
-  }
+  const demo = await demoNextDueAt(db, now);
+  if (demo) times.push(demo);
   return times.length ? new Date(Math.min(...times.map((t) => t.getTime()))) : null;
 }

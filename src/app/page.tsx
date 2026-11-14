@@ -19,6 +19,8 @@ import { Carousel } from '@/components/Carousel';
 import { FairDrawLink } from '@/components/SiteFooter';
 import { brand } from '@/brand';
 import { env } from '@/lib/env';
+import { demoMode } from '@/lib/demo';
+import { DemoHero } from '@/components/DemoHero';
 
 /** Home page in one of three layouts (brand.layout.home): hero, grid or featured. The content is the same. */
 export default async function Home() {
@@ -35,9 +37,12 @@ export default async function Home() {
   );
   const empty = live.length === 0 ? <p>No competitions are open right now.</p> : null;
   const lead = live[0];
+  // Demo sites open with the demo hero, so the page's own heading becomes a second-level one.
+  const demo = demoMode();
+  const Title = demo ? 'h2' : 'h1';
 
   let body: React.ReactNode;
-  if (brand.layout.home === 'hero' && lead) {
+  if (brand.layout.home === 'hero' && lead && !demo) {
     const img = lead.c.images[0];
     body = (
       <>
@@ -57,7 +62,7 @@ export default async function Home() {
   } else if (brand.layout.home === 'featured' && live.length > 0) {
     body = (
       <>
-        <h1>{env().SITE_NAME}</h1>
+        <Title>{env().SITE_NAME}</Title>
         {intro}
         <Carousel label="Live competitions">{cards}</Carousel>
       </>
@@ -65,7 +70,7 @@ export default async function Home() {
   } else {
     body = (
       <>
-        <h1>Live competitions</h1>
+        <Title>Live competitions</Title>
         {intro}
         {empty}
         <div className="grid">{cards}</div>
@@ -75,6 +80,7 @@ export default async function Home() {
 
   return (
     <>
+      {demo ? <DemoHero /> : null}
       {body}
       {recent.length ? (
         <>

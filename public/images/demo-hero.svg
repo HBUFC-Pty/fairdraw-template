@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" role="img" aria-label="Two raffle tickets and a green tick: a draw anyone can check">
+  <title>Two raffle tickets and a green tick: a draw anyone can check</title>
+  <rect width="600" height="400" fill="#eef2ff"/>
+  <g transform="rotate(-10 230 200)">
+    <path d="M90 120 h280 v50 a26 26 0 0 0 0 60 v50 h-280 v-50 a26 26 0 0 0 0 -60 Z" fill="#fbbf24"/>
+    <path d="M300 128 v144" stroke="#92400e" stroke-width="4" stroke-dasharray="10 8"/>
+    <text x="190" y="192" fill="#78350f" font-family="system-ui, sans-serif" font-size="30" font-weight="700" text-anchor="middle">TICKET</text>
+    <text x="190" y="234" fill="#78350f" font-family="ui-monospace, monospace" font-size="30" text-anchor="middle">No. 0427</text>
+  </g>
+  <g transform="rotate(8 330 250)">
+    <path d="M200 180 h280 v50 a26 26 0 0 0 0 60 v50 h-280 v-50 a26 26 0 0 0 0 -60 Z" fill="#60a5fa"/>
+    <path d="M410 188 v144" stroke="#1e3a8a" stroke-width="4" stroke-dasharray="10 8"/>
+    <text x="300" y="252" fill="#1e3a8a" font-family="system-ui, sans-serif" font-size="30" font-weight="700" text-anchor="middle">TICKET</text>
+    <text x="300" y="294" fill="#1e3a8a" font-family="ui-monospace, monospace" font-size="30" text-anchor="middle">No. 1318</text>
+  </g>
+  <circle cx="470" cy="110" r="70" fill="#16a34a"/>
+  <path d="M435 112 l25 25 l48 -52" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  
+</svg>

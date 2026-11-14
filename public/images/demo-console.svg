@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="A games console and controller (demo image)">
+  <title>A games console and controller (demo image)</title>
+  <rect width="800" height="450" fill="#ede9fe"/>
+  <rect x="150" y="90" width="300" height="230" rx="18" fill="#f8fafc" stroke="#312e81" stroke-width="8"/>
+  <rect x="180" y="270" width="240" height="14" rx="7" fill="#c7d2fe"/>
+  <circle cx="420" cy="120" r="10" fill="#22c55e"/>
+  <path d="M470 250 q20 -40 70 -40 h100 q50 0 70 40 l30 90 q10 40 -30 40 q-25 0 -45 -35 h-150 q-20 35 -45 35 q-40 0 -30 -40 Z" fill="#312e81"/>
+  <path d="M545 270 v40 M525 290 h40" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="660" cy="278" r="10" fill="#f472b6"/><circle cx="685" cy="302" r="10" fill="#38bdf8"/>
+  <text x="784" y="436" fill="#000" fill-opacity="0.45" font-family="system-ui, sans-serif" font-size="16" text-anchor="end">Demo image</text>
+</svg>

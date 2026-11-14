@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="A stack of banknotes (demo image)">
+  <title>A stack of banknotes (demo image)</title>
+  <rect width="800" height="450" fill="#dcfce7"/>
+  <rect x="220" y="230" width="380" height="170" rx="12" fill="#15803d" transform="rotate(-6 410 315)"/>
+  <rect x="210" y="190" width="380" height="170" rx="12" fill="#16a34a" transform="rotate(4 400 275)"/>
+  <rect x="200" y="140" width="380" height="170" rx="12" fill="#22c55e" stroke="#14532d" stroke-width="6"/>
+  <circle cx="390" cy="225" r="54" fill="#bbf7d0"/>
+  <text x="390" y="250" fill="#14532d" font-family="system-ui, sans-serif" font-size="72" font-weight="700" text-anchor="middle">£</text>
+  <text x="235" y="185" fill="#14532d" font-family="system-ui, sans-serif" font-size="26" font-weight="700">50</text>
+  <text x="784" y="436" fill="#000" fill-opacity="0.45" font-family="system-ui, sans-serif" font-size="16" text-anchor="end">Demo image</text>
+</svg>
