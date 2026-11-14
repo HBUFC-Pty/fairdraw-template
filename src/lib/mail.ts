@@ -70,6 +70,16 @@ export function resetMail(to: string, url: string): Mail {
   return { to, subject: `Reset your ${site} password`, text: `Open this link within one hour to choose a new password:\n\n${url}\n\nIf you did not ask for this, ignore this email; your password has not changed.\n\n${site}` };
 }
 
+/** To a free postal entrant: their ticket and entry code, or why the entry was not accepted. */
+export function postalEntryMail(to: string, competitionTitle: string, outcome: { ticket: number; code: string } | { reason: string }): Mail {
+  const site = env().SITE_NAME;
+  const body =
+    'ticket' in outcome
+      ? `We have entered your free postal entry into "${competitionTitle}". Your ticket number is ${outcome.ticket} and its entry code is ${outcome.code}: you can find both in the public entry list, which shows codes, never names. It has exactly the same chance of winning as a paid entry.`
+      : `We received your postal entry for "${competitionTitle}" but could not enter it: ${outcome.reason} If you think this is a mistake, reply to this email.`;
+  return { to, subject: `Your free entry: ${competitionTitle}`, text: `${body}\n\n${site}` };
+}
+
 export function winnerMail(to: string, competitionTitle: string, ticket: number, accountUrl: string): Mail {
   const site = env().SITE_NAME;
   return {
