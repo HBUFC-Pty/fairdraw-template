@@ -16,14 +16,15 @@
 # events the database is left alone, so a free plan that sleeps when idle (Neon Free) stays within its compute hours.
 # A caller that ticks every 5 minutes, such as .github/workflows/tick.yml, keeps such a database awake all month.
 #
-# Run it every 5 minutes from cron on any always-on Linux machine. Keep the settings in a private file:
+# Run it every minute from cron on any always-on Linux machine: between events it exits without calling anything, and
+# a draw then happens within about a minute of its advertised time. Keep the settings in a private file:
 #
 #   install -m 600 /dev/null ~/.config/my-site-tick.env    # then add two lines:
 #   TICK_URL=https://competitions.example.co.uk
 #   CRON_SECRET=<the same value as the site's CRON_SECRET>
 #
 #   crontab -e
-#   */5 * * * * TICK_ENV=$HOME/.config/my-site-tick.env /path/to/scripts/tick.sh >> $HOME/.cache/my-site-tick.log 2>&1
+#   * * * * * TICK_ENV=$HOME/.config/my-site-tick.env /path/to/scripts/tick.sh >> $HOME/.cache/my-site-tick.log 2>&1
 #
 # Needs bash, curl and GNU date. The secret is sent on standard input, never on the command line.
 set -euo pipefail

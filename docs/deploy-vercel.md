@@ -101,7 +101,7 @@ Something has to call `POST /api/cron/tick` with `Authorization: Bearer <CRON_SE
 `next_due_at`, the time it next has something to do. There are two ways.
 
 **Recommended on a free database: [scripts/tick.sh](../scripts/tick.sh)** on any always-on Linux machine (a home
-server or a Raspberry Pi is enough). Run from cron every 5 minutes, it only calls the site when a close, a draw or an
+server or a Raspberry Pi is enough). Run from cron every minute, it only calls the site when a close, a draw or an
 unpaid order is due, and every 6 hours anyway, so the database sleeps the rest of the time. The comments at the top
 of the script show the two lines of settings and the cron line.
 
