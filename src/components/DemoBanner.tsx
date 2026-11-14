@@ -10,7 +10,7 @@
  * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
-import { demoMode, DEMO_PLAYER_EMAIL, DEMO_PLAYER_PASSWORD } from '@/lib/demo';
+import { demoMode, DEMO_PLAYER_EMAIL, DEMO_PLAYER_PASSWORD, TEMPLATE_REPO_URL } from '@/lib/demo';
 
 /** Shown on every page of a demo site (DEMO_MODE=true): nothing here is real, and how to try it. */
 export function DemoBanner() {
@@ -20,7 +20,7 @@ export function DemoBanner() {
       <p className="wrap">
         <strong>Demo site in test mode:</strong> no real prizes, payments or people. To try it, log in as{' '}
         <code>{DEMO_PLAYER_EMAIL}</code> with the password <code>{DEMO_PLAYER_PASSWORD}</code> and pay with the test card. Every draw
-        is real and can be checked on its results page.
+        is real and can be checked on its results page. <a href={TEMPLATE_REPO_URL}>Get the template</a>
       </p>
     </div>
   );

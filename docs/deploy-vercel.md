@@ -77,6 +77,7 @@ assistant.
 | `DATABASE_POOL_MAX` | `2` (each Vercel instance opens its own connections) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Your email provider. Without one, new players cannot confirm their email address. |
 | `DEMO_MODE` | `true` only for a public demo of the template (see "A public demo" below) |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1`, so Vercel builds with the pnpm version named in `package.json` |
 
 From the command line, `printf '%s' "$(openssl rand -hex 32)" | pnpm dlx vercel@latest env add APP_SECRET production`
 adds a secret without it ever appearing on screen.
@@ -87,19 +88,12 @@ In **Settings**, **Domains**, add your domain or a subdomain such as `competitio
 DNS record to add at your DNS provider (usually a `CNAME` to `cname.vercel-dns.com`). If your DNS is on Cloudflare,
 leave the record "DNS only" (grey cloud) so Vercel can issue the certificate. Set `APP_URL` to the same address.
 
-## 6. Create the tables, then deploy
+## 6. Deploy
 
-Copy the production settings to a private file on your computer, create the tables, and delete the file:
-
-```sh
-pnpm dlx vercel@latest env pull .env.production.local --environment=production
-set -a; . ./.env.production.local; set +a
-pnpm db:migrate
-rm .env.production.local
-```
-
-Then deploy: push to GitHub (if you imported the repository) or run `pnpm dlx vercel@latest deploy --prod`. Run the
-migration step again whenever an update adds a file to `drizzle/`, before deploying that update.
+Push to GitHub (if you imported the repository) or run `pnpm dlx vercel@latest deploy --prod`. The repository's
+`vercel.json` runs `pnpm db:migrate` at the start of every Vercel build, so the tables are created on the first
+deploy and kept up to date after that. It has to happen there: Vercel marks the database settings as sensitive, so
+they cannot be downloaded to your computer (`vercel env pull` shows `[SENSITIVE]` instead of the value).
 
 ## 7. The scheduled work
 
@@ -112,20 +106,21 @@ unpaid order is due, and every 6 hours anyway, so the database sleeps the rest o
 of the script show the two lines of settings and the cron line.
 
 **GitHub Actions:** [.github/workflows/tick.yml](../.github/workflows/tick.yml) calls every 5 minutes once you add
-the repository variable `TICK_URL` (your site's address) and the secret `CRON_SECRET`. It is simple, but it keeps a
+the repository variable `TICK_URL` (your site's address) and the secret `CRON_SECRET`, and remove the `#` from its
+`schedule` lines. It is simple, but it keeps a
 free database awake all month, GitHub sometimes runs scheduled jobs late, and on a private repository the runs count
 against your Actions minutes. Use it with a paid database plan.
 
 ## 8. Your owner account
 
-Sign up on the site and confirm your email, then make yourself the owner, using the settings file from step 6
-again:
+Sign up on the site and confirm your email. Then, in Neon's dashboard (Vercel: **Storage**, your database, **Open
+in Neon**), choose **Connect** and copy the connection string with connection pooling turned off. On your computer,
+in your copy of the repository:
 
 ```sh
-pnpm dlx vercel@latest env pull .env.production.local --environment=production
-set -a; . ./.env.production.local; set +a
+read -rs DATABASE_URL && export DATABASE_URL    # paste the connection string; nothing is shown
 pnpm tsx scripts/create-owner.ts you@example.co.uk
-rm .env.production.local
+unset DATABASE_URL
 ```
 
 Log in and set up two-factor authentication before using the admin pages.
@@ -136,5 +131,5 @@ With `DEMO_MODE=true` (and `PAYMENT_PROVIDER=test`, which it requires) the site 
 itself: a banner on every page, no sign-ups, password resets or email, a shared login (`player@example.test`, password
 `demo-player-password`) whose settings cannot be changed, and the scheduled work keeps two competitions open with
 entries from fictional players. The first call to the scheduled work sets it all up, so a demo database needs only
-the migrations in step 6. Sign-ups are off in demo mode, so create any owner account (step 8) before turning it on. Never run `pnpm db:seed` against a public database: its other accounts have passwords
+the first deploy. Sign-ups are off in demo mode, so create any owner account (step 8) before turning it on. Never run `pnpm db:seed` against a public database: its other accounts have passwords
 published in this repository.

@@ -34,6 +34,8 @@ import { addToBasket, placeOrder, processPaymentEvent } from './checkout/service
 import { TestProvider } from './payments/test-provider';
 import type { AuditActor } from './audit';
 
+/** Where the template lives, linked from the demo banner. */
+export const TEMPLATE_REPO_URL = 'https://github.com/HBUFC-Pty/fairdraw-template';
 export const DEMO_PLAYER_EMAIL = 'player@example.test';
 /** Public on purpose: it is in scripts/seed.ts and shown in the demo banner. */
 export const DEMO_PLAYER_PASSWORD = 'demo-player-password';
