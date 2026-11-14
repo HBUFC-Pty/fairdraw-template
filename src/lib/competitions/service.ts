@@ -21,6 +21,8 @@ import type { Db } from '../db';
 import { competitions } from '../db/schema';
 import { appendAudit, type AuditActor } from '../audit';
 import { capAboveTenPercent } from './allocation';
+import { prepareInstantPrizes, instantPrizeCount, instantPrizeTiersSchema } from './instant';
+import { INSTANT_REVEALS } from '../db/schema';
 
 const imageSchema = z.object({
   url: z
@@ -55,9 +57,14 @@ export const competitionInputSchema = z
       .refine((q) => q.correctIndex < q.options.length, 'the correct answer must be one of the options')
       .nullable()
       .default(null),
-    // An instant win prize draw: credit cards are refused for it (DCMS code clause 1.3).
+    // An instant win prize draw: credit cards are refused for it (DCMS code clause 1.3). Always true with instant prizes.
     isInstantWin: z.boolean().default(false),
+    // Instant prizes, each fixed to a random ticket number and committed when published (./instant.ts).
+    instantPrizes: instantPrizeTiersSchema,
+    instantReveal: z.enum(INSTANT_REVEALS).default('scratch'),
   })
+  .refine((c) => instantPrizeCount(c.instantPrizes) <= c.maxTickets, { message: 'there are more instant prizes than tickets', path: ['instantPrizes'] })
+  .transform((c) => ({ ...c, isInstantWin: c.isInstantWin || c.instantPrizes.length > 0 }))
   .refine((c) => c.perPersonCap <= c.maxTickets, { message: 'the per-person cap cannot exceed the maximum tickets', path: ['perPersonCap'] })
   .refine((c) => c.winnerCount <= c.maxTickets, { message: 'more winners than tickets', path: ['winnerCount'] })
   .refine((c) => c.opensAt < c.closesAt, { message: 'the close time must be after the opening time', path: ['closesAt'] })
@@ -112,12 +119,17 @@ export async function updatePublishedText(db: Db, actor: AuditActor, id: string,
 }
 
 export async function publishCompetition(db: Db, actor: AuditActor, id: string, now = new Date()) {
-  const [cur] = await db.select().from(competitions).where(eq(competitions.id, id));
-  if (!cur) throw new Error('competition not found');
-  if (cur.status !== 'draft') throw new Error('only drafts can be published');
-  if (cur.closesAt <= now) throw new Error('the close time has already passed');
-  await db.update(competitions).set({ status: 'live', updatedAt: now }).where(eq(competitions.id, id));
-  await appendAudit(db, actor, { action: 'competition.publish', targetType: 'competition', targetId: id }, now);
+  const commit = await db.transaction(async (tx) => {
+    const [cur] = await tx.select().from(competitions).where(eq(competitions.id, id)).for('update');
+    if (!cur) throw new Error('competition not found');
+    if (cur.status !== 'draft') throw new Error('only drafts can be published');
+    if (cur.closesAt <= now) throw new Error('the close time has already passed');
+    // Instant prizes: choose and commit the winning numbers now, before a single ticket can be sold.
+    const instant = await prepareInstantPrizes(tx, id, cur.maxTickets, cur.instantPrizes, now);
+    await tx.update(competitions).set({ ...instant, status: 'live', updatedAt: now }).where(eq(competitions.id, id));
+    return instant.instantCommit ?? null;
+  });
+  await appendAudit(db, actor, { action: 'competition.publish', targetType: 'competition', targetId: id, details: commit ? { instant_commit: commit } : {} }, now);
 }
 
 export async function cancelDraft(db: Db, actor: AuditActor, id: string, now = new Date()) {

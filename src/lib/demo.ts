@@ -82,13 +82,23 @@ interface DemoPrize {
   maxTickets: number;
   perPersonCap: number;
   skillQuestion: { question: string; options: string[]; correctIndex: number } | null;
+  instantPrizes: { title: string; valuePence: number; count: number }[];
+  instantReveal: 'scratch' | 'spin' | 'coin';
 }
 
 /**
  * A prize of demo points. On a demo site every amount shows as points, one per penny (src/lib/money.ts), so a value
  * of 1000 shows as "1,000 points". Points have no value, so there is never anything for a winner to claim.
  */
-function pointsPrize(points: number, image: string, alt: string, price: number, maxTickets: number, question: DemoPrize['skillQuestion'] = null): DemoPrize {
+function pointsPrize(
+  points: number,
+  image: string,
+  alt: string,
+  price: number,
+  maxTickets: number,
+  question: DemoPrize['skillQuestion'] = null,
+  instant: { reveal: DemoPrize['instantReveal']; prizes: DemoPrize['instantPrizes'] } = { reveal: 'scratch', prizes: [] },
+): DemoPrize {
   const shown = new Intl.NumberFormat('en-GB').format(points);
   return {
     key: `points-${points}`,
@@ -101,14 +111,21 @@ function pointsPrize(points: number, image: string, alt: string, price: number, 
     maxTickets,
     perPersonCap: Math.floor(maxTickets / 10),
     skillQuestion: question,
+    instantPrizes: instant.prizes,
+    instantReveal: instant.reveal,
   };
 }
 
+const instantPoints = (big: number, bigCount: number, small: number, smallCount: number) => [
+  { title: `${big} demo points`, valuePence: big, count: bigCount },
+  { title: `${small} demo points`, valuePence: small, count: smallCount },
+];
+
 /** Short competitions (a few hours). Every per-person cap is 10% of the maximum. */
 export const DEMO_QUICK_PRIZES: DemoPrize[] = [
-  pointsPrize(500, '/images/demo-points-star.svg', 'A star: 500 demo points (demo image)', 5, 200),
-  pointsPrize(1000, '/images/demo-points-medal.svg', 'A medal: 1,000 demo points (demo image)', 10, 200),
-  pointsPrize(2500, '/images/demo-points-gem.svg', 'A gem: 2,500 demo points (demo image)', 25, 200),
+  pointsPrize(500, '/images/demo-points-star.svg', 'A star: 500 demo points (demo image)', 5, 200, null, { reveal: 'scratch', prizes: instantPoints(50, 3, 10, 10) }),
+  pointsPrize(1000, '/images/demo-points-medal.svg', 'A medal: 1,000 demo points (demo image)', 10, 200, null, { reveal: 'spin', prizes: instantPoints(100, 3, 20, 10) }),
+  pointsPrize(2500, '/images/demo-points-gem.svg', 'A gem: 2,500 demo points (demo image)', 25, 200, null, { reveal: 'coin', prizes: instantPoints(250, 3, 50, 10) }),
 ];
 
 /** Longer competitions (two to four days), one with a question to show how that works. */
@@ -118,7 +135,7 @@ export const DEMO_LONG_PRIZES: DemoPrize[] = [
     options: ['Glasgow', 'Edinburgh', 'Aberdeen'],
     correctIndex: 1,
   }),
-  pointsPrize(25000, '/images/demo-points-trophy.svg', 'A trophy: 25,000 demo points (demo image)', 100, 500),
+  pointsPrize(25000, '/images/demo-points-trophy.svg', 'A trophy: 25,000 demo points (demo image)', 100, 500, null, { reveal: 'spin', prizes: instantPoints(1000, 5, 200, 20) }),
 ];
 
 const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));
@@ -185,6 +202,8 @@ async function openDemoCompetition(db: Db, prize: DemoPrize, closes: Date, now: 
       closesAt: closes,
       drawAt: closes,
       skillQuestion: prize.skillQuestion,
+      instantPrizes: prize.instantPrizes,
+      instantReveal: prize.instantReveal,
     },
     now,
   );

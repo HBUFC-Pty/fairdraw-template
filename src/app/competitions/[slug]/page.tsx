@@ -22,6 +22,8 @@ import { isOpen } from '@/lib/competitions/service';
 import { formatUk } from '@/lib/time';
 import { env } from '@/lib/env';
 import { addToBasketAction } from '../../basket/actions';
+import { publicInstant } from '@/lib/public/instant';
+import { InstantPrizes } from '@/components/InstantPrizes';
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -35,6 +37,7 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
   if (!r) notFound();
   const { c, draw, sold, winners } = r;
   const s = await currentSession();
+  const inst = await publicInstant(c);
   const now = new Date();
   const open = isOpen(c, now);
   return (
@@ -72,6 +75,8 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
           <p><FairDrawLink /></p>
         </section>
       ) : null}
+
+      {inst ? <InstantPrizes slug={c.slug} inst={inst} /> : null}
 
       {c.status === 'closed' && draw ? (
         <section aria-labelledby="commitment">

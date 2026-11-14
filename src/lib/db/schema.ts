@@ -141,6 +141,14 @@ export interface SkillQuestion {
   options: string[];
   correctIndex: number;
 }
+/** One tier of instant prizes: `count` prizes of this title and value, each fixed to a ticket number at publishing. */
+export interface InstantPrizeTier {
+  title: string;
+  valuePence: number;
+  count: number;
+}
+export const INSTANT_REVEALS = ['scratch', 'spin', 'coin'] as const;
+export type InstantReveal = (typeof INSTANT_REVEALS)[number];
 
 export const competitions = pgTable(
   'competitions',
@@ -162,6 +170,13 @@ export const competitions = pgTable(
     skillQuestion: jsonb('skill_question').$type<SkillQuestion | null>(),
     // An instant win prize draw. DCMS code clause 1.3: no credit card payments at all for these. Fixed once live.
     isInstantWin: boolean('is_instant_win').notNull().default(false),
+    // Instant prizes (src/lib/competitions/instant.ts). The winning numbers are chosen and committed (a SHA-256 of the
+    // salted list) when the competition is published, and the salt and list are published at the close. Fixed once live.
+    instantPrizes: jsonb('instant_prizes').$type<InstantPrizeTier[]>().notNull().default([]),
+    instantReveal: text('instant_reveal', { enum: INSTANT_REVEALS }).notNull().default('scratch'),
+    instantCommit: text('instant_commit'),
+    instantSalt: text('instant_salt'),
+    instantCommittedAt: ts('instant_committed_at'),
     status: text('status', { enum: COMPETITION_STATUSES }).notNull().default('draft'),
     closedAt: ts('closed_at'),
     drawnAt: ts('drawn_at'),
@@ -284,6 +299,27 @@ export const tickets = pgTable(
     check('ticket_number_positive', sql`${t.number} >= 1`),
     check('ticket_owner', sql`(${t.source} = 'paid' AND ${t.orderId} IS NOT NULL) OR (${t.source} = 'postal' AND ${t.postalEntryId} IS NOT NULL)`),
   ],
+);
+
+/**
+ * Instant-win ticket numbers, chosen at random when the competition is published and committed by its instant_commit
+ * hash. The database awards a prize the moment a ticket with that number becomes active with a correct answer
+ * (drizzle/0005), records which ticket won it, and never lets a number, tier or winner change.
+ */
+export const instantWins = pgTable(
+  'instant_wins',
+  {
+    competitionId: uuid('competition_id')
+      .notNull()
+      .references(() => competitions.id),
+    ticketNumber: integer('ticket_number').notNull(),
+    tier: integer('tier').notNull(),
+    title: text('title').notNull(),
+    valuePence: integer('value_pence').notNull(),
+    wonTicketId: bigint('won_ticket_id', { mode: 'number' }).references(() => tickets.id),
+    wonAt: ts('won_at'),
+  },
+  (t) => [primaryKey({ columns: [t.competitionId, t.ticketNumber] }), index('instant_wins_ticket_idx').on(t.wonTicketId)],
 );
 
 /**
