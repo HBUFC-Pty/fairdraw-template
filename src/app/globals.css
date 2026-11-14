@@ -91,6 +91,10 @@ footer.site h2 { font-size: 1rem; margin: 0 0 8px; color: var(--c-text); }
 .flash.ok { background: var(--c-success-bg); }
 .flash.err, .notice.err { background: var(--c-error-bg); }
 .notice.warn { background: var(--c-warning-bg); }
+/* Demo sites only (DEMO_MODE): a full-width strip above the header. */
+.demo-banner { background: var(--c-warning-bg); border-bottom: 1px solid var(--c-border); }
+.demo-banner p { margin: 0 auto; padding-top: 8px; padding-bottom: 8px; font-size: 0.95rem; }
+.demo-banner code { overflow-wrap: anywhere; }
 
 /* Buttons: solid, outline, pill or square */
 .button, button {

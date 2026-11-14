@@ -60,6 +60,12 @@ a UK company, so mention the location in your privacy notice and records of proc
 
 - https://docs.hetzner.com/cloud/
 
+## No server: Vercel and Neon
+
+For a demo, a brand trial or a private test, the site can run without a server of your own: Vercel runs the site and
+Neon the database, both with free plans. Vercel's free plan is for non-commercial use only, so a site that sells
+tickets needs a paid plan there, or one of the servers above. See [deploy-vercel.md](deploy-vercel.md).
+
 ## After you have chosen
 
 Write down the server's public IP address, and carry on with [start-here.md](start-here.md), step 4.

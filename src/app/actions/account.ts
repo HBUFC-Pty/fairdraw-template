@@ -31,12 +31,19 @@ import { decryptSecret } from '@/lib/crypto';
 import { markSessionMfa, STAFF_ROLES } from '@/lib/auth/service';
 import { hit, RATE_RULES } from '@/lib/rate-limit';
 import { appendAudit } from '@/lib/audit';
+import { DEMO_ACCOUNT_LOCKED, isSharedDemoAccount } from '@/lib/demo';
+
+/** The shared demo login cannot change its settings, or one visitor could lock the others out (demo sites only). */
+function refuseSharedDemo(email: string, back: string) {
+  if (isSharedDemoAccount(email)) redirect(flashUrl(back, { error: DEMO_ACCOUNT_LOCKED }));
+}
 
 const period = z.enum(SPEND_PERIODS);
 
 export async function setLimitAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/limits');
   const p = period.safeParse(field(fd, 'period'));
   if (!p.success) redirect('/account/limits');
   const raw = field(fd, 'amount');
@@ -56,6 +63,7 @@ export async function setLimitAction(fd: FormData) {
 export async function cancelIncreaseAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/limits');
   const p = period.safeParse(field(fd, 'period'));
   if (p.success) await cancelPendingIncrease(getDb(), s.user.id, p.data);
   redirect(flashUrl('/account/limits', { notice: 'Pending increase cancelled.' }));
@@ -64,6 +72,7 @@ export async function cancelIncreaseAction(fd: FormData) {
 export async function takeBreakAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/break');
   const key = field(fd, 'length') as keyof typeof BREAK_OPTIONS;
   if (!(key in BREAK_OPTIONS) || field(fd, 'confirm') !== 'yes') redirect(flashUrl('/account/break', { error: 'Choose how long, and tick the box to confirm.' }));
   const until = await takeBreak(getDb(), s.user.id, BREAK_OPTIONS[key]);
@@ -73,6 +82,7 @@ export async function takeBreakAction(fd: FormData) {
 export async function selfExcludeAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/break');
   const key = field(fd, 'length') as keyof typeof EXCLUSION_OPTIONS;
   if (!(key in EXCLUSION_OPTIONS) || field(fd, 'confirm') !== 'yes') redirect(flashUrl('/account/break', { error: 'Choose how long, and tick the box to confirm.' }));
   const until = await selfExclude(getDb(), s.user.id, EXCLUSION_OPTIONS[key]);
@@ -92,6 +102,7 @@ export async function winnerConsentAction(fd: FormData) {
 export async function deleteAccountAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/delete');
   if (STAFF_ROLES.includes(s.user.role)) redirect(flashUrl('/account/delete', { error: 'Staff accounts must be removed by the site owner first.' }));
   if (field(fd, 'confirm') !== 'yes' || !(await verifyPassword(s.user.passwordHash, field(fd, 'password')))) {
     redirect(flashUrl('/account/delete', { error: 'Enter your password and tick the box to confirm.' }));
@@ -105,6 +116,7 @@ export async function confirmTotpAction(fd: FormData) {
   await assertSameOrigin();
   const db = getDb();
   const s = await requirePasswordSession();
+  refuseSharedDemo(s.user.email, '/account/security');
   if (!(await hit(db, `totp:${s.user.id}`, RATE_RULES.totp))) redirect(flashUrl('/account/security', { error: 'Too many attempts. Wait 15 minutes.' }));
   if (!s.user.totpSecretEnc || s.user.totpEnabledAt) redirect('/account/security');
   const step = checkTotp(decryptSecret(env().APP_SECRET, s.user.totpSecretEnc), field(fd, 'code'), new Date(), null);
@@ -119,6 +131,7 @@ export async function disableTotpAction(fd: FormData) {
   await assertSameOrigin();
   const db = getDb();
   const s = await requireUser();
+  refuseSharedDemo(s.user.email, '/account/security');
   if (STAFF_ROLES.includes(s.user.role)) redirect(flashUrl('/account/security', { error: 'Two-factor authentication is required for staff accounts.' }));
   if (!s.user.totpSecretEnc) redirect('/account/security');
   const step = checkTotp(decryptSecret(env().APP_SECRET, s.user.totpSecretEnc), field(fd, 'code'), new Date(), s.user.totpLastStep);

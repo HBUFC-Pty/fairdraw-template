@@ -32,4 +32,5 @@ fi
 echo "Checks before deploying..."
 pnpm check:dashes >/dev/null
 echo "Deploying $REV to $HOST"
+# shellcheck disable=SC2029 # $REV is meant to expand here, on this computer
 git archive --format=tar.gz "$REV" | ssh "$HOST" "site-deploy $REV"

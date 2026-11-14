@@ -41,6 +41,7 @@ import { accountExistsMail, resetMail, trySendMail, verifyEmailMail } from '@/li
 import { parsePounds } from '@/lib/money';
 import { checkTotp } from '@/lib/auth/totp';
 import { decryptSecret } from '@/lib/crypto';
+import { demoMode, DEMO_NO_EMAIL } from '@/lib/demo';
 
 const password = z.string().min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters.`).max(256);
 
@@ -64,6 +65,7 @@ function firstError(e: z.ZodError) {
 
 export async function signUpAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/signup', { error: DEMO_NO_EMAIL }));
   const db = getDb();
   if (!(await hit(db, `signup:${await clientIp()}`, RATE_RULES.signup))) redirect(flashUrl('/signup', { error: 'Too many sign-ups from this connection. Try again later.' }));
   const parsed = signUpSchema.safeParse(Object.fromEntries(['email', 'password', 'confirm', 'firstName', 'lastName', 'dateOfBirth', 'monthlyLimit', 'over18', 'terms'].map((k) => [k, field(fd, k)])));
@@ -94,6 +96,7 @@ export async function verifyEmailAction(fd: FormData) {
 
 export async function resendVerificationAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const db = getDb();
   const email = normaliseEmail(field(fd, 'email'));
   if (await hit(db, `verify:${email}`, RATE_RULES.verifyResend)) {
@@ -149,6 +152,7 @@ export async function logoutAction() {
 
 export async function forgotPasswordAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const db = getDb();
   const email = normaliseEmail(field(fd, 'email')).slice(0, 254);
   if ((await hit(db, `reset:${await clientIp()}`, RATE_RULES.reset)) && (await hit(db, `reset-email:${email}`, RATE_RULES.reset))) {
@@ -160,6 +164,7 @@ export async function forgotPasswordAction(fd: FormData) {
 
 export async function resetPasswordAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const token = field(fd, 'token');
   const parsed = z.object({ password, confirm: z.string() }).refine((v) => v.password === v.confirm, 'The passwords do not match.').safeParse({ password: field(fd, 'password'), confirm: field(fd, 'confirm') });
   if (!parsed.success) redirect(flashUrl(`/reset-password?token=${encodeURIComponent(token)}`, { error: firstError(parsed.error) }));

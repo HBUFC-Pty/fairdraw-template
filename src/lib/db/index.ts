@@ -26,7 +26,9 @@ let db: Db | undefined;
 
 export function getPool(): Pool {
   if (!pool) {
-    const url = process.env.DATABASE_URL;
+    // Neon (and any host that pools through PgBouncer in transaction mode) also gives a direct URL. Prefer it: the
+    // worker's session advisory lock (src/lib/worker.ts) does not work through a transaction-mode pooler.
+    const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
     if (!url) throw new Error('DATABASE_URL is not set');
     pool = new Pool({ connectionString: url, max: Number(process.env.DATABASE_POOL_MAX ?? 10) });
   }

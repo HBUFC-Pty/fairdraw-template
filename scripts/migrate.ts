@@ -16,7 +16,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 
-const url = process.env.DATABASE_URL;
+// Prefer a direct connection where the host gives one (Neon): migrations should not run through a pooler.
+const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is not set');
 const folder = process.env.MIGRATIONS_DIR ?? path.resolve(process.cwd(), 'drizzle');
 const pool = new Pool({ connectionString: url, max: 1 });
