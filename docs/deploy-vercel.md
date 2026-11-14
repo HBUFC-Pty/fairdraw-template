@@ -127,9 +127,21 @@ Log in and set up two-factor authentication before using the admin pages.
 
 ## A public demo
 
-With `DEMO_MODE=true` (and `PAYMENT_PROVIDER=test`, which it requires) the site becomes a showcase that looks after
-itself: a banner on every page, no sign-ups, password resets or email, a shared login (`player@example.test`, password
-`demo-player-password`) whose settings cannot be changed, and the scheduled work keeps two competitions open with
-entries from fictional players. The first call to the scheduled work sets it all up, so a demo database needs only
-the first deploy. Sign-ups are off in demo mode, so create any owner account (step 8) before turning it on. Never run `pnpm db:seed` against a public database: its other accounts have passwords
-published in this repository.
+With `DEMO_MODE=true` (and `PAYMENT_PROVIDER=test`, which it requires) the site becomes a showcase for operators
+who want to try the player experience. It looks after itself:
+
+- a banner on every page and a hero on the home page say it is a demo and that nothing is real;
+- every amount shows as points (one per penny) and every prize is demo points with no value, so nothing looks like
+  real money or a prize anyone could claim;
+- anyone can sign up: the form suggests made-up details, the real sign-up runs (age check included), and the email
+  step is skipped because a demo sends no email. Password resets are off for the same reason;
+- visitors' accounts are deleted 24 hours after sign-up, through the normal account deletion;
+- the scheduled work keeps a short competition that draws every few hours and two longer ones open, each with
+  entries from fictional players who cannot log in. Every draw is a real one, so finished draws can be checked.
+
+The first call to the scheduled work sets it all up, so a demo database needs only the first deploy. Sign-ups skip
+email in demo mode, so create any owner account (step 8) before turning it on. Never run `pnpm db:seed` against a
+public database: its accounts have passwords published in this repository.
+
+`vercel.json` runs the site in London (`lhr1`), next to a London database. Every page makes several database
+queries, so a site in another region from its database is slow, and the scheduled work can time out.

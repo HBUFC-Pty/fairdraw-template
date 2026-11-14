@@ -11,6 +11,7 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 import Link from 'next/link';
+import { zeroAmount } from '@/lib/money';
 
 export const metadata = { title: 'Responsible play' };
 
@@ -22,7 +23,7 @@ export default function ResponsiblePlayPage() {
       <p>Competitions should be fun. Only spend what you can afford to lose, and never chase losses.</p>
       <h2>Tools in your account</h2>
       <ul>
-        <li><strong>Spend limits</strong>: daily, weekly and monthly, down to £0. Lower limits apply at once; higher limits wait 24 hours. <Link href="/account/limits">Set limits</Link>.</li>
+        <li><strong>Spend limits</strong>: daily, weekly and monthly, down to {zeroAmount()}. Lower limits apply at once; higher limits wait 24 hours. <Link href="/account/limits">Set limits</Link>.</li>
         <li><strong>Take a break</strong>: from 24 hours to 6 weeks. <Link href="/account/break">Take a break</Link>.</li>
         <li><strong>Self-exclusion</strong>: from 6 months to 5 years. It cannot be undone early, and still applies if you delete your account.</li>
       </ul>

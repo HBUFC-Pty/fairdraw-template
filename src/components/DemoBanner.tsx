@@ -10,17 +10,16 @@
  * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
-import { demoMode, DEMO_PLAYER_EMAIL, DEMO_PLAYER_PASSWORD, TEMPLATE_REPO_URL } from '@/lib/demo';
+import { demoMode, TEMPLATE_REPO_URL } from '@/lib/demo';
 
-/** Shown on every page of a demo site (DEMO_MODE=true): nothing here is real, and how to try it. */
+/** Shown on every page of a demo site (DEMO_MODE=true): nothing here is real. */
 export function DemoBanner() {
   if (!demoMode()) return null;
   return (
     <div className="demo-banner" role="note">
       <p className="wrap">
-        <strong>Demo site in test mode:</strong> no real prizes, payments or people. To try it, log in as{' '}
-        <code>{DEMO_PLAYER_EMAIL}</code> with the password <code>{DEMO_PLAYER_PASSWORD}</code> and pay with the test card. Every draw
-        is real and can be checked on its results page. <a href={TEMPLATE_REPO_URL}>Get the template</a>
+        <strong>Demo for operators: nothing here is real.</strong> Prices and prizes are points with no value, payments are test only, the
+        other players are made up, and accounts you create are deleted after 24 hours. <a href={TEMPLATE_REPO_URL}>Get the template</a>
       </p>
     </div>
   );

@@ -59,8 +59,8 @@ const schema = z.object({
   TRUST_PROXY_HEADERS: bool.default(true),
   // Serverless hosts only (Vercel): the bearer secret for POST /api/cron/tick. Unset, the endpoint does not exist.
   CRON_SECRET: z.string().min(32, 'CRON_SECRET must be at least 32 characters').optional(),
-  // Public demo sites only: a banner, no sign-ups or email, a shared player account that cannot be changed, and
-  // fresh demo competitions from the scheduled work. Needs PAYMENT_PROVIDER=test. Never set it on a real site.
+  // Public demo sites only (src/lib/demo.ts): a demo banner and hero, sign-up with made-up details and no email,
+  // visitors deleted after 24 hours, and fresh demo competitions. Needs PAYMENT_PROVIDER=test. Never on a real site.
   DEMO_MODE: bool.default(false),
 });
 

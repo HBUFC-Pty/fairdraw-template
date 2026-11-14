@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Cordless drill set (demo image)">
-  <rect width="800" height="450" fill="#b45309"/>
-  <text x="400" y="215" fill="#ffffff" font-family="system-ui, sans-serif" font-size="44" text-anchor="middle">Cordless drill set</text>
-  <text x="400" y="270" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" opacity="0.8">Demo image: replace with your own</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="A cordless drill (demo image)">
+  <title>A cordless drill (demo image)</title>
+  <rect width="800" height="450" fill="#fde9cc"/>
+  <rect x="210" y="140" width="300" height="110" rx="26" fill="#f97316"/>
+  <rect x="510" y="168" width="70" height="54" rx="8" fill="#4b5563"/>
+  <rect x="580" y="186" width="120" height="18" rx="4" fill="#9ca3af"/>
+  <path d="M300 250 L270 360 L360 360 L380 250 Z" fill="#1f2937"/>
+  <rect x="235" y="350" width="170" height="54" rx="12" fill="#374151"/>
+  <rect x="250" y="362" width="60" height="10" rx="4" fill="#10b981"/>
+  <circle cx="265" cy="195" r="14" fill="#fff" opacity="0.5"/>
+  <text x="784" y="436" fill="#000" fill-opacity="0.45" font-family="system-ui, sans-serif" font-size="16" text-anchor="end">Demo image</text>
 </svg>

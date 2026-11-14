@@ -1,5 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Lake District break (demo image)">
-  <rect width="800" height="450" fill="#0f766e"/>
-  <text x="400" y="215" fill="#ffffff" font-family="system-ui, sans-serif" font-size="44" text-anchor="middle">Lake District break</text>
-  <text x="400" y="270" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" opacity="0.8">Demo image: replace with your own</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="A lake below hills with a small cottage (demo image)">
+  <title>A lake below hills with a small cottage (demo image)</title>
+  <rect width="800" height="450" fill="#cfe8f6"/>
+  <circle cx="640" cy="95" r="46" fill="#ffd166"/>
+  <polygon points="0,300 170,120 330,300" fill="#5b7f6b"/>
+  <polygon points="200,300 420,90 640,300" fill="#3f6b55"/>
+  <polygon points="380,93 420,90 455,125 400,130" fill="#ffffff" opacity="0.85"/>
+  <polygon points="520,300 680,160 800,260 800,300" fill="#6d9478"/>
+  <rect y="300" width="800" height="150" fill="#4a90c2"/>
+  <path d="M60 350 h120 M260 380 h160 M520 345 h140 M600 400 h120" stroke="#ffffff" stroke-opacity="0.6" stroke-width="6" stroke-linecap="round"/>
+  <rect x="96" y="262" width="70" height="44" fill="#f4efe6"/>
+  <polygon points="88,264 131,232 174,264" fill="#a23e3e"/>
+  <rect x="122" y="282" width="16" height="24" fill="#6b4f3a"/>
+  <text x="784" y="436" fill="#000" fill-opacity="0.45" font-family="system-ui, sans-serif" font-size="16" text-anchor="end">Demo image</text>
 </svg>
