@@ -19,7 +19,7 @@
  *
  * Periods are rolling: "day" is the last 24 hours, "week" the last 7 days, "month" the last 30 days.
  */
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, eq, gt, ne, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { orders, spendLimits, SPEND_PERIODS, type SpendPeriod } from '../db/schema';
 
@@ -97,7 +97,7 @@ export async function cancelPendingIncrease(db: Db, userId: string, period: Spen
 }
 
 /** What the player has spent (or has pending) in each rolling period. */
-export async function spentInPeriod(db: Db, userId: string, period: SpendPeriod, now = new Date()): Promise<number> {
+export async function spentInPeriod(db: Db, userId: string, period: SpendPeriod, now = new Date(), excludeOrderId?: string): Promise<number> {
   const since = new Date(now.getTime() - PERIOD_MS[period]);
   const [r] = await db
     .select({ total: sql<string>`coalesce(sum(${orders.totalPence}), 0)` })
@@ -106,6 +106,7 @@ export async function spentInPeriod(db: Db, userId: string, period: SpendPeriod,
       and(
         eq(orders.userId, userId),
         gt(orders.createdAt, since),
+        excludeOrderId ? ne(orders.id, excludeOrderId) : undefined,
         sql`(${orders.status} IN ('capturing', 'paid', 'partially_refunded') OR (${orders.status} = 'pending' AND ${orders.expiresAt} > ${now.toISOString()}))`,
       ),
     );
@@ -119,13 +120,16 @@ export interface SpendCheck {
   spentPence?: number;
 }
 
-/** Would spending `amountPence` more break any limit? Call inside the checkout transaction. */
-export async function checkSpend(db: Db, userId: string, amountPence: number, now = new Date()): Promise<SpendCheck> {
+/**
+ * Would spending `amountPence` more break any limit? Call inside the checkout transaction, and again when the payment
+ * arrives with `excludeOrderId` set to the order being paid (so it is not counted twice).
+ */
+export async function checkSpend(db: Db, userId: string, amountPence: number, now = new Date(), excludeOrderId?: string): Promise<SpendCheck> {
   const limits = await getLimits(db, userId, now);
   for (const p of SPEND_PERIODS) {
     const l = limits[p].limitPence;
     if (l === null) continue;
-    const spent = await spentInPeriod(db, userId, p, now);
+    const spent = await spentInPeriod(db, userId, p, now, excludeOrderId);
     if (spent + amountPence > l) return { ok: false, period: p, limitPence: l, spentPence: spent };
   }
   return { ok: true };

@@ -183,7 +183,7 @@ export const competitions = pgTable(
 export const ORDER_STATUSES = ['pending', 'capturing', 'cancelling', 'declined', 'paid', 'failed', 'expired', 'refunded', 'partially_refunded'] as const;
 export const FUNDING_TYPES = ['credit', 'debit', 'prepaid', 'unknown'] as const;
 export type FundingType = (typeof FUNDING_TYPES)[number];
-export const ORDER_DECISIONS = ['capture', 'decline_credit_cap', 'decline_instant_win_credit', 'decline_unavailable', 'decline_amount'] as const;
+export const ORDER_DECISIONS = ['capture', 'decline_credit_cap', 'decline_instant_win_credit', 'decline_unavailable', 'decline_amount', 'decline_play_blocked', 'decline_spend_limit'] as const;
 export type OrderDecision = (typeof ORDER_DECISIONS)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
