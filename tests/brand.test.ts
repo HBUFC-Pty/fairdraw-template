@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { brandSchema, type Brand } from '../src/brand/schema';
-import { checkBrandContrast } from '../src/brand/check';
+import { checkBrandContrast, describeProblems } from '../src/brand/check';
 import { contrastRatio, mixHex, nearestPassing } from '../src/brand/contrast';
 import { brandAttributes, brandCss } from '../src/brand/css';
 import { activeBrand, brand, parseBrand } from '../src/brand';
@@ -92,6 +92,27 @@ describe('showtime v2 brand values', () => {
     expect(mixHex('#ffffff', '#000000', 50)).toBe('#808080');
     expect(mixHex('#fbbf24', '#f5f3ff', 100)).toBe('#fbbf24');
     expect(mixHex('#fbbf24', '#f5f3ff', 85)).toBe('#fac745');
+  });
+
+  it('checks the mixed colours of display brands in brand:check, and every preset passes them', () => {
+    for (const f of presetFiles) {
+      const b = brandSchema.parse(JSON.parse(fs.readFileSync(f, 'utf8')));
+      expect(checkBrandContrast({ ...b, typeScale: 'display' }).filter((p) => p.what.includes('gradient')), f).toEqual([]);
+    }
+    const showtime = activeBrand('showtime');
+    expect(checkBrandContrast(showtime)).toEqual([]);
+    // A display brand whose accent is too dark for the tinted tiles is refused, with the mixed background named.
+    const bad: Brand = structuredClone(showtime);
+    bad.colours.dark.accent = '#7a2a55';
+    const problems = checkBrandContrast(bad).filter((p) => p.mode === 'dark');
+    const tint = problems.find((p) => p.mix?.with === 'surface');
+    expect(tint?.fg).toBe('accent');
+    expect(tint?.suggestion).not.toBeNull();
+    const back = mixHex(bad.colours.dark.primary, bad.colours.dark.surface, 16);
+    expect(contrastRatio(tint!.suggestion!, back)).toBeGreaterThanOrEqual(4.5);
+    expect(describeProblems(problems)).toContain('primary mixed 16% with surface');
+    // The same colours under the standard type scale do not get the display checks.
+    expect(checkBrandContrast({ ...bad, typeScale: 'standard' }).some((p) => p.mix)).toBe(false);
   });
 
   it('keeps button text at 4.5:1 on every stop of the showtime gradient, light and dark', () => {

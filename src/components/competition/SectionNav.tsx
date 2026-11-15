@@ -22,7 +22,9 @@ export function SectionNav({ items }: { items: { id: string; label: string }[] }
   const open = (e: MouseEvent<HTMLAnchorElement>) => {
     const id = e.currentTarget.hash.slice(1);
     const el = document.getElementById(id);
-    if (el instanceof HTMLDetailsElement) el.open = true;
+    // The id sits on the panel's <section>; its <details> is inside (or, for older markup, the element itself).
+    const details = el instanceof HTMLDetailsElement ? el : el?.querySelector(':scope > details');
+    if (details instanceof HTMLDetailsElement) details.open = true;
   };
   return (
     <nav className="section-nav" aria-label="On this page">

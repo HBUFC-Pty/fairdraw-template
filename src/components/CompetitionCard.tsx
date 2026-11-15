@@ -18,34 +18,13 @@ import { formatPercent, percentSold, progressClass, ticketsLeft } from './Compet
 import { Countdown } from './Countdown';
 import { Bolt, Clock } from './icons';
 import { PrizePlaceholder } from './illustrations';
+import { cardBadges, filterFlags } from './badges';
 import { brand } from '@/brand';
 
 export type CardStyle = 'classic' | 'compact' | 'poster' | 'tile';
 
-const DAY = 24 * 3600_000;
-
-/**
- * Factual badges for brands with extras.badges: nothing invented, every badge follows from the competition's own times
- * and ticket counts. "Ending soon" within 24 hours of the close, "Almost sold out" from 80% of the maximum.
- */
-export function cardBadges(c: { opensAt: Date; closesAt: Date; maxTickets: number }, sold: number, now: Date): string[] {
-  if (now < c.opensAt) return ['Coming soon'];
-  const out: string[] = [];
-  if (sold >= c.maxTickets) out.push('Sold out');
-  else if (sold >= c.maxTickets * 0.8) out.push('Almost sold out');
-  if (c.closesAt.getTime() - now.getTime() <= DAY && now < c.closesAt) out.push('Ending soon');
-  if (now.getTime() - c.opensAt.getTime() <= DAY) out.push('New');
-  return out;
-}
-
-/**
- * Which home page filters a competition matches (the showcase filter pills): the same 24 hour rules as cardBadges,
- * so a filter count always equals the number of tiles it shows.
- */
-export function filterFlags(c: { opensAt: Date; closesAt: Date; maxTickets: number; instantPrizes: unknown[] }, sold: number, now: Date) {
-  const badges = cardBadges(c, sold, now);
-  return { ending: badges.includes('Ending soon'), instant: c.instantPrizes.length > 0, new: badges.includes('New') };
-}
+// Pure badge rules live in ./badges (no brand import), so client components can use them without bundling the brand.
+export { cardBadges, filterFlags } from './badges';
 
 function Extras({ c, sold, now }: { c: Competition; sold: number; now: Date }) {
   const badges = brand.extras.badges ? cardBadges(c, sold, now) : [];

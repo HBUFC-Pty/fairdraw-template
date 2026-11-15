@@ -16,7 +16,9 @@
  *   animation and transition off under reduce;
  * - every element's resting style is its final state: keyframes animate only the "from" or passing frames, so with
  *   motion off nothing is hidden;
- * - transform and opacity only (plus background-position for stripes). No animation library, no canvas.
+ * - transform and opacity only (plus background-position for stripes). No animation library, no canvas;
+ * - nothing that starts on its own loops for more than five seconds (WCAG 2.2.2): decorative loops run a few times
+ *   and stop. The two things that keep moving, the hero autoplay and the winners strip, each have a pause button.
  */
 :root {
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -27,7 +29,7 @@
   /* Live dot: a ring pings out from real live states (ending soon, under an hour, next draw). */
   [data-motion] .live-dot::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor;
-    animation: dot-ping 1.6s var(--ease-out) infinite;
+    animation: dot-ping 1.6s var(--ease-out) 3;
   }
 
   /* Buttons lift a pixel on hover; primaries get a sheen. */
@@ -74,12 +76,13 @@
   [data-motion] .hero-slide.is-active .hero-copy > :nth-child(5) { animation-delay: 320ms; }
   [data-motion] .hero-slide.is-active .hero-copy > :nth-child(6) { animation-delay: 400ms; }
   [data-motion] .hero-slide.is-active :is(.hero-frame-inner img, .hero-stage) { animation: settle 0.7s var(--ease-out) both; }
-  [data-motion] .hero-frame { animation: float 6s ease-in-out infinite alternate; }
-  [data-motion] .spark { animation: twinkle 2.8s ease-in-out infinite; }
-  [data-motion] .spark.s2 { animation-delay: 0.9s; }
-  [data-motion] .spark.s3 { animation-delay: 1.7s; }
-  [data-motion] .hero-cta { animation: glow-pulse 2.4s ease-in-out infinite alternate; }
-  [data-motion][data-type='display'] .hero-cta::after { animation: sheen-idle 6s var(--ease-out) 1s infinite; }
+  /* Each runs a short while when its slide comes in, then rests (under five seconds). */
+  [data-motion] .hero-slide.is-active .hero-frame { animation: float 4.8s ease-in-out 1; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark { animation: twinkle 2.8s ease-in-out 1; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark.s2 { animation-delay: 0.9s; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark.s3 { animation-delay: 1.7s; }
+  [data-motion] .hero-slide.is-active .hero-cta { animation: glow-pulse 2.4s ease-in-out 2 alternate; }
+  [data-motion][data-type='display'] .hero-slide.is-active .hero-cta::after { animation: sheen 0.9s var(--ease-out) 0.8s 1; }
   [data-motion] .hero-dots .hero-dot::before { transition: transform 0.3s var(--ease-out), background-color 0.3s var(--ease-out); }
 
   /* ---------- Countdown digits: the changed digit drops in ---------- */
@@ -92,7 +95,7 @@
       repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-text) 12%, transparent) 0 6px, transparent 6px 12px),
       linear-gradient(90deg, var(--c-primary), var(--c-accent));
     background-size: 24px 24px, 100% 100%;
-    animation: bar-fill 0.9s var(--ease-out) 0.15s both, stripes 1.2s linear infinite;
+    animation: bar-fill 0.9s var(--ease-out) 0.15s both, stripes 1.2s linear 4;
   }
 
   /* ---------- Winners marquee: 4s an item, at least 30s a loop; holds on hover, focus or the pause button ---------- */
@@ -125,8 +128,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* ---------- The lit background drifts slowly (stage.css draws it) ---------- */
-  [data-motion][data-type='display']::before { animation: drift 30s ease-in-out infinite alternate; will-change: transform; }
+  /* ---------- The stage lights come up once as the page opens (stage.css draws them) ---------- */
+  [data-motion][data-type='display']::before { animation: lights-up 2.4s var(--ease-out) 1; }
 
   /* ---------- Instant win reveal: the result pops in and confetti falls once (never on a loss) ---------- */
   [data-motion] .reveal.done.is-win .reveal-result strong { display: inline-block; animation: pop-in 0.4s var(--ease-pop) both; }
@@ -162,15 +165,11 @@
 @keyframes rise-in { from { opacity: 0; translate: 0 16px; } }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes settle { from { scale: 1.04; } }
-@keyframes float { from { translate: 0 0; } to { translate: 0 -6px; } }
+@keyframes float { 50% { translate: 0 -6px; } }
 @keyframes twinkle { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.6; opacity: 0.3; } }
 @keyframes glow-pulse {
   from { box-shadow: var(--shadow), 0 0 0 0 color-mix(in srgb, var(--c-primary) 45%, transparent); }
   to { box-shadow: var(--shadow), 0 0 24px 4px color-mix(in srgb, var(--c-primary) 45%, transparent); }
-}
-@keyframes sheen-idle {
-  0% { transform: translateX(-120%) skewX(-20deg); }
-  15%, 100% { transform: translateX(120%) skewX(-20deg); }
 }
 @keyframes tick-in { from { transform: translateY(-40%); opacity: 0; } }
 @keyframes bar-fill { from { transform: scaleX(0); } }
@@ -178,7 +177,7 @@
 @keyframes marquee { to { transform: translateX(-50%); } }
 @keyframes dot-ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.4); opacity: 0; } }
 @keyframes sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(120%) skewX(-20deg); } }
-@keyframes drift { to { transform: translate3d(-3vw, 2vh, 0) scale(1.08); } }
+@keyframes lights-up { from { opacity: 0; transform: translate3d(-3vw, 2vh, 0) scale(1.08); } }
 @keyframes pop-in { from { transform: scale(0.8); opacity: 0; } }
 @keyframes confetti-fall {
   0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }

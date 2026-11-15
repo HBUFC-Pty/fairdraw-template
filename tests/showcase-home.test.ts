@@ -16,6 +16,7 @@ import { filterCounts } from '../src/components/home/filters';
 import { ProofBand } from '../src/components/home/ProofBand';
 import { WinnersMarquee } from '../src/components/home/WinnersMarquee';
 import { Hero } from '../src/components/home/Hero';
+import { FilterableGrid } from '../src/components/home/FilterableGrid';
 import { formatAgo } from '../src/lib/time';
 import { resetEnvCache } from '../src/lib/env';
 
@@ -242,6 +243,27 @@ describe('home sections', () => {
     expect(real).not.toContain('Template demo');
     const none = renderToStaticMarkup(createElement(Hero, { live: [], now, demo: false, siteName: 'Test', badges: true, autoplay: true }));
     expect(none).toContain('No competitions are open right now');
+  });
+
+  it('asks for high fetch priority only for the image of the slide shown first', async () => {
+    const now = new Date();
+    const img = (n: number) => [{ url: `/images/p${n}.svg`, alt: `Prize ${n}` }];
+    const live = await Promise.all([1, 2, 3].map(async (n) => ({ c: { ...(await makeCompetition(db, { title: `Prize ${n}` })), images: img(n) }, sold: 0 })));
+    const high = (html: string) => (html.match(/<img[^>]*fetchpriority="high"[^>]*>/gi) ?? []);
+    const real = renderToStaticMarkup(createElement(Hero, { live, now, demo: false, siteName: 'Test', badges: true, autoplay: true }));
+    expect(high(real)).toHaveLength(1);
+    expect(real.match(/<img[^>]*loading="lazy"[^>]*>/g)).toHaveLength(2);
+    const demo = renderToStaticMarkup(createElement(Hero, { live, now, demo: true, siteName: 'Test', badges: true, autoplay: true }));
+    expect(high(demo)).toHaveLength(1);
+    expect(high(demo)[0]).toContain('stage-tickets.svg');
+  });
+
+  it('renders the filter pills on the server (disabled until the page runs), so they never push the grid down', () => {
+    const html = renderToStaticMarkup(createElement(FilterableGrid, { counts: { all: 4, ending: 1, instant: 0, new: 2 } }, null));
+    const pills = html.match(/<button[^>]*class="bare pill"[^>]*>/g) ?? [];
+    expect(pills).toHaveLength(3); // All, Ending soon, New: a filter with no tiles is not offered
+    expect(pills.every((t) => t.includes('disabled'))).toBe(true);
+    expect(html).toContain('aria-pressed="true"');
   });
 
   it('formatAgo says how long ago in plain words', () => {

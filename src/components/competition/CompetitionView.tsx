@@ -41,16 +41,23 @@ export type CompetitionViewProps = {
   action: (fd: FormData) => void | Promise<void>;
 };
 
-/** A collapsible section with a heading row and a chevron. */
+/**
+ * A collapsible section with a heading row and a chevron. The heading sits outside the <summary> (some screen readers
+ * flatten a summary's content, which would drop the heading from heading navigation); the summary covers the whole
+ * heading row, so the row still opens and closes the section. Works without JavaScript.
+ */
 function Panel({ id, title, open = false, children }: { id: string; title: string; open?: boolean; children: ReactNode }) {
   return (
-    <details className="panel" id={id} open={open}>
-      <summary>
-        <h2>{title}</h2>
-        <ChevronDown className="panel-chevron" />
-      </summary>
-      <div className="panel-body">{children}</div>
-    </details>
+    <section className="panel" id={id} aria-labelledby={`${id}-h`}>
+      <h2 id={`${id}-h`} className="panel-heading">{title}</h2>
+      <details className="panel-details" open={open}>
+        <summary className="panel-toggle">
+          <span className="sr-only">Show or hide {title.toLowerCase()}</span>
+          <ChevronDown className="panel-chevron" />
+        </summary>
+        <div className="panel-body">{children}</div>
+      </details>
+    </section>
   );
 }
 

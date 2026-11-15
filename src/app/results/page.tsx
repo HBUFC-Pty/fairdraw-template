@@ -12,7 +12,7 @@
  */
 import Link from 'next/link';
 import { finishedCompetitions } from '@/lib/public/queries';
-import { formatUk } from '@/lib/time';
+import { formatUkShort } from '@/lib/time';
 import { FairDrawLink } from '@/components/SiteFooter';
 import { ShieldCheck } from '@/components/icons';
 import { PrizePlaceholder } from '@/components/illustrations';
@@ -21,14 +21,12 @@ export const metadata = { title: 'Results' };
 
 export default async function ResultsPage() {
   const rows = await finishedCompetitions();
+  const now = new Date();
   return (
     <div className="results-page">
       <div className="results-head">
         <h1>Results</h1>
-        <p className="results-lede">
-          Every finished competition, with tickets sold, the maximum, the winning tickets and both the scheduled and actual draw times. Each draw has a
-          public record you can re-run.
-        </p>
+        <p className="results-lede">Every finished draw, with a record you can re-run.</p>
         <p className="results-fairdraw"><FairDrawLink icon /></p>
       </div>
       {rows.length === 0 ? <p className="empty-state">No competitions have closed yet.</p> : (
@@ -38,7 +36,7 @@ export default async function ResultsPage() {
             const drawn = Boolean(d.randomness);
             return (
               <li key={c.id} className="result-card">
-                <span className="result-thumb">{img ? <img src={img.url} alt="" width={72} height={72} loading="lazy" /> : <PrizePlaceholder />}</span>
+                <span className="result-thumb">{img ? <img src={img.url} alt="" width={96} height={96} loading="lazy" /> : <PrizePlaceholder />}</span>
                 <div className="result-info">
                   <h2 className="result-title"><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h2>
                   <p className="result-winner num">
@@ -48,10 +46,14 @@ export default async function ResultsPage() {
                         : 'No entries'
                       : 'Awaiting draw'}
                   </p>
+                  {/* Short facts as chips; the exact scheduled and actual times, to the second, are on the draw record. */}
                   <dl className="result-facts num">
-                    <div><dt>Sold</dt><dd>{d.ticketsSold.toLocaleString('en-GB')} of {d.maxTickets.toLocaleString('en-GB')}</dd></div>
-                    <div><dt>Scheduled draw</dt><dd><time dateTime={d.scheduledDrawAt.toISOString()}>{formatUk(d.scheduledDrawAt, true)}</time></dd></div>
-                    <div><dt>Actual draw</dt><dd>{d.drawnAt ? <time dateTime={d.drawnAt.toISOString()}>{formatUk(d.drawnAt, true)}</time> : 'not yet'}</dd></div>
+                    <div className="chip chip-glass"><dt>Sold</dt><dd>{d.ticketsSold.toLocaleString('en-GB')} of {d.maxTickets.toLocaleString('en-GB')}</dd></div>
+                    {d.drawnAt ? (
+                      <div className="chip chip-glass"><dt>Drawn</dt><dd><time dateTime={d.drawnAt.toISOString()}>{formatUkShort(d.drawnAt, now)}</time></dd></div>
+                    ) : (
+                      <div className="chip chip-glass"><dt>Draw</dt><dd><time dateTime={d.scheduledDrawAt.toISOString()}>{formatUkShort(d.scheduledDrawAt, now)}</time></dd></div>
+                    )}
                   </dl>
                 </div>
                 <div className="result-actions">

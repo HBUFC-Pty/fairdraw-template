@@ -26,7 +26,16 @@ body {
   background: var(--c-bg);
   line-height: 1.55;
   overflow-x: clip;
+  /* Short pages keep the footer at the foot of the screen rather than halfway up it. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
 }
+body > main { flex: 1 0 auto; width: 100%; }
+/* Scripts never render. (The Next.js dev overlay gives its script an inline display: block, which would otherwise
+   sit at the top of the flex column in development.) */
+body > script { display: none !important; }
 h1, h2, h3 { font-family: var(--font-heading); line-height: 1.2; }
 a { color: var(--c-primary); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {

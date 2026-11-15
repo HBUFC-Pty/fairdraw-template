@@ -76,17 +76,19 @@ describe('demo mode', () => {
     expect(() => env()).toThrow(/DEMO_MODE needs PAYMENT_PROVIDER=test/);
   });
 
-  it('sets itself up: fictional players who cannot log in, a quick draw and two longer competitions', async () => {
+  it('sets itself up: fictional players who cannot log in, a quick draw and three longer competitions', async () => {
     demoOn();
     const now = new Date('2026-11-14T10:20:00Z');
-    expect(await topUpDemoCompetitions(db, now, seq())).toBe(3);
+    expect(await topUpDemoCompetitions(db, now, seq())).toBe(4);
 
     const fictional = await db.select().from(users);
     expect(fictional).toHaveLength(DEMO_FICTIONAL_PLAYERS);
     expect(fictional.every((u) => u.passwordHash === null && u.role === 'player' && u.email.endsWith('@example.test'))).toBe(true);
 
     const open = await live();
-    expect(open).toHaveLength(3);
+    expect(open).toHaveLength(4);
+    // The longer competitions are three different prizes.
+    expect(new Set(open.slice(1).map((c) => c.title)).size).toBe(3);
     // A new demo's first draw comes within the hour, on a quarter hour.
     expect(open[0]!.closesAt.toISOString()).toBe('2026-11-14T11:00:00.000Z');
     for (const c of open.slice(1)) {

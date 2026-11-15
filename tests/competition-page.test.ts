@@ -157,6 +157,19 @@ describe('competition page: entry form', () => {
   });
 });
 
+describe('competition page: section headings', () => {
+  it('keeps each section heading outside its <summary>, so screen readers list it as a heading', () => {
+    const html = render();
+    for (const id of ['prize', 'checks']) {
+      expect(html).toContain(`<section class="panel" id="${id}" aria-labelledby="${id}-h">`);
+      expect(html).toMatch(new RegExp(`<h2 id="${id}-h" class="panel-heading">`));
+    }
+    const summaries = html.match(/<summary[\s\S]*?<\/summary>/g) ?? [];
+    expect(summaries.length).toBeGreaterThan(0);
+    for (const sm of summaries) expect(sm).not.toMatch(/<h[1-6]/);
+  });
+});
+
 describe('competition page: drawn and closed', () => {
   const draw = {
     competitionId: 'x',

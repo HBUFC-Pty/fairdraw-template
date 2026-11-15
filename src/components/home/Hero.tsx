@@ -15,7 +15,7 @@ import { formatPriceShort } from '@/lib/money';
 import { formatUkShort } from '@/lib/time';
 import { TEMPLATE_REPO_URL } from '@/lib/demo';
 import type { Competition } from '@/lib/public/queries';
-import { cardBadges } from '../CompetitionCard';
+import { cardBadges } from '../badges';
 import { formatPercent, percentSold, progressClass, ticketsLeft } from '../CompetitionFacts';
 import { Countdown } from '../Countdown';
 import { Bolt, Clock, Sparkle } from '../icons';
@@ -43,7 +43,7 @@ function Sparkles() {
   );
 }
 
-function PrizeSlide({ c, sold, now, badges }: { c: Competition; sold: number; now: Date; badges: boolean }) {
+function PrizeSlide({ c, sold, now, badges, first }: { c: Competition; sold: number; now: Date; badges: boolean; first: boolean }) {
   const img = c.images[0];
   const href = `/competitions/${c.slug}`;
   const chips = (badges ? cardBadges(c, sold, now) : []).map((b) => (
@@ -89,7 +89,8 @@ function PrizeSlide({ c, sold, now, badges }: { c: Competition; sold: number; no
         <HeroRings />
         <div className="hero-frame">
           <div className="hero-frame-inner">
-            {img ? <img src={img.url} alt={img.alt} width={600} height={600} fetchPriority="high" /> : null}
+            {/* Only the slide shown first competes for bandwidth; the hidden ones wait (LCP). */}
+            {img ? <img src={img.url} alt={img.alt} width={600} height={600} fetchPriority={first ? 'high' : 'low'} loading={first ? 'eager' : 'lazy'} /> : null}
           </div>
         </div>
         <Sparkles />
@@ -112,7 +113,7 @@ function IntroSlide() {
       </div>
       <div className="hero-art">
         <HeroRings />
-        <img className="hero-stage" src="/images/stage-tickets.svg" alt="" width={800} height={800} />
+        <img className="hero-stage" src="/images/stage-tickets.svg" alt="" width={800} height={800} fetchPriority="high" />
         <Sparkles />
       </div>
     </div>
@@ -152,7 +153,9 @@ export function Hero({
   const slides: HeroSlide[] = [];
   if (demo) slides.push({ key: 'intro', node: <IntroSlide /> });
   const open = live.filter(({ c }) => c.opensAt <= now && now < c.closesAt).sort((a, b) => a.c.closesAt.getTime() - b.c.closesAt.getTime());
-  for (const { c, sold } of open.slice(0, MAX_SLIDES - slides.length)) slides.push({ key: c.id, node: <PrizeSlide c={c} sold={sold} now={now} badges={badges} /> });
+  for (const { c, sold } of open.slice(0, MAX_SLIDES - slides.length)) {
+    slides.push({ key: c.id, node: <PrizeSlide c={c} sold={sold} now={now} badges={badges} first={slides.length === 0} /> });
+  }
   if (slides.length === (demo ? 1 : 0)) slides.push({ key: 'empty', node: <EmptySlide /> });
   return (
     <div className="hero-band bleed">

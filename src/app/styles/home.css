@@ -22,15 +22,15 @@
 .home-section { margin-top: var(--s8); }
 .section-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2) var(--s3); margin-bottom: var(--s4); }
 .section-head h2 { margin: 0; }
-.section-head :is(.section-link, .section-note) { margin-left: auto; }
+.section-head .section-link { margin-left: auto; }
 .section-link {
   display: inline-flex; align-items: center; gap: 6px; min-height: 24px; color: var(--c-primary); text-decoration: none;
   font-size: var(--fs-small); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .section-link:hover { text-decoration: underline; }
 .section-link .icon { width: 16px; height: 16px; }
-.section-note, .count-chip { font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); }
-.count-chip { height: 26px; min-width: 26px; justify-content: center; font-size: 0.8125rem; letter-spacing: 0; color: var(--c-text); }
+.count-chip { height: 26px; min-width: 26px; justify-content: center; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0; text-transform: uppercase; color: var(--c-text); }
+.count-chip.is-label { gap: 6px; padding: 0 12px; font-size: var(--fs-micro); letter-spacing: 0.06em; }
 .band { padding-block: var(--s7); background: color-mix(in srgb, var(--c-surface) 60%, transparent); border-block: 1px solid var(--c-border); }
 @media (max-width: 639px) {
   .home-section { margin-top: 40px; }
@@ -149,7 +149,7 @@
   [data-type='display'] .hero-actions .button.lg { min-height: 48px; padding: 0 14px; font-size: 1rem; }
   .hero-controls { margin-top: var(--s2); }
   .showcase .section-head { margin-bottom: var(--s3); }
-  .filter-pills { margin-bottom: var(--s3); }
+  .filter-pills { margin-bottom: calc(var(--s3) - 6px); }
 }
 @media (max-width: 639px) { .hero-actions > * { flex: 1 1 auto; } }
 @media (max-width: 339px) { .hero-actions { flex-wrap: wrap; } }
@@ -166,17 +166,20 @@
 .trust-strip .icon { flex: none; }
 @media (max-width: 899px) {
   .trust-strip {
-    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-block: 6px;
     -webkit-mask-image: linear-gradient(90deg, var(--c-text) 80%, transparent); mask-image: linear-gradient(90deg, var(--c-text) 80%, transparent);
   }
   .trust-strip::-webkit-scrollbar { display: none; }
   .trust-strip li { flex: none; scroll-snap-align: start; }
   .trust-strip a { padding: 12px 16px; }
   .trust-strip li:first-child a { padding-left: 0; }
+  /* The strip scrolls, so it clips: draw the focus ring inside each link. */
+  .trust-strip a:focus-visible { outline-offset: -3px; }
 }
 
 /* ---------- Filter pills and filtering ---------- */
-.filter-pills { display: flex; gap: var(--s2); margin: 0 0 var(--s4); overflow-x: auto; scrollbar-width: none; padding: 2px; }
+/* 6px of padding (taken back by the margin) leaves room for the 5px focus ring inside the scrolling row. */
+.filter-pills { display: flex; gap: var(--s2); margin: -6px -6px calc(var(--s4) - 6px); overflow-x: auto; scrollbar-width: none; padding: 6px; }
 .filter-pills::-webkit-scrollbar { display: none; }
 .filter-pills button.pill {
   flex: none; display: inline-flex; align-items: center; gap: 8px; height: 36px; min-height: 36px; padding: 0 8px 0 14px;
@@ -188,6 +191,8 @@
 }
 .filter-pills button.pill:hover { box-shadow: inset 0 0 0 1px var(--c-primary); }
 .filter-pills button.pill[aria-pressed='true'] { background: var(--c-primary); color: var(--c-on-primary); box-shadow: none; }
+/* Before the page runs the pills are disabled but already in place, showing the real state (All). */
+.filter-pills button.pill:disabled { opacity: 1; cursor: default; }
 .pill-count {
   display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px;
   font-size: var(--fs-micro); background: color-mix(in srgb, var(--c-text) 12%, transparent);
@@ -201,7 +206,7 @@
 .snap { position: relative; }
 .snap-track {
   display: grid; grid-auto-flow: column; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory; scrollbar-width: none; padding: 6px 2px 10px; margin: -6px -2px -10px;
+  scroll-snap-type: x mandatory; scrollbar-width: none; padding: 6px 6px 10px; margin: -6px -6px -10px;
 }
 .snap-track::-webkit-scrollbar { display: none; }
 .snap-track > * { scroll-snap-align: start; }
@@ -213,8 +218,23 @@
   .snap-arrows .icon-btn { position: absolute; top: calc(50% - 20px); z-index: 3; }
   .snap-arrows .icon-btn:first-child { left: -14px; }
   .snap-arrows .icon-btn:last-child { right: -14px; }
+  /* Instant prize cards carry their icon at the left edge: sit the arrows further out, clear of it. */
+  .iprize-row .snap-arrows .icon-btn:first-child { left: -24px; }
+  .iprize-row .snap-arrows .icon-btn:last-child { right: -24px; }
   .tile-row .snap-track { grid-auto-columns: 260px; }
   .iprize-row .snap-track { grid-auto-columns: 176px; }
+}
+/* Wide screens: four instant prize cards across, lined up with the tile grid above, icon beside the value. */
+@media (min-width: 1024px) {
+  .iprize-row .snap-track { grid-auto-columns: calc((100% - 3 * 18px) / 4); gap: 18px; }
+  .iprize-row .iprize {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-rows: auto auto auto; align-content: center;
+    justify-items: start; column-gap: var(--s4); row-gap: 4px; aspect-ratio: auto; min-height: 128px;
+    padding: var(--s5) var(--s5) calc(var(--s5) + 2px); text-align: left;
+    background: radial-gradient(90% 140% at 0% 50%, color-mix(in srgb, var(--c-primary) 16%, var(--c-surface)), var(--c-surface) 70%);
+  }
+  .iprize-row .iprize-art { grid-row: 1 / 4; height: 64px; }
+  .iprize-row .prize-icon { width: 64px; height: 64px; }
 }
 @media (max-width: 899px) {
   .snap-track { -webkit-mask-image: linear-gradient(90deg, var(--c-text) calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, var(--c-text) calc(100% - 28px), transparent); }
@@ -238,11 +258,13 @@
 
 /* ---------- Recent winners ---------- */
 .marquee { display: flex; align-items: center; gap: var(--s3); }
-.mq-viewport { flex: 1; min-width: 0; overflow: hidden; padding-block: 2px; }
-.marquee.is-moving .mq-viewport {
-  -webkit-mask-image: linear-gradient(90deg, transparent, var(--c-text) 4%, var(--c-text) 96%, transparent);
-  mask-image: linear-gradient(90deg, transparent, var(--c-text) 4%, var(--c-text) 96%, transparent);
+.mq-viewport { flex: 1; min-width: 0; overflow: hidden; padding-block: 6px; }
+/* A fixed 40px fade at each edge (moving or not), so pills slide out softly rather than being cut mid-word. */
+.mq-viewport {
+  -webkit-mask-image: linear-gradient(90deg, transparent, var(--c-text) 40px, var(--c-text) calc(100% - 40px), transparent);
+  mask-image: linear-gradient(90deg, transparent, var(--c-text) 40px, var(--c-text) calc(100% - 40px), transparent);
 }
+.marquee:not(.is-moving) .mq-list { padding-inline: var(--s5); }
 .marquee:not(.is-moving) .mq-viewport { overflow-x: auto; scrollbar-width: none; }
 .mq-track { display: flex; width: max-content; }
 .mq-list { display: flex; gap: var(--s3); margin: 0; padding: 0 var(--s3) 0 0; list-style: none; }
@@ -265,10 +287,16 @@
   .win-line:focus-visible { outline: none; }
   .win:has(.win-line:focus-visible) { outline: 3px solid var(--c-accent); outline-offset: 2px; }
 }
+@media (max-width: 639px) {
+  .win { gap: 10px; padding: 6px 14px 6px 6px; }
+  .win-disc { width: 32px; height: 32px; }
+  .win-disc .icon { width: 18px; height: 18px; }
+}
 .win-time { font-size: var(--fs-micro); font-weight: 700; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); }
 @media (prefers-reduced-motion: reduce) {
   .mq-copy, .mq-pause { display: none; }
-  .marquee .mq-viewport { overflow-x: auto; scrollbar-width: none; -webkit-mask-image: none; mask-image: none; }
+  .marquee .mq-viewport { overflow-x: auto; scrollbar-width: none; }
+  .marquee .mq-list { padding-inline: var(--s5); }
 }
 
 /* ---------- Next draw ---------- */

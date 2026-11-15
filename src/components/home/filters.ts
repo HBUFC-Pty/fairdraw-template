@@ -11,10 +11,10 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 /** The showcase home page's filter pills: which filters exist and how many live tiles each one shows. */
-import { filterFlags } from '../CompetitionCard';
+import { filterFlags } from '../badges';
+import type { FilterKey } from './filter-labels';
 
-export type FilterKey = 'all' | 'ending' | 'instant' | 'new';
-export const FILTER_LABELS: Record<FilterKey, string> = { all: 'All', ending: 'Ending soon', instant: 'Instant wins', new: 'New' };
+export { FILTER_LABELS, type FilterKey } from './filter-labels';
 
 type Item = { c: { opensAt: Date; closesAt: Date; maxTickets: number; instantPrizes: unknown[] }; sold: number };
 

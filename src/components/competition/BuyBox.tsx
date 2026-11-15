@@ -18,7 +18,7 @@ import { bundleOffers } from '@/lib/competitions/bundles';
 import { formatPence, formatPriceShort, moneyAsPoints } from '@/lib/money';
 import { formatUk, formatUkShort } from '@/lib/time';
 import { DrawnWhateverSold, formatPercent, percentSold, progressClass, ticketsLeft } from '../CompetitionFacts';
-import { cardBadges } from '../CompetitionCard';
+import { cardBadges } from '../badges';
 import { Countdown } from '../Countdown';
 import { FairDrawLink } from '../SiteFooter';
 import { Bolt, Calendar, Clock, Envelope, Info, ShieldCheck, Trophy, Users } from '../icons';
@@ -231,7 +231,7 @@ export function BuyBox({ c, sold, draw, winners, now, open, loggedIn, badges, ac
     <div className="buybox">
       <div className="buy-head">
         <div className="chip-row buy-chips">
-          <span className={`chip ${STATUS_CHIP[status] ?? 'chip-glass'}`}>{status}</span>
+          <span className={`chip chip-status ${STATUS_CHIP[status] ?? 'chip-glass'}`}>{status}</span>
           {facts.map((b) => (
             <span key={b} className={`chip ${CHIP[b] ?? 'chip-glass'}`}>{b === 'Ending soon' ? <span className="live-dot" aria-hidden="true" /> : null}{b}</span>
           ))}

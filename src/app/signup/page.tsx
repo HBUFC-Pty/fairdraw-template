@@ -16,6 +16,8 @@ import { moneyUnit } from '@/lib/money';
 import { signUpAction } from '../actions/auth';
 import { siteConfig } from '@/lib/site-config';
 import { demoMode, demoSignUpDefaults, DEMO_SIGNUP_NOTE } from '@/lib/demo';
+import { AuthArt } from '@/components/AuthArt';
+import { Info } from '@/components/icons';
 
 export const metadata = { title: 'Sign up' };
 
@@ -23,31 +25,34 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   // Demo sites: suggest made-up details, so nobody needs to type in their own.
   const d = demoMode() ? demoSignUpDefaults() : null;
   return (
-    <>
-      <h1>Sign up</h1>
-      <FlashMessage searchParams={await searchParams} />
-      {d ? <p className="notice warn">{DEMO_SIGNUP_NOTE}</p> : null}
-      <p>You must be 18 or over. We ask for your date of birth to check this.</p>
-      <form className="stack" action={signUpAction}>
-        <label>First name<input name="firstName" autoComplete="given-name" required maxLength={80} defaultValue={d?.firstName} /></label>
-        <label>Last name<input name="lastName" autoComplete="family-name" required maxLength={80} defaultValue={d?.lastName} /></label>
-        <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} defaultValue={d?.email} /></label>
-        <label>Date of birth<input name="dateOfBirth" type="date" autoComplete="bday" required defaultValue={d?.dateOfBirth} /></label>
-        <label>
-          Password<span className="hint">At least 12 characters. A few random words works well.</span>
-          <input name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} />
-        </label>
-        <label>Confirm password<input name="confirm" type="password" autoComplete="new-password" required minLength={12} maxLength={256} /></label>
-        <label>
-          Monthly spend limit (optional)
-          <span className="hint">In {moneyUnit()}. You can set daily and weekly limits too, or change this later. Lowering a limit takes effect at once.</span>
-          <input name="monthlyLimit" inputMode="decimal" maxLength={12} defaultValue={siteConfig.defaults.suggestedMonthlyLimitPounds ?? ''} />
-        </label>
-        <label><input type="checkbox" name="over18" value="yes" required /> I am 18 or over</label>
-        <label><input type="checkbox" name="terms" value="yes" required /> I accept the <Link href="/terms">terms</Link> and have read the <Link href="/privacy">privacy notice</Link></label>
-        <button type="submit">Create account</button>
-      </form>
-      <p>Already signed up? <Link href="/login">Log in</Link>.</p>
-    </>
+    <div className="auth-page">
+      <AuthArt />
+      <div className="auth-panel">
+        <h1>Sign up</h1>
+        <FlashMessage searchParams={await searchParams} />
+        {d ? <p className="notice warn has-icon"><Info size={20} /><span>{DEMO_SIGNUP_NOTE}</span></p> : null}
+        <p>You must be 18 or over. We ask for your date of birth to check this.</p>
+        <form className="stack" action={signUpAction}>
+          <label>First name<input name="firstName" autoComplete="given-name" required maxLength={80} defaultValue={d?.firstName} /></label>
+          <label>Last name<input name="lastName" autoComplete="family-name" required maxLength={80} defaultValue={d?.lastName} /></label>
+          <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} defaultValue={d?.email} /></label>
+          <label>Date of birth<input name="dateOfBirth" type="date" autoComplete="bday" required defaultValue={d?.dateOfBirth} /></label>
+          <label>
+            Password<span className="hint">At least 12 characters. A few random words works well.</span>
+            <input name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} />
+          </label>
+          <label>Confirm password<input name="confirm" type="password" autoComplete="new-password" required minLength={12} maxLength={256} /></label>
+          <label>
+            Monthly spend limit (optional)
+            <span className="hint">In {moneyUnit()}. You can set daily and weekly limits too, or change this later. Lowering a limit takes effect at once.</span>
+            <input name="monthlyLimit" inputMode="decimal" maxLength={12} defaultValue={siteConfig.defaults.suggestedMonthlyLimitPounds ?? ''} />
+          </label>
+          <label className="check-row"><input type="checkbox" name="over18" value="yes" required /> <span>I am 18 or over</span></label>
+          <label className="check-row"><input type="checkbox" name="terms" value="yes" required /> <span>I accept the <Link href="/terms">terms</Link> and have read the <Link href="/privacy">privacy notice</Link></span></label>
+          <button type="submit">Create account</button>
+        </form>
+        <p className="auth-alt">Already signed up? <Link href="/login">Log in</Link>.</p>
+      </div>
+    </div>
   );
 }

@@ -13,24 +13,25 @@
 'use client';
 
 import { useState, useSyncExternalStore } from 'react';
-import { FILTER_LABELS, type FilterKey } from './filters';
+import { FILTER_LABELS, type FilterKey } from './filter-labels';
 import { hydration } from './motion';
 
 /**
- * The live tile grid with factual filter pills (All, Ending soon, Instant wins, New). The pills only appear once the
- * page is running, so the server HTML is the full grid; they set data-filter on the grid and CSS hides the tiles that
- * do not match (stage.css). A pill whose count is 0 is not shown.
+ * The live tile grid with factual filter pills (All, Ending soon, Instant wins, New). The server renders the pills
+ * disabled, so their space is taken from the first paint (no layout shift); they turn on once the page is running.
+ * They set data-filter on the grid and CSS hides the tiles that do not match (home.css). A pill whose count is 0 is
+ * not shown.
  */
-export function FilterableGrid({ counts, children }: { counts: Record<FilterKey, number>; children: React.ReactNode }) {
+export function FilterableGrid({ counts, children }: { counts: Record<FilterKey, number>; children?: React.ReactNode }) {
   const hydrated = useSyncExternalStore(hydration.subscribe, hydration.client, hydration.server);
   const [filter, setFilter] = useState<FilterKey>('all');
   const keys = (Object.keys(FILTER_LABELS) as FilterKey[]).filter((k) => k === 'all' || counts[k] > 0);
   return (
     <>
-      {hydrated && keys.length > 1 ? (
+      {keys.length > 1 ? (
         <div className="filter-pills" role="group" aria-label="Filter competitions">
           {keys.map((k) => (
-            <button key={k} type="button" className="bare pill" aria-pressed={filter === k} onClick={() => setFilter(k)}>
+            <button key={k} type="button" className="bare pill" aria-pressed={filter === k} disabled={!hydrated} onClick={() => setFilter(k)}>
               {FILTER_LABELS[k]}
               <span className="pill-count num">{counts[k]}</span>
             </button>

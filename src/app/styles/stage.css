@@ -81,6 +81,14 @@
 [data-type='display'] button.icon-btn { display: inline-grid; min-height: 40px; padding: 0; border-radius: 50%; }
 
 /* ---------- Bar header (layout.header "bar") ---------- */
+/* Keep a focused control clear of the sticky bars when tabbing (WCAG 2.4.11): the header, the section nav on phones
+   and the basket total on phones. */
+html:has(> body[data-header='bar']) { scroll-padding-top: calc(var(--header-h) + 16px); }
+@media (max-width: 959px) {
+  html:has(.section-nav) { scroll-padding-top: 72px; }
+  html:has(> body[data-header='bar'] .section-nav) { scroll-padding-top: calc(var(--header-h) + 72px); }
+}
+@media (max-width: 899px) { html:has(.basket-summary) { scroll-padding-bottom: 160px; } }
 header.site.bar {
   position: sticky; top: 0; z-index: 50;
   background: color-mix(in srgb, var(--c-bg) 85%, transparent);
@@ -175,7 +183,11 @@ details.menu[open] > summary { background: var(--c-surface); }
 /* ---------- Tile card (layout.card "tile") ---------- */
 .tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
 @media (min-width: 640px) { .tile-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
-@media (min-width: 1024px) { .tile-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; } }
+@media (min-width: 1024px) {
+  .tile-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  /* One to three tiles sit centred at the normal tile width, rather than leaving an empty column. */
+  .tile-grid:not(:has(> :nth-child(4))) { grid-template-columns: repeat(auto-fit, minmax(0, 288px)); justify-content: center; }
+}
 
 .tile {
   position: relative; display: flex; flex-direction: column; container-type: inline-size;

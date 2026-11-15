@@ -34,7 +34,7 @@ export type HeroSlide = { key: string; node: React.ReactNode };
  * - Autoplay (every 6 seconds) only when the brand has extras.motion, never with reduced motion. It holds while the
  *   pointer is over the carousel, while focus is inside it and while the tab is hidden, and stops for good after any
  *   use of a control. The pause button shows whenever autoplay is possible.
- * - Arrow buttons, dots, swipes (40px) and the left and right arrow keys move it.
+ * - Arrow buttons, dots, swipes (40px) and the left and right arrow keys (while focus is on the controls) move it.
  * - Inactive slides are hidden (visibility and inert), so they are out of the tab order and the accessibility tree.
  */
 export function HeroCarousel({ slides, autoplay, label }: { slides: HeroSlide[]; autoplay: boolean; label: string }) {
@@ -72,11 +72,6 @@ export function HeroCarousel({ slides, autoplay, label }: { slides: HeroSlide[];
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusIn(false);
       }}
-      onKeyDown={(e) => {
-        if (n < 2 || e.target instanceof HTMLInputElement) return;
-        if (e.key === 'ArrowLeft') go(index - 1);
-        else if (e.key === 'ArrowRight') go(index + 1);
-      }}
     >
       <div
         className="hero-track"
@@ -109,7 +104,15 @@ export function HeroCarousel({ slides, autoplay, label }: { slides: HeroSlide[];
         ))}
       </div>
       {n > 1 ? (
-        <div className="hero-controls">
+        // Arrow keys only act while focus is on the controls: handled from a link inside the slide, the slide would
+        // turn inert under the focused link and focus would drop to the page (WCAG 2.4.3).
+        <div
+          className="hero-controls"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') go(index - 1);
+            else if (e.key === 'ArrowRight') go(index + 1);
+          }}
+        >
           <button type="button" className="icon-btn hero-arrow is-prev" onClick={() => go(index - 1)} aria-label="Previous slide"><ArrowLeft /></button>
           <div className="hero-dots" role="group" aria-label="Choose a slide">
             {slides.map((s, i) => (

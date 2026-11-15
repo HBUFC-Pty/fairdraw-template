@@ -13,6 +13,7 @@
 import { formatPriceShort } from '@/lib/money';
 import type { InstantPrizeTile } from '@/lib/public/home';
 import { progressClass } from '../CompetitionFacts';
+import { Bolt } from '../icons';
 import { InstantPrizeArt } from '../illustrations';
 import { SnapRow } from './SnapRow';
 
@@ -25,7 +26,7 @@ export function InstantPrizeRow({ tiles }: { tiles: InstantPrizeTile[] }) {
     <section className="home-section band bleed" aria-labelledby="instant-title">
       <div className="section-head">
         <h2 id="instant-title">Instant prizes</h2>
-        <span className="section-note num">{left.toLocaleString('en-GB')} left to win</span>
+        <span className="chip chip-glass count-chip is-label num"><Bolt className="ic-primary" />{left.toLocaleString('en-GB')} left to win</span>
       </div>
       <SnapRow label="Instant prizes" className="iprize-row">
         {open.map((t, i) => (
