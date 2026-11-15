@@ -14,7 +14,7 @@ import { formatPriceShort } from '@/lib/money';
 import { formatUk, formatUkShort } from '@/lib/time';
 import type { publicInstant } from '@/lib/public/instant';
 import { progressClass } from './CompetitionFacts';
-import { PrizeIcon } from './home/PrizeIcon';
+import { InstantPrizeArt } from './illustrations';
 
 type Instant = NonNullable<Awaited<ReturnType<typeof publicInstant>>>;
 
@@ -38,7 +38,7 @@ export function InstantPrizes({ slug, inst }: { slug: string; inst: Instant }) {
           const left = Math.max(0, t.count - t.won);
           return (
             <li key={`${t.title}-${i}`} className={`iw-tile${left === 0 ? ' is-gone' : ''}`}>
-              <span className="iw-art"><PrizeIcon rank={tierRank(values, t.valuePence)} id={`iw${i}`} /></span>
+              <span className="iw-art"><InstantPrizeArt rank={tierRank(values, t.valuePence)} id={`iw${i}`} /></span>
               <span className="iw-value num">{formatPriceShort(t.valuePence)}</span>
               <span className="iw-title">{t.title}</span>
               <span className="iw-left num">

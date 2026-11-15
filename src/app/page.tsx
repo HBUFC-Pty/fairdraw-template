@@ -96,7 +96,7 @@ export default async function Home() {
             <p>{formatPence(lead.c.ticketPricePence)} a ticket. Drawn {formatUk(lead.c.drawAt)}, however many tickets are sold.</p>
             <p><Link className="button" href={`/competitions/${lead.c.slug}`}>See the prize</Link></p>
           </div>
-          {img ? <div className="hero"><img src={img.url} alt={img.alt} /></div> : null}
+          {img ? <div className="hero"><img src={img.url} alt={img.alt} width={600} height={600} /></div> : null}
         </section>
         {intro}
         {live.length > 1 ? <><h2>More competitions</h2><div className={gridClass}>{cards.slice(1)}</div></> : null}

@@ -13,7 +13,7 @@
 import Link from 'next/link';
 import type { SiteStats } from '@/lib/public/home';
 import { FairDrawLink } from '../SiteFooter';
-import { Beacon, Dice, ShieldCheck, Sparkle } from '../icons';
+import { ProofArt } from '../illustrations';
 import { CountUp } from './CountUp';
 
 /** "Every draw can be checked": exact counts from the database (no "+", no totals of money) and the way to check. */
@@ -26,13 +26,7 @@ export function ProofBand({ stats }: { stats: SiteStats }) {
   return (
     <section className="home-section proof" aria-labelledby="proof-title">
       <div className="proof-art" aria-hidden="true">
-        <span className="proof-ring r1" />
-        <span className="proof-ring r2" />
-        <Beacon className="proof-beacon" size={72} />
-        <ShieldCheck className="proof-shield" size={112} />
-        <Dice className="proof-dice" size={36} />
-        <Sparkle className="spark s1" />
-        <Sparkle className="spark s2" />
+        <ProofArt id="proof" />
       </div>
       <div className="proof-body">
         <h2 id="proof-title">Every draw can be checked</h2>

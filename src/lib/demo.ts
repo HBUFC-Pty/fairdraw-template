@@ -135,7 +135,7 @@ export const DEMO_LONG_PRIZES: DemoPrize[] = [
     options: ['Glasgow', 'Edinburgh', 'Aberdeen'],
     correctIndex: 1,
   }),
-  pointsPrize(25000, '/images/demo-points-trophy.svg', 'A trophy: 25,000 demo points (demo image)', 100, 500, null, { reveal: 'spin', prizes: instantPoints(1000, 5, 200, 20) }),
+  pointsPrize(25000, '/images/demo-points-crown.svg', 'A crown: 25,000 demo points (demo image)', 100, 500, null, { reveal: 'spin', prizes: instantPoints(1000, 5, 200, 20) }),
 ];
 
 const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));

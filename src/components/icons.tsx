@@ -215,12 +215,3 @@ export function LogoTicket({ className, size = 32, gradientId }: IconProps & { g
     </svg>
   );
 }
-
-/** Stand-in for a prize with no image: a ticket on the lit stage. Stage 4 may replace it with richer art. */
-export function PrizePlaceholder({ className }: { className?: string }) {
-  return (
-    <span className={['prize-placeholder', className].filter(Boolean).join(' ')} aria-hidden="true">
-      <Ticket size={56} />
-    </span>
-  );
-}

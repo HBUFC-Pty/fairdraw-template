@@ -150,8 +150,8 @@ details.menu[open] > summary { background: var(--c-surface); }
   margin: 0 0 var(--s3); font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-text);
 }
-[data-type='display'] footer.site .columns ul { gap: 10px; }
-[data-type='display'] footer.site .columns a { color: var(--c-muted); text-decoration: none; }
+[data-type='display'] footer.site .columns ul { gap: 4px; }
+[data-type='display'] footer.site .columns a { display: inline-flex; align-items: center; min-height: 28px; color: var(--c-muted); text-decoration: none; }
 [data-type='display'] footer.site .columns a:hover, [data-type='display'] footer.site .columns a:focus-visible { color: var(--c-text); text-decoration: underline; }
 [data-type='display'] footer.site .operator-line { margin: 0; max-width: 90ch; }
 
@@ -194,6 +194,7 @@ details.menu[open] > summary { background: var(--c-surface); }
 }
 .tile-frame img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
 .prize-placeholder { display: grid; place-items: center; width: 100%; height: 100%; color: var(--c-primary); }
+.prize-placeholder .il-placeholder { width: 78%; height: 78%; }
 .tile-chips { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: calc(100% - 16px); }
 .tile-price {
   position: absolute; top: 8px; right: 8px; height: 28px; padding: 0 10px;
@@ -236,6 +237,8 @@ details.menu[open] > summary { background: var(--c-surface); }
 @container (max-width: 230px) {
   .tile-chips { top: 42px; }
   .tile-chips .chip { height: 22px; padding: 0 8px; letter-spacing: 0.05em; }
+  /* One badge only, so the prize stays in view (the competition page lists every fact). */
+  .tile-chips .chip:nth-child(n + 2) { display: none; }
   .tile-time { font-size: 0.6875rem; min-width: 0; padding: 0 10px; }
   .tile-meta { letter-spacing: 0.03em; }
 }

@@ -27,7 +27,7 @@ export function DemoHero() {
         </p>
       </div>
       <div className="hero">
-        <img src="/images/demo-hero.svg" alt="Two raffle tickets and a green tick: a draw anyone can check" width={600} height={400} />
+        <img src="/images/demo-hero.svg" alt="Two raffle tickets and a green tick: a draw anyone can check" width={600} height={600} />
       </div>
     </section>
   );

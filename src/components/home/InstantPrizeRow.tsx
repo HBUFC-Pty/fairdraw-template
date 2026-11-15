@@ -13,7 +13,7 @@
 import { formatPriceShort } from '@/lib/money';
 import type { InstantPrizeTile } from '@/lib/public/home';
 import { progressClass } from '../CompetitionFacts';
-import { PrizeIcon } from './PrizeIcon';
+import { InstantPrizeArt } from '../illustrations';
 import { SnapRow } from './SnapRow';
 
 /** Instant prizes still to be won in live competitions, with real counts (count minus won). */
@@ -30,7 +30,7 @@ export function InstantPrizeRow({ tiles }: { tiles: InstantPrizeTile[] }) {
       <SnapRow label="Instant prizes" className="iprize-row">
         {open.map((t, i) => (
           <a key={`${t.slug}-${t.title}-${i}`} className="iprize" href={`/competitions/${t.slug}#instant`}>
-            <span className="iprize-art"><PrizeIcon rank={t.rank} id={`${i}`} /></span>
+            <span className="iprize-art"><InstantPrizeArt rank={t.rank} id={`row${i}`} /></span>
             <span className="iprize-value num">{formatPriceShort(t.valuePence)}</span>
             <span className="iprize-left num">{t.left.toLocaleString('en-GB')} of {t.count.toLocaleString('en-GB')} left</span>
             <span className="iprize-comp">{t.competition}</span>

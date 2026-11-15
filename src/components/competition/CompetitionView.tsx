@@ -17,7 +17,8 @@ import type { publicInstant } from '@/lib/public/instant';
 import { formatUk } from '@/lib/time';
 import { CompetitionFacts } from '../CompetitionFacts';
 import { InstantPrizes } from '../InstantPrizes';
-import { ChevronDown, Envelope } from '../icons';
+import { ChevronDown } from '../icons';
+import { PostalEntryArt } from '../illustrations';
 import { BuyBox, type Draw, type Winner } from './BuyBox';
 import { Gallery } from './Gallery';
 import { SectionNav } from './SectionNav';
@@ -60,7 +61,7 @@ function Panel({ id, title, open = false, children }: { id: string; title: strin
 export function FreeEntry({ c, postalAddress }: { c: Competition; postalAddress: string }) {
   return (
     <section className="free-entry" id="free-entry" aria-labelledby="free-entry-title">
-      <span className="free-entry-art" aria-hidden="true"><Envelope size={40} /></span>
+      <span className="free-entry-art" aria-hidden="true"><PostalEntryArt id="postal" /></span>
       <div>
         <h2 id="free-entry-title" className="panel-title">Free entry</h2>
         {c.status === 'live' ? (

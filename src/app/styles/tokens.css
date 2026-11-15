@@ -78,6 +78,40 @@
 .fill-primary { fill: var(--c-primary); }
 .fill-accent { fill: var(--c-accent); }
 .stroke-muted { stroke: var(--c-muted); }
+.stop-primary-light { stop-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-text)); }
+.stop-primary-deep { stop-color: color-mix(in srgb, var(--c-primary) 58%, var(--c-bg)); }
+
+/* Illustrations (src/components/illustrations.tsx): fills and strokes from tokens only. */
+.il { display: block; overflow: visible; }
+.il-primary { fill: var(--c-primary); }
+.il-accent { fill: var(--c-accent); }
+.il-surface { fill: var(--c-surface); }
+.il-soft { fill: color-mix(in srgb, var(--c-primary) 14%, var(--c-surface)); }
+.il-line { stroke: currentColor; }
+.il-cut { stroke: var(--c-on-primary); }
+.il-cut-fill { fill: var(--c-on-primary); fill-opacity: 0.55; }
+.il-hand { fill: var(--c-surface); stroke: var(--c-text); }
+.il-on-accent { stroke: var(--c-on-accent); fill: none; }
+.il-accent-line { stroke: var(--c-accent); }
+.il-ring { fill: none; stroke: color-mix(in srgb, var(--c-primary) 30%, transparent); }
+.il-ring.is-accent { stroke: color-mix(in srgb, var(--c-accent) 30%, transparent); }
+.il-ring.is-strong { stroke: color-mix(in srgb, var(--c-primary) 65%, transparent); }
+.il-ring.is-accent.is-strong { stroke: color-mix(in srgb, var(--c-accent) 65%, transparent); }
+.il-shadow { fill: color-mix(in srgb, var(--c-bg) 65%, transparent); }
+.il-gloss { stroke: color-mix(in srgb, var(--c-text) 55%, transparent); }
+.il-gloss-fill { fill: color-mix(in srgb, var(--c-text) 60%, transparent); }
+.il-spark { fill: var(--c-primary); }
+.il-spark.is-accent { fill: var(--c-accent); }
+.il-floor { fill: color-mix(in srgb, var(--c-primary) 22%, transparent); }
+.il-p3 { fill: color-mix(in srgb, var(--c-primary) 72%, var(--c-bg)); }
+.il-p3-line { stroke: color-mix(in srgb, var(--c-primary) 72%, var(--c-bg)); }
+.il-p4 { fill: color-mix(in srgb, var(--c-primary) 50%, var(--c-bg)); }
+.il-a1 { fill: color-mix(in srgb, var(--c-accent) 55%, var(--c-text)); }
+.il-a2 { fill: var(--c-accent); }
+.il-a3 { fill: color-mix(in srgb, var(--c-accent) 75%, var(--c-bg)); }
+.il-a4 { fill: color-mix(in srgb, var(--c-accent) 52%, var(--c-bg)); }
+.il-a-edge { stroke: color-mix(in srgb, var(--c-accent) 50%, var(--c-text)); }
+.il .spark { transform-box: fill-box; transform-origin: center; }
 
 /* Paragraph measure */
 .measure { max-width: 62ch; }

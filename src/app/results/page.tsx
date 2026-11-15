@@ -14,7 +14,8 @@ import Link from 'next/link';
 import { finishedCompetitions } from '@/lib/public/queries';
 import { formatUk } from '@/lib/time';
 import { FairDrawLink } from '@/components/SiteFooter';
-import { PrizePlaceholder, ShieldCheck } from '@/components/icons';
+import { ShieldCheck } from '@/components/icons';
+import { PrizePlaceholder } from '@/components/illustrations';
 
 export const metadata = { title: 'Results' };
 

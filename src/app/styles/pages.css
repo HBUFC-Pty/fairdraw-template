@@ -90,7 +90,6 @@ main.wrap:has(> .comp-page) { overflow-x: clip; }
 }
 .gallery-inner img { display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
 .gallery-inner img.is-active { display: block; }
-.gallery-inner .prize-placeholder .icon { width: 96px; height: 96px; }
 [data-type='display'] .gallery-frame {
   padding: 2px; border: 0;
   background: linear-gradient(135deg, var(--c-primary), color-mix(in srgb, var(--c-primary) 40%, var(--c-accent)) 55%, var(--c-accent));
@@ -260,6 +259,13 @@ main.wrap:has(> .comp-page) { overflow-x: clip; }
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   }
   [data-header='bar'] .section-nav { top: var(--header-h); }
+  /* Fade the right edge so a clipped chip reads as "more this way". */
+  .section-nav ul {
+    scroll-snap-type: x proximity; padding-right: 28px;
+    -webkit-mask-image: linear-gradient(90deg, var(--c-text) calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, var(--c-text) calc(100% - 28px), transparent);
+  }
+  .section-nav li { scroll-snap-align: start; }
 }
 @media (min-width: 640px) and (max-width: 959px) { .section-nav { margin-inline: -24px; padding-inline: 22px; } }
 .comp-page [id] { scroll-margin-top: 72px; }
@@ -291,11 +297,8 @@ details.panel[open] > summary .panel-chevron { transform: rotate(180deg); }
   display: flex; align-items: flex-start; gap: var(--s5); padding: var(--s5); border-radius: var(--radius); background: var(--c-surface);
   border: 1px solid color-mix(in srgb, var(--c-primary) 40%, var(--c-border));
 }
-.free-entry-art {
-  display: grid; place-items: center; flex: none; width: 72px; height: 72px; border-radius: 50%; color: var(--c-primary);
-  border: 2px solid transparent;
-  background: linear-gradient(var(--c-surface), var(--c-surface)) padding-box, linear-gradient(135deg, var(--c-primary), var(--c-accent)) border-box;
-}
+.free-entry-art { display: grid; place-items: center; flex: none; width: 96px; height: 96px; color: var(--c-primary); }
+.free-entry-art .il-postal { width: 96px; height: 96px; filter: drop-shadow(0 10px 22px color-mix(in srgb, var(--c-primary) 30%, transparent)); }
 .free-entry h2 { margin: 0 0 var(--s2); }
 .free-entry p { margin: 0; max-width: 62ch; }
 @media (max-width: 639px) {
@@ -355,7 +358,6 @@ details.panel[open] > summary .panel-chevron { transform: rotate(180deg); }
   background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--c-primary) 18%, var(--c-surface)), var(--c-surface) 72%);
 }
 .basket-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
-.basket-thumb .prize-placeholder .icon { width: 32px; height: 32px; }
 .basket-info { min-width: 0; }
 .basket-page h2.basket-title {
   margin: 0; font-size: 1.0625rem; line-height: 1.2;
@@ -455,7 +457,6 @@ p.checkout-panel.is-ok .icon { flex: none; color: var(--c-success); }
   background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--c-primary) 18%, var(--c-surface)), var(--c-surface) 72%);
 }
 .result-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
-.result-thumb .prize-placeholder .icon { width: 32px; height: 32px; }
 .result-info { display: grid; gap: 4px; min-width: 0; }
 .results-page h2.result-title { margin: 0; font-size: 1.125rem; line-height: 1.15; }
 [data-type='display'] .results-page h2.result-title { font-size: 1.25rem; }

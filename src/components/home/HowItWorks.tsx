@@ -11,15 +11,16 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 import Link from 'next/link';
-import { ArrowRight, Beacon, Envelope, Ticket } from '../icons';
+import { ArrowRight } from '../icons';
+import { StepCheck, StepEnter, StepPick } from '../illustrations';
 
 const STEPS = [
-  { title: 'Pick a prize', Icon: Ticket },
-  { title: 'Get tickets or enter free by post', Icon: Envelope },
-  { title: 'Watch the draw, then check it', Icon: Beacon },
+  { title: 'Pick a prize', Art: StepPick },
+  { title: 'Get tickets or enter free by post', Art: StepEnter },
+  { title: 'Watch the draw, then check it', Art: StepCheck },
 ] as const;
 
-/** Three steps, no paragraphs. Stage 4 replaces the icons with illustrations. */
+/** Three illustrated steps, no paragraphs. */
 export function HowItWorks() {
   return (
     <section className="home-section band bleed" aria-labelledby="how-title">
@@ -27,9 +28,9 @@ export function HowItWorks() {
         <h2 id="how-title">How it works</h2>
       </div>
       <ol className="steps">
-        {STEPS.map(({ title, Icon }, i) => (
+        {STEPS.map(({ title, Art }, i) => (
           <li key={title} className="step">
-            <span className="step-ring" aria-hidden="true"><Icon size={34} /></span>
+            <span className="step-ring" aria-hidden="true"><Art id={`step${i + 1}`} /></span>
             <span className="step-no">Step {i + 1}</span>
             <h3 className="step-title">{title}</h3>
           </li>

@@ -13,7 +13,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PrizePlaceholder } from '../icons';
+import { PrizePlaceholder } from '../illustrations';
 
 type Image = { url: string; alt: string };
 

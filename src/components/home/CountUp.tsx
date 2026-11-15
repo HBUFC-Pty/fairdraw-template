@@ -29,6 +29,7 @@ export function CountUp({ value }: { value: number }) {
     const el = ref.current;
     if (!el || value <= 0 || !motionAllowed() || !('IntersectionObserver' in window)) return;
     let raf = 0;
+    let done: ReturnType<typeof setTimeout> | undefined;
     el.textContent = '0';
     const io = new IntersectionObserver(
       (entries) => {
@@ -42,6 +43,8 @@ export function CountUp({ value }: { value: number }) {
           if (p < 1) raf = requestAnimationFrame(step);
         };
         raf = requestAnimationFrame(step);
+        // If frames are held back (a background tab, a screenshot tool), still land on the real number.
+        done = setTimeout(() => { cancelAnimationFrame(raf); el.textContent = text; }, DURATION + 300);
       },
       { threshold: 0.4 },
     );
@@ -49,6 +52,7 @@ export function CountUp({ value }: { value: number }) {
     return () => {
       io.disconnect();
       cancelAnimationFrame(raf);
+      clearTimeout(done);
       el.textContent = text;
     };
   }, [value, text]);

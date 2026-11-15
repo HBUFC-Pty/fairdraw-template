@@ -19,6 +19,7 @@ import { cardBadges } from '../CompetitionCard';
 import { formatPercent, percentSold, progressClass, ticketsLeft } from '../CompetitionFacts';
 import { Countdown } from '../Countdown';
 import { Bolt, Clock, Sparkle } from '../icons';
+import { HeroRings } from '../illustrations';
 import { HeroCarousel, type HeroSlide } from './HeroCarousel';
 
 const MAX_SLIDES = 5;
@@ -85,6 +86,7 @@ function PrizeSlide({ c, sold, now, badges }: { c: Competition; sold: number; no
         </p>
       </div>
       <div className="hero-art">
+        <HeroRings />
         <div className="hero-frame">
           <div className="hero-frame-inner">
             {img ? <img src={img.url} alt={img.alt} width={600} height={600} fetchPriority="high" /> : null}
@@ -109,6 +111,7 @@ function IntroSlide() {
         </p>
       </div>
       <div className="hero-art">
+        <HeroRings />
         <img className="hero-stage" src="/images/stage-tickets.svg" alt="" width={800} height={800} />
         <Sparkles />
       </div>

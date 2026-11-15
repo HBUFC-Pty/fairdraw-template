@@ -21,7 +21,8 @@ import { playBlockReason } from '@/lib/checkout/service';
 import { creditAllowance } from '@/lib/checkout/credit-card-rule';
 import { checkoutAction, removeFromBasketAction } from './actions';
 import { priceFor } from '@/lib/competitions/bundles';
-import { Basket, Close, PrizePlaceholder } from '@/components/icons';
+import { Basket, Close } from '@/components/icons';
+import { PrizePlaceholder } from '@/components/illustrations';
 
 export const metadata = { title: 'Basket' };
 

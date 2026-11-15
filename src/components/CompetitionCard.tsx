@@ -16,7 +16,8 @@ import { formatUk, formatUkShort } from '@/lib/time';
 import type { Competition } from '@/lib/public/queries';
 import { formatPercent, percentSold, progressClass, ticketsLeft } from './CompetitionFacts';
 import { Countdown } from './Countdown';
-import { Bolt, Clock, PrizePlaceholder } from './icons';
+import { Bolt, Clock } from './icons';
+import { PrizePlaceholder } from './illustrations';
 import { brand } from '@/brand';
 
 export type CardStyle = 'classic' | 'compact' | 'poster' | 'tile';
