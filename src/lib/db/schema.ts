@@ -419,3 +419,31 @@ export const jobRuns = pgTable('job_runs', {
   lastOk: boolean('last_ok').notNull(),
   lastError: text('last_error'),
 });
+
+/**
+ * The optional visit counter (src/lib/stats.ts, on only when STATS_TOKEN is set). Page views per minute, per page and
+ * per referring site (host name only, '' for none). Rows are deleted after 48 hours.
+ */
+export const pageViews = pgTable(
+  'page_views',
+  {
+    minute: ts('minute').notNull(),
+    path: text('path').notNull(),
+    referrerHost: text('referrer_host').notNull().default(''),
+    views: integer('views').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.minute, t.path, t.referrerHost] })],
+);
+
+/**
+ * Distinct visitors per minute for the visit counter: only a keyed hash (HMAC-SHA256 with a key that changes every UK
+ * day) of the IP address and browser, never the address or browser themselves. Rows are deleted after 48 hours.
+ */
+export const pageVisitors = pgTable(
+  'page_visitors',
+  {
+    minute: ts('minute').notNull(),
+    visitor: text('visitor').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.minute, t.visitor] })],
+);

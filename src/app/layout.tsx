@@ -24,6 +24,7 @@ import { currentSession, isStaff } from '@/lib/web/session';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { DemoBanner } from '@/components/DemoBanner';
+import { PageCounter } from '@/components/PageCounter';
 import { cspNonce } from '@/lib/web/request';
 import { basketCount } from '@/lib/public/basket-count';
 import { brand, brandAttributes, brandCss } from '@/brand';
@@ -52,6 +53,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader brand={brand} loggedIn={Boolean(s)} staff={Boolean(s && isStaff(s.user.role))} basket={basket} />
         <main id="main" className="wrap">{children}</main>
         <SiteFooter style={brand.layout.footer} brand={brand} />
+        {/* The optional cookieless visit counter: only when the operator sets STATS_TOKEN (src/lib/stats.ts). */}
+        {env().STATS_TOKEN ? <PageCounter /> : null}
       </body>
     </html>
   );

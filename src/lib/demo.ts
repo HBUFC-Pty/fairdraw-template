@@ -139,7 +139,8 @@ export const DEMO_LONG_PRIZES: DemoPrize[] = [
   pointsPrize(5000, '/images/demo-points-gem.svg', 'A gem: 5,000 demo points (demo image)', 25, 300, null, { reveal: 'coin', prizes: instantPoints(500, 3, 100, 12) }),
 ];
 
-const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));
+/** The fictional demo players (no password, so nobody can log in as them). Also used by the visit counter. */
+export const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));
 const visitorWhere = and(eq(users.role, 'player'), isNotNull(users.passwordHash), isNull(users.deletedAt));
 
 /** Create the fictional players if they are missing. They have no password, so nobody can log in as them. */

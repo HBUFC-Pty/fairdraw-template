@@ -20,6 +20,7 @@ import { exclusions, users, webhookEvents } from './db/schema';
 import { pruneTokensAndSessions } from './auth/service';
 import { pruneRateLimits } from './rate-limit';
 import { deleteAccount } from './account/service';
+import { pruneVisitCounts } from './stats';
 
 export const RETENTION = {
   unverifiedAccountDays: 30,
@@ -35,6 +36,8 @@ export async function runRetention(db: Db, now = new Date()) {
   await pruneRateLimits(db, now);
   await db.delete(webhookEvents).where(lt(webhookEvents.receivedAt, new Date(now.getTime() - RETENTION.webhookEventDays * day)));
   await db.delete(exclusions).where(lt(exclusions.until, now));
+  // The optional visit counter's rows (src/lib/stats.ts): 48 hours. The worker's tick also prunes them as it goes.
+  await pruneVisitCounts(db, now);
 
   // Unverified sign-ups with no orders: delete outright after 30 days.
   const unverified = await db.execute<{ id: string }>(sql`

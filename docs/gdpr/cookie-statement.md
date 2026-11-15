@@ -38,6 +38,15 @@ ways to control cookie behaviour such as the length of time they are stored: eit
 by using third party plugins. If you disable cookies, please be aware that you will not be able to log in to this
 site. To find out more on how to manage and delete cookies, visit [aboutcookies.org](https://www.aboutcookies.org/).
 
+## The optional visit counter (for operators)
+
+Setting `STATS_TOKEN` turns on the template's own visit counter (`src/lib/stats.ts`). It sets no cookie and stores
+nothing on the visitor's device. It counts page views per minute and unique visitors with a keyed hash of IP address
+and browser that changes every day, keeps the rows for 48 hours, and does not count browsers that send Global Privacy
+Control or Do Not Track. While it is on, the privacy notice adds a "Visit counts" section and the cookies page
+mentions it, so keep this statement in step. Because the visitor hash is made from details the browser sends, take
+advice on whether PECR rules on "similar technologies" apply to your use, and record it in your ROPA.
+
 ## If you add analytics (for operators)
 
 Adding analytics, advertising pixels, chat widgets, embedded videos or anything else that stores or reads information

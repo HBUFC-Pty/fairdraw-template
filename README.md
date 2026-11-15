@@ -53,7 +53,8 @@ with `DEMO_MODE=true`.
   nonce-based Content-Security-Policy and strict security headers, Server Action origin checks, Zod validation on every
   input, Postgres-backed rate limiting on login, sign-up, reset, 2FA and checkout.
 - **Privacy by default**: no trackers, no analytics, one strictly necessary cookie, so no cookie banner. A scheduled
-  retention job deletes or anonymises data on schedule. Templates for the privacy notice, ROPA, DPIA, DSAR and breach
+  retention job deletes or anonymises data on schedule. An optional first-party, cookieless visit counter (off unless
+  you set `STATS_TOKEN`) gives live traffic figures at `/api/stats` and is described in the privacy notice when on. Templates for the privacy notice, ROPA, DPIA, DSAR and breach
   procedures and the cookie statement are in [docs/gdpr/](docs/gdpr/).
 - **Legal templates** in [docs/legal/](docs/legal/): competition terms (prize competition and free draw exemptions),
   responsible play, complaints, and a checklist for the DCMS voluntary code for prize draw operators.
