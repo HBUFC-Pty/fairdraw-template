@@ -9,15 +9,15 @@ exactly the same whatever the brand.
 | Setting | Choices | What it changes |
 | --- | --- | --- |
 | `colours.light`, `colours.dark` | 16 colours each | Page, cards, text, links and buttons, focus rings, success, warning and error, in light and dark mode |
-| `fonts` | `modern`, `editorial`, `friendly`, `bold`, `classic`, `outdoors`, `geometric`, `premium`, `playful`, `accessible`, `system` | Heading and body fonts (see `src/brand/fonts.ts`) |
+| `fonts` | `modern`, `editorial`, `friendly`, `bold`, `classic`, `outdoors`, `geometric`, `premium`, `playful`, `accessible`, `system`, `stage` | Heading and body fonts (see `src/brand/fonts.ts`). `stage` is Barlow Condensed headings with Figtree body |
 | `radius` | `none`, `small`, `medium`, `large` | Corner rounding |
 | `density` | `compact`, `comfortable`, `spacious` | Spacing |
-| `shadow` | `none`, `soft`, `crisp` | Card shadows |
+| `shadow` | `none`, `soft`, `crisp`, `glow` | Card shadows (`glow` adds a soft halo in your primary colour) |
 | `buttons` | `solid`, `outline`, `pill`, `square` | Button style |
 | `cards` | `bordered`, `elevated`, `flat` | Card style |
-| `layout.home` | `hero`, `grid`, `featured` | Home page: a big lead prize, a grid, or a carousel you move yourself (it never moves on its own) |
-| `layout.card` | `classic`, `compact`, `poster` | How each competition appears in lists |
-| `layout.header` | `simple`, `centred` | Logo beside or above the menu |
+| `layout.home` | `hero`, `grid`, `featured`, `showcase` | Home page: a big lead prize, a grid, a carousel you move yourself (it never moves on its own), or `showcase`: a prize carousel, the live grid with filters, instant prizes, recent winners, the next draw, how it works and the proof band |
+| `layout.card` | `classic`, `compact`, `poster`, `tile` | How each competition appears in lists (`tile`: a compact square card, two to a row on phones) |
+| `layout.header` | `simple`, `centred`, `bar` | Logo beside or above the menu, or `bar`: a slim sticky header with a basket count and a menu button on phones |
 | `layout.footer` | `columns`, `minimal` | Footer arrangement |
 | `logo` | path in `public/brand/`, alt text, whether to show the site name too | Header logo |
 | `favicon` | path in `public/brand/` or `null` | Browser tab icon (a monogram in your colours is generated otherwise) |
@@ -25,8 +25,13 @@ exactly the same whatever the brand.
 | `extras.countdown` | `true` or `false` (default) | A live countdown to the close on each competition card |
 | `extras.badges` | `true` or `false` (default) | Factual badges on cards: "Ending soon" (within 24 hours of the close), "Almost sold out" (80% of the maximum or more), "Sold out", "New" (opened in the last 24 hours), "Coming soon". Never invented: each follows from the competition's own times and counts |
 | `extras.glow` | `true` or `false` (default) | A soft glow and lift on competition cards (still for people who prefer reduced motion) |
+| `typeScale` | `standard` (default) or `display` | `display` sets headings, prices and buttons in condensed capitals on a larger scale |
+| `extras.motion` | `true` or `false` (default) | Hero autoplay (with a pause button), card lifts, sheen, scroll entrances, stage lights that come up as the page opens, and confetti when an instant win is revealed. All of it is off for people who prefer reduced motion |
+| `extras.ticker` | `true` or `false` (default) | A strip of recent winners on the home page, from real results only (names only with the winner's consent) |
 
 The social sharing image and the default favicon are drawn from your colours and site name automatically.
+
+Prize images are shown square and cropped to fill: upload square images, 1200 by 1200 pixels, with no text near the edges.
 
 ## How it works
 

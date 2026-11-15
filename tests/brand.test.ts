@@ -4,9 +4,9 @@ import path from 'node:path';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { brandSchema, type Brand } from '../src/brand/schema';
-import { checkBrandContrast } from '../src/brand/check';
-import { contrastRatio, nearestPassing } from '../src/brand/contrast';
-import { brandCss } from '../src/brand/css';
+import { checkBrandContrast, describeProblems } from '../src/brand/check';
+import { contrastRatio, mixHex, nearestPassing } from '../src/brand/contrast';
+import { brandAttributes, brandCss } from '../src/brand/css';
 import { activeBrand, brand, parseBrand } from '../src/brand';
 import { cardBadges } from '../src/components/CompetitionCard';
 import { SiteFooter } from '../src/components/SiteFooter';
@@ -57,6 +57,74 @@ describe('brand files', () => {
   });
 });
 
+describe('showtime v2 brand values', () => {
+  const showtime = () => JSON.parse(fs.readFileSync(path.join(root, 'config/brand-presets/showtime.json'), 'utf8'));
+
+  it('accepts the new values, and defaults them for older brand files', () => {
+    const b = brandSchema.parse(showtime());
+    expect(b.fonts).toBe('stage');
+    expect(b.shadow).toBe('glow');
+    expect(b.typeScale).toBe('display');
+    expect(b.layout).toEqual({ home: 'showcase', card: 'tile', header: 'bar', footer: 'columns' });
+    const old = showtime();
+    delete old.typeScale;
+    delete old.extras;
+    const parsed = brandSchema.parse(old);
+    expect(parsed.typeScale).toBe('standard');
+    expect(parsed.extras).toEqual({ countdown: false, badges: false, glow: false, motion: false, ticker: false });
+    const partial = brandSchema.parse({ ...showtime(), extras: { countdown: true } });
+    expect(partial.extras).toEqual({ countdown: true, badges: false, glow: false, motion: false, ticker: false });
+    expect(() => brandSchema.parse({ ...showtime(), typeScale: 'huge' })).toThrow();
+  });
+
+  it('only switches the new look on for brands that ask for it', () => {
+    const on = brandAttributes(activeBrand('showtime'));
+    expect(on).toMatchObject({ 'data-type': 'display', 'data-motion': 'on', 'data-home': 'showcase', 'data-header': 'bar', 'data-card-style': 'tile' });
+    for (const f of presetFiles.filter((p) => !p.endsWith('showtime.json'))) {
+      const attrs = brandAttributes(brandSchema.parse(JSON.parse(fs.readFileSync(f, 'utf8')))) as Record<string, string>;
+      expect(attrs['data-type'], f).toBeUndefined();
+      expect(attrs['data-motion'], f).toBeUndefined();
+    }
+    expect(brandCss(activeBrand('showtime'))).toContain("'Barlow Condensed'");
+  });
+
+  it('mixes colours as CSS color-mix in srgb does', () => {
+    expect(mixHex('#ffffff', '#000000', 50)).toBe('#808080');
+    expect(mixHex('#fbbf24', '#f5f3ff', 100)).toBe('#fbbf24');
+    expect(mixHex('#fbbf24', '#f5f3ff', 85)).toBe('#fac745');
+  });
+
+  it('checks the mixed colours of display brands in brand:check, and every preset passes them', () => {
+    for (const f of presetFiles) {
+      const b = brandSchema.parse(JSON.parse(fs.readFileSync(f, 'utf8')));
+      expect(checkBrandContrast({ ...b, typeScale: 'display' }).filter((p) => p.what.includes('gradient')), f).toEqual([]);
+    }
+    const showtime = activeBrand('showtime');
+    expect(checkBrandContrast(showtime)).toEqual([]);
+    // A display brand whose accent is too dark for the tinted tiles is refused, with the mixed background named.
+    const bad: Brand = structuredClone(showtime);
+    bad.colours.dark.accent = '#7a2a55';
+    const problems = checkBrandContrast(bad).filter((p) => p.mode === 'dark');
+    const tint = problems.find((p) => p.mix?.with === 'surface');
+    expect(tint?.fg).toBe('accent');
+    expect(tint?.suggestion).not.toBeNull();
+    const back = mixHex(bad.colours.dark.primary, bad.colours.dark.surface, 16);
+    expect(contrastRatio(tint!.suggestion!, back)).toBeGreaterThanOrEqual(4.5);
+    expect(describeProblems(problems)).toContain('primary mixed 16% with surface');
+    // The same colours under the standard type scale do not get the display checks.
+    expect(checkBrandContrast({ ...bad, typeScale: 'standard' }).some((p) => p.mix)).toBe(false);
+  });
+
+  it('keeps button text at 4.5:1 on every stop of the showtime gradient, light and dark', () => {
+    const b = activeBrand('showtime');
+    for (const mode of ['light', 'dark'] as const) {
+      const p = b.colours[mode];
+      const stops = [mixHex(p.primary, p.text, 85), p.primary, mixHex(p.primary, p.accent, 85)];
+      for (const stop of stops) expect(contrastRatio(p.onPrimary, stop), `${mode} ${stop}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe('no hard-coded colours or fonts outside the brand', () => {
   function files(dir: string): string[] {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : [path.join(dir, e.name)]));
@@ -79,19 +147,24 @@ describe('no hard-coded colours or fonts outside the brand', () => {
 });
 
 describe('the FairDraw link survives every footer style', () => {
-  it('renders in both footers', () => {
+  it('renders in both footers, with and without the display brand', () => {
     for (const style of ['columns', 'minimal'] as const) {
-      const html = renderToStaticMarkup(createElement(SiteFooter, { style }));
-      expect(html).toContain('href="https://fairdraw.partyofone.quest"');
-      expect(html).toContain('Draw checks by FairDraw');
+      for (const b of [undefined, activeBrand('showtime')]) {
+        const html = renderToStaticMarkup(createElement(SiteFooter, { style, brand: b }));
+        // Once in the trust row, and once more in the footer links.
+        expect(html.split('href="https://fairdraw.partyofone.quest"').length - 1).toBe(2);
+        expect(html).toContain('Draw checks by FairDraw');
+        expect(html).toContain('Free entry by post');
+        expect(html).toContain('18+ only');
+      }
     }
   });
 
   it('BRAND_PRESET picks a preset at run time, and refuses one that does not exist', () => {
     expect(activeBrand('showtime').direction).toMatch(/^Showtime/);
-    expect(activeBrand('showtime').extras).toEqual({ countdown: true, badges: true, glow: true });
+    expect(activeBrand('showtime').extras).toEqual({ countdown: true, badges: true, glow: true, motion: true, ticker: true });
     expect(activeBrand('').direction).toBe(activeBrand(undefined).direction);
-    expect(activeBrand(undefined).extras).toEqual({ countdown: false, badges: false, glow: false });
+    expect(activeBrand(undefined).extras).toEqual({ countdown: false, badges: false, glow: false, motion: false, ticker: false });
     expect(() => activeBrand('neon-nights')).toThrow(/not one of/);
   });
 

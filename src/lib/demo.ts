@@ -19,7 +19,7 @@
  *   the email step is skipped because a demo sends no email. Visitors' accounts are deleted after 24 hours;
  * - every amount shows as points (src/lib/money.ts) and every prize is demo points with no value, so nothing looks
  *   like real money or a prize anyone could claim;
- * - the scheduled work keeps a short competition that draws within a few hours, plus two longer ones, each with
+ * - the scheduled work keeps a short competition that draws within a few hours, plus three longer ones, each with
  *   entries from fictional players who cannot log in. Every draw is a real draw, so finished ones can be checked.
  *
  * Never set DEMO_MODE on a real site: env() refuses it unless PAYMENT_PROVIDER=test.
@@ -49,7 +49,7 @@ export const DEMO_VISITOR_MS = 24 * H;
 /** There is always a competition that closes within this. */
 export const DEMO_QUICK_WINDOW_MS = 6 * H;
 /** Longer competitions kept open, counting only those closing more than DEMO_LONG_LEAD_MS from now. */
-export const DEMO_LONG_TARGET = 2;
+export const DEMO_LONG_TARGET = 3;
 export const DEMO_LONG_LEAD_MS = 12 * H;
 export const DEMO_FICTIONAL_PLAYERS = 24;
 /** At most this many demo competitions open in any 24 hours, however often visitors sell them out. */
@@ -103,7 +103,7 @@ function pointsPrize(
   return {
     key: `points-${points}`,
     title: `${shown} demo points`,
-    summary: 'Made-up points with no value: nothing to claim.',
+    summary: 'Demo points with no value.',
     prizeDescription: `${shown} demo points. The points are made up for this demo: they have no value and cannot be claimed, exchanged or withdrawn. Everything else runs exactly as it would on a real site: the close, the commitment, the draw and the record anyone can check.`,
     prizeValuePence: points,
     image: { url: image, alt },
@@ -128,14 +128,15 @@ export const DEMO_QUICK_PRIZES: DemoPrize[] = [
   pointsPrize(2500, '/images/demo-points-gem.svg', 'A gem: 2,500 demo points (demo image)', 25, 200, null, { reveal: 'coin', prizes: instantPoints(250, 3, 50, 10) }),
 ];
 
-/** Longer competitions (two to four days), one with a question to show how that works. */
+/** Longer competitions (two to six days), one with a question to show how that works. */
 export const DEMO_LONG_PRIZES: DemoPrize[] = [
   pointsPrize(10000, '/images/demo-points-trophy.svg', 'A trophy: 10,000 demo points (demo image)', 50, 400, {
     question: 'Which of these is the capital of Scotland?',
     options: ['Glasgow', 'Edinburgh', 'Aberdeen'],
     correctIndex: 1,
   }),
-  pointsPrize(25000, '/images/demo-points-trophy.svg', 'A trophy: 25,000 demo points (demo image)', 100, 500, null, { reveal: 'spin', prizes: instantPoints(1000, 5, 200, 20) }),
+  pointsPrize(25000, '/images/demo-points-crown.svg', 'A crown: 25,000 demo points (demo image)', 100, 500, null, { reveal: 'spin', prizes: instantPoints(1000, 5, 200, 20) }),
+  pointsPrize(5000, '/images/demo-points-gem.svg', 'A gem: 5,000 demo points (demo image)', 25, 300, null, { reveal: 'coin', prizes: instantPoints(500, 3, 100, 12) }),
 ];
 
 const fictionalWhere = and(like(users.email, 'player%@example.test'), isNull(users.passwordHash), isNull(users.deletedAt), eq(users.role, 'player'));
@@ -239,9 +240,15 @@ export async function topUpDemoCompetitions(db: Db, now = new Date(), random: ()
   }
 
   const [later] = await db.select({ n: count() }).from(competitions).where(and(eq(competitions.status, 'live'), gt(competitions.closesAt, new Date(t + DEMO_LONG_LEAD_MS))));
+  // Prefer a prize that is not already live, so the home page never shows the same prize twice.
+  const liveTitles = new Set((await db.select({ title: competitions.title }).from(competitions).where(eq(competitions.status, 'live'))).map((r) => r.title));
   for (let i = later?.n ?? 0; i < DEMO_LONG_TARGET; i++) {
     const closes = ceilTo(t + (2 + 2 * (i - (later?.n ?? 0))) * D, H);
-    await openDemoCompetition(db, DEMO_LONG_PRIZES[(total + made) % DEMO_LONG_PRIZES.length]!, closes, now, players, random);
+    const start = (total + made) % DEMO_LONG_PRIZES.length;
+    const order = DEMO_LONG_PRIZES.map((_, k) => DEMO_LONG_PRIZES[(start + k) % DEMO_LONG_PRIZES.length]!);
+    const prize = order.find((p) => !liveTitles.has(p.title)) ?? order[0]!;
+    liveTitles.add(prize.title);
+    await openDemoCompetition(db, prize, closes, now, players, random);
     made++;
   }
   return made;

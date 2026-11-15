@@ -26,6 +26,7 @@ export const FONT_PAIRINGS = {
   premium: { label: 'Premium: Cormorant Garamond and Work Sans', heading: "'Cormorant Garamond', Georgia, serif", body: "'Work Sans', system-ui, sans-serif" },
   playful: { label: 'Playful: Fredoka and Nunito', heading: "'Fredoka', system-ui, sans-serif", body: "'Nunito', system-ui, sans-serif" },
   accessible: { label: 'Highly legible: Atkinson Hyperlegible', heading: "'Atkinson Hyperlegible', system-ui, sans-serif", body: "'Atkinson Hyperlegible', system-ui, sans-serif" },
+  stage: { label: 'Stage: Barlow Condensed and Figtree', heading: "'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif", body: "'Figtree', system-ui, sans-serif" },
   system: { label: 'System fonts (nothing to download)', heading: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", body: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
 } as const;
 

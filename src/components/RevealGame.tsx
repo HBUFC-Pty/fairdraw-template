@@ -13,6 +13,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Confetti } from './Confetti';
 
 type Props = { style: 'scratch' | 'spin' | 'coin'; ticket: number; competition: string; prize: string | null };
 
@@ -68,6 +69,7 @@ export function RevealGame({ style, ticket, competition, prize }: Props) {
       {stage === 'playing' ? (
         <button type="button" className="secondary reveal-skip" onClick={finish}>Show the result now</button>
       ) : null}
+      {stage === 'done' && won ? <Confetti /> : null}
     </div>
   );
 }

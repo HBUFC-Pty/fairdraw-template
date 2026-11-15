@@ -19,6 +19,16 @@ export function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/**
+ * The colour CSS gives for `color-mix(in srgb, a weight%, b)`: a weighted average of the gamma-encoded channels,
+ * rounded. Used to check text on the gradient stops that components build with color-mix.
+ */
+export function mixHex(a: string, b: string, weight: number): string {
+  const [x, y] = [hexToRgb(a), hexToRgb(b)];
+  const w = weight / 100;
+  return `#${x.map((v, i) => Math.round(v * w + y[i]! * (1 - w)).toString(16).padStart(2, '0')).join('')}`;
+}
+
 function channel(c: number): number {
   const s = c / 255;
   return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;

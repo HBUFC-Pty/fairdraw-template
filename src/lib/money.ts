@@ -35,6 +35,17 @@ export function formatPence(pence: number): string {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
 }
 
+/**
+ * A short price for chips and tiles: "£2.99", "£5", "99p", or "5 pts" on a demo site. formatPence stays the one for
+ * sentences, the basket and checkout.
+ */
+export function formatPriceShort(pence: number): string {
+  if (moneyAsPoints()) return `${new Intl.NumberFormat('en-GB').format(pence)} pts`;
+  if (pence < 100) return `${pence}p`;
+  const whole = pence % 100 === 0;
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(pence / 100);
+}
+
 /** Parse "12.50" or "12" (pounds) into pence, or on a demo site "1200" (points, one per penny). Rejects anything else. */
 export function parsePounds(input: string): number {
   if (moneyAsPoints()) {

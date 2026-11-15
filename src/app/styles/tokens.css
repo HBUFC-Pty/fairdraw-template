@@ -1,0 +1,129 @@
+/*
+ * The contents of this file are subject to the Common Public Attribution License Version 1.0 (the “License”); you may
+ * not use this file except in compliance with the License. You may obtain a copy of the License at
+ * https://opensource.org/license/CPAL-1.0. The License is based on the Mozilla Public License Version 1.1 but Sections
+ * 14 and 15 have been added to cover use of software over a computer network and provide for limited attribution for
+ * the Original Developer. In addition, Exhibit A has been modified to be consistent with Exhibit B.
+ * Software distributed under the License is distributed on an “AS IS” basis, WITHOUT WARRANTY OF ANY KIND, either
+ * express or implied. See the License for the specific language governing rights and limitations under the License.
+ * The Original Code is FairDraw operator template.
+ * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
+ * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
+ */
+/*
+ * Shared design tokens that are not colours: spacing, the display type scale, the wrap width, and small utilities.
+ * Colours always come from the brand tokens (var(--c-*)); fonts from var(--font-*). Every preset may use these.
+ * The type scale only takes effect under [data-type='display'] (stage.css).
+ */
+:root {
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+
+  --fs-hero: clamp(2.25rem, 1.4rem + 3.6vw, 4rem);
+  --fs-h1: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+  --fs-h2: clamp(1.5rem, 1.15rem + 1.3vw, 2.125rem);
+  --fs-h3: 1.125rem;
+  --fs-body: 1rem;
+  --fs-small: 0.8125rem;
+  --fs-micro: 0.6875rem;
+  --fs-price: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  --fs-price-chip: 1.0625rem;
+  --fs-count: 1.5rem;
+  --fs-button: 1rem;
+  --fs-nav: 0.9375rem;
+
+  --header-h: 64px;
+}
+@media (max-width: 899px) { :root { --header-h: 56px; } }
+@media (max-width: 639px) { :root { --fs-h3: 1rem; --fs-price-chip: 0.9375rem; } }
+
+[data-home='showcase'] { --wrap: 1240px; }
+
+/* Full-bleed bands inside the wrap. body has overflow-x: clip, so nothing scrolls sideways. */
+.bleed { margin-inline: calc(50% - 50vw); padding-inline: calc(50vw - 50%); }
+
+/* Vertical rhythm helpers: direct children spaced evenly. */
+.stack-2 > * + * { margin-top: var(--s2); }
+.stack-3 > * + * { margin-top: var(--s3); }
+.stack-4 > * + * { margin-top: var(--s4); }
+.stack-5 > * + * { margin-top: var(--s5); }
+
+/* Small uppercase label above a heading. */
+.eyebrow { display: inline-flex; align-items: center; gap: var(--s2); margin: 0 0 var(--s2); font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-primary); }
+
+/* Chips: short facts in a pill. Text only ever sits on a token background (or the 85% glass layer). */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 10px; border-radius: 999px;
+  font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.08em; line-height: 1.2;
+  text-transform: uppercase; white-space: nowrap; border: 1px solid transparent;
+}
+.chip .icon { width: 14px; height: 14px; flex: none; }
+.chip-primary { background: var(--c-primary); color: var(--c-on-primary); }
+.chip-accent { background: var(--c-accent); color: var(--c-on-accent); }
+.chip-glass {
+  background: color-mix(in srgb, var(--c-bg) 85%, transparent); color: var(--c-text);
+  border-color: color-mix(in srgb, var(--c-text) 10%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.chip-success { background: var(--c-success-bg); color: var(--c-text); }
+/* Display brands: "New" is a glass chip with a success dot, so it reads as a badge on dark prize art. Text sits on the
+   85% bg layer. The buy box status chip ("Open") drops the glass, so a status and a badge never look the same. */
+[data-type='display'] .chip-success {
+  gap: 6px; background: color-mix(in srgb, var(--c-bg) 85%, transparent); color: var(--c-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-success) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+[data-type='display'] .chip-success::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--c-success); }
+[data-type='display'] .chip-status.chip-success {
+  padding-left: 0; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+[data-type='display'] .chip-status.chip-success::before { width: 8px; height: 8px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-success) 25%, transparent); }
+.chip-muted { background: var(--c-surface); color: var(--c-muted); border-color: var(--c-border); }
+.chip-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.ic-primary { color: var(--c-primary); }
+
+/* A small status dot (pulses under [data-motion], see motion.css). */
+.live-dot { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+
+/* SVG gradient stops and fills from tokens (icons.tsx, illustrations). */
+.stop-primary { stop-color: var(--c-primary); }
+.stop-accent { stop-color: var(--c-accent); }
+.fill-primary { fill: var(--c-primary); }
+.fill-accent { fill: var(--c-accent); }
+.stroke-muted { stroke: var(--c-muted); }
+.stop-primary-light { stop-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-text)); }
+.stop-primary-deep { stop-color: color-mix(in srgb, var(--c-primary) 58%, var(--c-bg)); }
+
+/* Illustrations (src/components/illustrations.tsx): fills and strokes from tokens only. */
+.il { display: block; overflow: visible; }
+.il-primary { fill: var(--c-primary); }
+.il-accent { fill: var(--c-accent); }
+.il-surface { fill: var(--c-surface); }
+.il-soft { fill: color-mix(in srgb, var(--c-primary) 14%, var(--c-surface)); }
+.il-line { stroke: currentColor; }
+.il-cut { stroke: var(--c-on-primary); }
+.il-cut-fill { fill: var(--c-on-primary); fill-opacity: 0.55; }
+.il-hand { fill: var(--c-surface); stroke: var(--c-text); }
+.il-on-accent { stroke: var(--c-on-accent); fill: none; }
+.il-accent-line { stroke: var(--c-accent); }
+.il-ring { fill: none; stroke: color-mix(in srgb, var(--c-primary) 30%, transparent); }
+.il-ring.is-accent { stroke: color-mix(in srgb, var(--c-accent) 30%, transparent); }
+.il-ring.is-strong { stroke: color-mix(in srgb, var(--c-primary) 65%, transparent); }
+.il-ring.is-accent.is-strong { stroke: color-mix(in srgb, var(--c-accent) 65%, transparent); }
+.il-shadow { fill: color-mix(in srgb, var(--c-bg) 65%, transparent); }
+.il-gloss { stroke: color-mix(in srgb, var(--c-text) 55%, transparent); }
+.il-gloss-fill { fill: color-mix(in srgb, var(--c-text) 60%, transparent); }
+.il-spark { fill: var(--c-primary); }
+.il-spark.is-accent { fill: var(--c-accent); }
+.il-floor { fill: color-mix(in srgb, var(--c-primary) 22%, transparent); }
+.il-p3 { fill: color-mix(in srgb, var(--c-primary) 72%, var(--c-bg)); }
+.il-p3-line { stroke: color-mix(in srgb, var(--c-primary) 72%, var(--c-bg)); }
+.il-p4 { fill: color-mix(in srgb, var(--c-primary) 50%, var(--c-bg)); }
+.il-a1 { fill: color-mix(in srgb, var(--c-accent) 55%, var(--c-text)); }
+.il-a2 { fill: var(--c-accent); }
+.il-a3 { fill: color-mix(in srgb, var(--c-accent) 75%, var(--c-bg)); }
+.il-a4 { fill: color-mix(in srgb, var(--c-accent) 52%, var(--c-bg)); }
+.il-a-edge { stroke: color-mix(in srgb, var(--c-accent) 50%, var(--c-text)); }
+.il .spark { transform-box: fill-box; transform-origin: center; }
+
+/* Paragraph measure */
+.measure { max-width: 62ch; }
