@@ -14,8 +14,27 @@ import { formatPence } from '@/lib/money';
 import { formatUk } from '@/lib/time';
 import type { Competition } from '@/lib/public/queries';
 
+/**
+ * The share of tickets sold, rounded down to one decimal place (46.29% is 46.2), so it never shows more than was sold.
+ * Integer maths first, so 57 of 100 is exactly 57.
+ */
+export function percentSold(sold: number, max: number): number {
+  if (max <= 0) return 0;
+  return Math.min(1000, Math.max(0, Math.floor((sold * 1000) / max))) / 10;
+}
+
+/** "3.5" under 10%, whole numbers from 10% ("46"). Never rounds up. */
+export function formatPercent(percent: number): string {
+  return percent < 10 && !Number.isInteger(percent) ? percent.toFixed(1) : String(Math.floor(percent));
+}
+
+export function ticketsLeft(sold: number, max: number): number {
+  return Math.max(0, max - sold);
+}
+
+/** The width class for a sold bar (src/app/styles/progress.css): pc0 to pc100, rounded down. */
 export function progressClass(sold: number, max: number) {
-  return `p${Math.min(100, Math.round((sold / max) * 10) * 10)}`;
+  return `pc${Math.floor(percentSold(sold, max))}`;
 }
 
 export function CompetitionFacts({ c, sold }: { c: Competition; sold: number }) {

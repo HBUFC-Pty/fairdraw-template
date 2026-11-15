@@ -26,20 +26,75 @@ function subscribe(onTick: () => void) {
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 const onServer = () => null;
 
+export type CountdownVariant = 'inline' | 'compact' | 'segments';
+
+/** Split a number of seconds into days, hours, minutes and seconds. */
+export function splitSeconds(s: number) {
+  return { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), sec: s % 60 };
+}
+
+/** "Closes in 2 days 4 hours", in whole minutes, so screen readers that read it are not told about every second. */
+export function spokenRemaining(label: string, s: number): string {
+  const { d, h, m } = splitSeconds(s);
+  const part = (n: number, one: string) => (n ? `${n} ${one}${n === 1 ? '' : 's'}` : '');
+  const words = d ? [part(d, 'day'), part(h, 'hour')] : h ? [part(h, 'hour'), part(m, 'minute')] : [part(Math.max(m, 1), 'minute')];
+  return `${label} ${words.filter(Boolean).join(' ')}`;
+}
+
 /**
- * A live countdown to a real time (the close or the draw), for brands with extras.countdown. Renders nothing on the
- * server and in the first browser render, so they agree; the card already shows the time in words.
+ * A live countdown to a real time (the close or the draw). Nothing is invented: it only counts to `to`.
+ *
+ * - `inline`: "Closes in 2d 04:12:08" on one line (the default).
+ * - `compact`: "2d 04:12:08" for pills; under an hour it turns accent with a live dot.
+ * - `segments`: boxes for days, hours, minutes and seconds.
+ *
+ * The server and the first browser render show `fallback` (a real time in words, such as "Today 19:45"), so they agree
+ * and nothing jumps; the live count replaces it once the page is running. After `to` has passed it shows `fallback`.
  */
-export function Countdown({ to, label }: { to: string; label: string }) {
+export function Countdown({ to, label = 'Closes in', variant = 'inline', fallback }: { to: string; label?: string; variant?: CountdownVariant; fallback?: string }) {
   const now = useSyncExternalStore(subscribe, nowSeconds, onServer);
   const target = Math.floor(new Date(to).getTime() / 1000);
-  if (now === null || now >= target) return null;
+  const live = now !== null && now < target;
+  const cls = `countdown cd-${variant}`;
+  if (!live) {
+    if (!fallback) return variant === 'inline' ? null : <span className={`${cls} is-fallback`} />;
+    return variant === 'inline' ? <p className={`${cls} is-fallback`}>{fallback}</p> : <span className={`${cls} is-fallback`}>{fallback}</span>;
+  }
   const s = target - now;
-  const d = Math.floor(s / 86400);
+  const { d, h, m, sec } = splitSeconds(s);
+  const aria = spokenRemaining(label, s);
+  // The seconds (and minutes) remount when they change, so motion.css can animate the new digit in.
+  const tick = (v: number, unit: string) => <span key={`${unit}${v}`} className="cd-tick">{two(v)}</span>;
+  if (variant === 'compact') {
+    const soon = s < 3600;
+    return (
+      <span className={`${cls}${soon ? ' is-soon' : ''}`} role="timer" aria-live="off" aria-label={aria}>
+        {soon ? <span className="live-dot" aria-hidden="true" /> : null}
+        <span className="num" aria-hidden="true">
+          {d > 0 ? `${d}d ` : ''}
+          {h > 0 || d > 0 ? `${two(h)}:` : ''}
+          {tick(m, 'm')}:{tick(sec, 's')}
+        </span>
+      </span>
+    );
+  }
+  if (variant === 'segments') {
+    const parts: [number, string, string][] = [...(d > 0 ? [[d, 'Days', 'd'] as [number, string, string]] : []), [h, 'Hrs', 'h'], [m, 'Mins', 'm'], [sec, 'Secs', 's']];
+    return (
+      <span className={cls} role="timer" aria-live="off" aria-label={aria}>
+        {parts.map(([v, unit, k]) => (
+          <span key={unit} className="cd-seg" aria-hidden="true">
+            <span className="cd-num num">{k === 'd' || k === 'h' ? two(v) : tick(v, k)}</span>
+            <span className="cd-unit">{unit}</span>
+          </span>
+        ))}
+      </span>
+    );
+  }
   return (
-    <p className="countdown" role="timer" aria-live="off">
+    <p className={cls} role="timer" aria-live="off">
       <span className="countdown-label">{label}</span>{' '}
-      <span className="num">{d > 0 ? `${d}d ` : ''}{two(Math.floor((s % 86400) / 3600))}:{two(Math.floor((s % 3600) / 60))}:{two(s % 60)}</span>
+      <span className="num">{d > 0 ? `${d}d ` : ''}{two(h)}:{two(m)}:{two(sec)}</span>
     </p>
   );
 }

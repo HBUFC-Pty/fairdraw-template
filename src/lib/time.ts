@@ -28,6 +28,26 @@ export function formatUk(d: Date | null | undefined, withSeconds = false): strin
   }).format(d);
 }
 
+/**
+ * A short UK time for chips and fact tiles: "Today 19:45", "Tomorrow 20:00" or "Sun 22 Nov 20:00" (with the year
+ * added when it is not this year). "Today" and "Tomorrow" are UK calendar days, so they stay right across the clock
+ * change.
+ */
+export function formatUkShort(d: Date, now: Date = new Date()): string {
+  const time = new Intl.DateTimeFormat('en-GB', { timeZone: UK_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+  const day = ukDate(d);
+  const today = ukDate(now);
+  if (day === today) return `Today ${time}`;
+  const [y, m, dd] = today.split('-').map(Number) as [number, number, number];
+  const next = new Date(Date.UTC(y, m - 1, dd + 1)).toISOString().slice(0, 10);
+  if (day === next) return `Tomorrow ${time}`;
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  const date = new Intl.DateTimeFormat('en-GB', { timeZone: UK_TZ, weekday: 'short', day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) })
+    .format(d)
+    .replace(',', '');
+  return `${date} ${time}`;
+}
+
 /** Today's calendar date in the UK, as YYYY-MM-DD. */
 export function ukDate(d: Date): string {
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: UK_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);

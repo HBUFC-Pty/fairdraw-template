@@ -1,0 +1,56 @@
+/*
+ * The contents of this file are subject to the Common Public Attribution License Version 1.0 (the “License”); you may
+ * not use this file except in compliance with the License. You may obtain a copy of the License at
+ * https://opensource.org/license/CPAL-1.0. The License is based on the Mozilla Public License Version 1.1 but Sections
+ * 14 and 15 have been added to cover use of software over a computer network and provide for limited attribution for
+ * the Original Developer. In addition, Exhibit A has been modified to be consistent with Exhibit B.
+ * Software distributed under the License is distributed on an “AS IS” basis, WITHOUT WARRANTY OF ANY KIND, either
+ * express or implied. See the License for the specific language governing rights and limitations under the License.
+ * The Original Code is FairDraw operator template.
+ * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
+ * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
+ */
+/*
+ * Motion, for brands with extras.motion (data-motion on <body>). Rules:
+ * - every rule sits under [data-motion] and inside prefers-reduced-motion: no-preference, and globals.css switches all
+ *   animation and transition off under reduce;
+ * - every element's resting style is its final state: keyframes animate only the "from" or passing frames, so with
+ *   motion off nothing is hidden;
+ * - transform and opacity only (plus background-position for stripes). No animation library, no canvas.
+ */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Live dot: a ring pings out from real live states (ending soon, under an hour, next draw). */
+  [data-motion] .live-dot::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor;
+    animation: dot-ping 1.6s var(--ease-out) infinite;
+  }
+
+  /* Buttons lift a pixel on hover; primaries get a sheen. */
+  [data-motion][data-type='display'] :is(.button, button) { transition: box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+  [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn)::after,
+  [data-motion] .tile-cta:not(.is-quiet)::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--c-text) 45%, transparent) 50%, transparent 70%);
+    transform: translateX(-120%) skewX(-20deg);
+  }
+
+  @media (hover: hover) {
+    [data-motion][data-type='display'] :is(.button, button):not(:disabled):hover { transform: translateY(-1px); }
+    [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, :disabled):hover::after { animation: sheen 0.9s var(--ease-out) 1; }
+
+    /* Tiles lift, the prize image zooms and the call to action's sheen sweeps once. */
+    [data-motion] .tile { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
+    [data-motion] .tile:hover { transform: translateY(-4px); }
+    [data-motion] .tile-frame img { transition: transform 0.6s var(--ease-out); }
+    [data-motion] .tile:hover .tile-frame img { transform: scale(1.06); }
+    [data-motion] .tile:hover .tile-cta::after { animation: sheen 0.9s var(--ease-out) 1; }
+  }
+}
+
+@keyframes dot-ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(120%) skewX(-20deg); } }

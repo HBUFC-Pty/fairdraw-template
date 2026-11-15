@@ -35,6 +35,8 @@ export default async function Home() {
       <Link href="/fairness">How our draws work</Link>.
     </p>
   );
+  // The tile card has its own denser grid (src/app/styles/stage.css).
+  const gridClass = style === 'tile' ? 'tile-grid' : 'grid';
   const empty = live.length === 0 ? <p>No competitions are open right now.</p> : null;
   const lead = live[0];
   // Demo sites open with the demo hero, so the page's own heading becomes a second-level one.
@@ -56,7 +58,7 @@ export default async function Home() {
           {img ? <div className="hero"><img src={img.url} alt={img.alt} /></div> : null}
         </section>
         {intro}
-        {live.length > 1 ? <><h2>More competitions</h2><div className="grid">{cards.slice(1)}</div></> : null}
+        {live.length > 1 ? <><h2>More competitions</h2><div className={gridClass}>{cards.slice(1)}</div></> : null}
       </>
     );
   } else if (brand.layout.home === 'featured' && live.length > 0) {
@@ -73,7 +75,7 @@ export default async function Home() {
         <Title>Live competitions</Title>
         {intro}
         {empty}
-        <div className="grid">{cards}</div>
+        <div className={gridClass}>{cards}</div>
       </>
     );
   }

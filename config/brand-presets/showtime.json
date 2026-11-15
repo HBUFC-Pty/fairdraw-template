@@ -10,7 +10,8 @@
     "do": [
       "Make the prizes the star",
       "Show real close times and real ticket counts",
-      "Keep the free entry route easy to find"
+      "Keep the free entry route easy to find",
+      "Use numbers and chips, not sentences"
     ],
     "avoid": [
       "Made-up scarcity or fake counters",
@@ -55,22 +56,25 @@
       "errorBg": "#450a0a"
     }
   },
-  "fonts": "bold",
-  "radius": "large",
+  "fonts": "stage",
+  "radius": "medium",
   "density": "comfortable",
-  "shadow": "crisp",
+  "shadow": "glow",
   "buttons": "pill",
   "cards": "elevated",
+  "typeScale": "display",
   "layout": {
-    "home": "featured",
-    "card": "poster",
-    "header": "centred",
+    "home": "showcase",
+    "card": "tile",
+    "header": "bar",
     "footer": "columns"
   },
   "extras": {
     "countdown": true,
     "badges": true,
-    "glow": true
+    "glow": true,
+    "motion": true,
+    "ticker": true
   },
   "logo": null,
   "favicon": null

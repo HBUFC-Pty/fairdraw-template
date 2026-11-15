@@ -13,12 +13,17 @@
 import type { Metadata } from 'next';
 import './fonts.css';
 import './globals.css';
+import './styles/tokens.css';
+import './styles/progress.css';
+import './styles/stage.css';
+import './styles/motion.css';
 import { env } from '@/lib/env';
 import { currentSession, isStaff } from '@/lib/web/session';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { DemoBanner } from '@/components/DemoBanner';
 import { cspNonce } from '@/lib/web/request';
+import { basketCount } from '@/lib/public/basket-count';
 import { brand, brandAttributes, brandCss } from '@/brand';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const nonce = await cspNonce(); // reading the request makes every page dynamic, which the per-request CSP nonce needs
   const s = await currentSession();
+  const basket = s ? await basketCount(s.user.id) : 0;
   return (
     <html lang="en-GB">
       <head>
@@ -41,9 +47,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body {...brandAttributes(brand)}>
         <a className="skip" href="#main">Skip to content</a>
         <DemoBanner />
-        <SiteHeader brand={brand} loggedIn={Boolean(s)} staff={Boolean(s && isStaff(s.user.role))} />
+        <SiteHeader brand={brand} loggedIn={Boolean(s)} staff={Boolean(s && isStaff(s.user.role))} basket={basket} />
         <main id="main" className="wrap">{children}</main>
-        <SiteFooter style={brand.layout.footer} />
+        <SiteFooter style={brand.layout.footer} brand={brand} />
       </body>
     </html>
   );
