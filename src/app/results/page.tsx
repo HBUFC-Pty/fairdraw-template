@@ -14,42 +14,61 @@ import Link from 'next/link';
 import { finishedCompetitions } from '@/lib/public/queries';
 import { formatUk } from '@/lib/time';
 import { FairDrawLink } from '@/components/SiteFooter';
+import { PrizePlaceholder, ShieldCheck } from '@/components/icons';
 
 export const metadata = { title: 'Results' };
 
 export default async function ResultsPage() {
   const rows = await finishedCompetitions();
   return (
-    <>
-      <h1>Results</h1>
-      <p>
-        Every finished competition, with tickets sold, the maximum, the winning tickets and both the scheduled and actual draw times. Each draw has a
-        public record you can re-run. <FairDrawLink />.
-      </p>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Competition</th><th scope="col">Sold</th><th scope="col">Maximum</th><th scope="col">Winning ticket(s)</th>
-              <th scope="col">Scheduled draw</th><th scope="col">Actual draw</th><th scope="col">Check it</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ c, d, winners }) => (
-              <tr key={c.id}>
-                <td><Link href={`/competitions/${c.slug}`}>{c.title}</Link></td>
-                <td className="num">{d.ticketsSold}</td>
-                <td className="num">{d.maxTickets}</td>
-                <td>{d.randomness ? (winners.length ? winners.map((w) => `${w.ticket}${w.name ? ` (${w.name})` : ''}`).join(', ') : 'No entries') : 'Awaiting draw'}</td>
-                <td>{formatUk(d.scheduledDrawAt, true)}</td>
-                <td>{d.drawnAt ? formatUk(d.drawnAt, true) : 'not yet'}</td>
-                <td>{d.randomness ? <><Link href={`/draws/${c.slug}`}>Verify</Link> · <a href={`/draws/${c.slug}/record.json`}>Record</a></> : <a href={`/draws/${c.slug}/commitment.json`}>Commitment</a>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="results-page">
+      <div className="results-head">
+        <h1>Results</h1>
+        <p className="results-lede">
+          Every finished competition, with tickets sold, the maximum, the winning tickets and both the scheduled and actual draw times. Each draw has a
+          public record you can re-run.
+        </p>
+        <p className="results-fairdraw"><FairDrawLink icon /></p>
       </div>
-      {rows.length === 0 ? <p>No competitions have closed yet.</p> : null}
-    </>
+      {rows.length === 0 ? <p className="empty-state">No competitions have closed yet.</p> : (
+        <ul className="result-list">
+          {rows.map(({ c, d, winners }) => {
+            const img = c.images[0];
+            const drawn = Boolean(d.randomness);
+            return (
+              <li key={c.id} className="result-card">
+                <span className="result-thumb">{img ? <img src={img.url} alt="" width={72} height={72} loading="lazy" /> : <PrizePlaceholder />}</span>
+                <div className="result-info">
+                  <h2 className="result-title"><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h2>
+                  <p className="result-winner num">
+                    {drawn
+                      ? winners.length
+                        ? `Winning ticket${winners.length === 1 ? '' : 's'} ${winners.map((w) => `${w.ticket}${w.name ? ` (${w.name})` : ''}`).join(', ')}`
+                        : 'No entries'
+                      : 'Awaiting draw'}
+                  </p>
+                  <dl className="result-facts num">
+                    <div><dt>Sold</dt><dd>{d.ticketsSold.toLocaleString('en-GB')} of {d.maxTickets.toLocaleString('en-GB')}</dd></div>
+                    <div><dt>Scheduled draw</dt><dd><time dateTime={d.scheduledDrawAt.toISOString()}>{formatUk(d.scheduledDrawAt, true)}</time></dd></div>
+                    <div><dt>Actual draw</dt><dd>{d.drawnAt ? <time dateTime={d.drawnAt.toISOString()}>{formatUk(d.drawnAt, true)}</time> : 'not yet'}</dd></div>
+                  </dl>
+                </div>
+                <div className="result-actions">
+                  {drawn ? (
+                    <>
+                      <Link className="button sm" href={`/draws/${c.slug}`}><ShieldCheck size={18} />Verify</Link>
+                      <a href={`/draws/${c.slug}/record.json`}>Record</a>
+                    </>
+                  ) : (
+                    <a href={`/draws/${c.slug}/commitment.json`}>Commitment</a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="results-fairdraw is-foot"><FairDrawLink icon /></p>
+    </div>
   );
 }

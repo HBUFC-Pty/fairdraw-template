@@ -86,7 +86,7 @@
   [data-motion] .cd-tick { animation: tick-in 0.28s var(--ease-out); }
 
   /* ---------- Sold bars fill from the left; the fill carries slowly moving stripes ---------- */
-  [data-motion] :is(.tile-bar, .sold-bar, .iprize-line) > span {
+  [data-motion] :is(.tile-bar, .sold-bar, .iprize-line, .iw-bar) > span {
     transform-origin: left center;
     background-image:
       repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-text) 12%, transparent) 0 6px, transparent 6px 12px),
@@ -114,6 +114,9 @@
 
   /* ---------- Filter change: tiles that come back into view fade in ---------- */
   [data-motion] .tile-grid[data-filter] > .tile > * { animation: fade-in 0.2s var(--ease-out); }
+
+  /* ---------- Accordions: the chevron turns ---------- */
+  [data-motion] .panel-chevron { transition: transform 0.2s var(--ease-out); }
 
   @media (hover: hover) {
     [data-motion] .iprize { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }

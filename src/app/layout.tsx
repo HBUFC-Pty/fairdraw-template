@@ -17,6 +17,7 @@ import './styles/tokens.css';
 import './styles/progress.css';
 import './styles/stage.css';
 import './styles/home.css';
+import './styles/pages.css';
 import './styles/motion.css';
 import { env } from '@/lib/env';
 import { currentSession, isStaff } from '@/lib/web/session';
