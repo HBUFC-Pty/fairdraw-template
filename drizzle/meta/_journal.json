@@ -43,6 +43,13 @@
       "when": 1794685241432,
       "tag": "0005_instant_wins",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794686355432,
+      "tag": "0006_bundles",
+      "breakpoints": true
     }
   ]
 }

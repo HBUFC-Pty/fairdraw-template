@@ -23,6 +23,7 @@ import { appendAudit, type AuditActor } from '../audit';
 import { capAboveTenPercent } from './allocation';
 import { prepareInstantPrizes, instantPrizeCount, instantPrizeTiersSchema } from './instant';
 import { INSTANT_REVEALS } from '../db/schema';
+import { bundlesSchema } from './bundles';
 
 const imageSchema = z.object({
   url: z
@@ -62,7 +63,12 @@ export const competitionInputSchema = z
     // Instant prizes, each fixed to a random ticket number and committed when published (./instant.ts).
     instantPrizes: instantPrizeTiersSchema,
     instantReveal: z.enum(INSTANT_REVEALS).default('scratch'),
+    // Bundle prices (./bundles.ts). Fixed once live.
+    bundles: bundlesSchema,
   })
+  .refine((c) => c.bundles.every((b) => b.quantity <= c.perPersonCap), { message: 'a bundle cannot be bigger than the per-person cap', path: ['bundles'] })
+  .refine((c) => c.bundles.every((b) => b.pricePence < b.quantity * c.ticketPricePence), { message: 'a bundle must cost less than buying its tickets one by one', path: ['bundles'] })
+  .refine((c) => new Set(c.bundles.map((b) => b.quantity)).size === c.bundles.length, { message: 'two bundles have the same number of tickets', path: ['bundles'] })
   .refine((c) => instantPrizeCount(c.instantPrizes) <= c.maxTickets, { message: 'there are more instant prizes than tickets', path: ['instantPrizes'] })
   .transform((c) => ({ ...c, isInstantWin: c.isInstantWin || c.instantPrizes.length > 0 }))
   .refine((c) => c.perPersonCap <= c.maxTickets, { message: 'the per-person cap cannot exceed the maximum tickets', path: ['perPersonCap'] })

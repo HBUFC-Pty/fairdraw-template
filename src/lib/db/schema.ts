@@ -147,6 +147,11 @@ export interface InstantPrizeTier {
   valuePence: number;
   count: number;
 }
+/** A bundle price: `quantity` tickets for `pricePence` (src/lib/competitions/bundles.ts). */
+export interface TicketBundle {
+  quantity: number;
+  pricePence: number;
+}
 export const INSTANT_REVEALS = ['scratch', 'spin', 'coin'] as const;
 export type InstantReveal = (typeof INSTANT_REVEALS)[number];
 
@@ -177,6 +182,8 @@ export const competitions = pgTable(
     instantCommit: text('instant_commit'),
     instantSalt: text('instant_salt'),
     instantCommittedAt: ts('instant_committed_at'),
+    // Bundle prices, for example 10 tickets for the price of 8. Fixed once live.
+    bundles: jsonb('bundles').$type<TicketBundle[]>().notNull().default([]),
     status: text('status', { enum: COMPETITION_STATUSES }).notNull().default('draft'),
     closedAt: ts('closed_at'),
     drawnAt: ts('drawn_at'),
@@ -287,6 +294,8 @@ export const tickets = pgTable(
     allocation: text('allocation', { enum: ['random', 'chosen'] }).notNull(),
     status: text('status', { enum: TICKET_STATUSES }).notNull(),
     answerCorrect: boolean('answer_correct'),
+    // What this ticket cost (bundles make it differ from the ticket price); null for free postal entries. Never changes.
+    pricePence: integer('price_pence'),
     reservedUntil: ts('reserved_until'),
     createdAt: ts('created_at').notNull().defaultNow(),
   },

@@ -64,7 +64,21 @@ function readCompetitionForm(fd: FormData): CompetitionInput {
     isInstantWin: field(fd, 'isInstantWin') === 'yes',
     instantPrizes: parseInstantPrizes(field(fd, 'instantPrizes')),
     instantReveal: field(fd, 'instantReveal') || 'scratch',
+    bundles: parseBundles(field(fd, 'bundles')),
   });
+}
+
+/** "10 | 8" per line: how many tickets, the price for them. */
+function parseBundles(text: string) {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [quantity, price] = l.split('|').map((x) => x.trim());
+      if (!quantity || !price) throw new Error(`Bundle line "${l}": write how many tickets and the price, separated by |.`);
+      return { quantity: Number(quantity), pricePence: parsePounds(price) };
+    });
 }
 
 /** "5 | £10 voucher | 10" per line: how many, the prize, its value. */

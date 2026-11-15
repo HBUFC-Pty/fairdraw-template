@@ -24,6 +24,8 @@ import { env } from '@/lib/env';
 import { addToBasketAction } from '../../basket/actions';
 import { publicInstant } from '@/lib/public/instant';
 import { InstantPrizes } from '@/components/InstantPrizes';
+import { bundleOffers } from '@/lib/competitions/bundles';
+import { formatPence } from '@/lib/money';
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -102,16 +104,38 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
             <form className="stack" action={addToBasketAction}>
               <input type="hidden" name="competitionId" value={c.id} />
               <input type="hidden" name="slug" value={c.slug} />
+              {c.bundles.length ? (
+                <div className="bundle-offers">
+                  <p><strong>Bundles</strong> <span className="muted">(you always pay the lowest price for the number of tickets you buy)</span></p>
+                  <p className="quick-buttons">
+                    {bundleOffers(c.ticketPricePence, c.bundles).filter((b) => b.quantity <= c.perPersonCap).map((b) => (
+                      <button key={b.quantity} type="submit" name="quick" value={b.quantity} className="secondary">
+                        {b.quantity} for {formatPence(b.pricePence)} <span className="muted">(save {formatPence(b.savingPence)})</span>
+                      </button>
+                    ))}
+                  </p>
+                </div>
+              ) : null}
+              <p className="quick-buttons" aria-label="Lucky dip">
+                <span className="muted">Lucky dip, numbers picked at random:</span>
+                {[5, 10, 25].filter((n) => n <= c.perPersonCap).map((n) => (
+                  <button key={n} type="submit" name="quick" value={n} className="secondary">{n} tickets</button>
+                ))}
+              </p>
               <label>
                 Number of tickets
                 <span className="hint">Up to {c.perPersonCap} per person, including any free postal entries.</span>
                 <input name="quantity" type="number" min={1} max={c.perPersonCap} defaultValue={1} required />
               </label>
-              <label>
-                Choose your own numbers (optional)
-                <span className="hint">Leave blank and we will pick unsold numbers at random. Or list one number per ticket, between 1 and {c.maxTickets}, separated by commas.</span>
-                <input name="numbers" inputMode="numeric" pattern="[0-9, ]*" autoComplete="off" />
-              </label>
+              {c.instantPrizes.length ? (
+                <p className="hint">Numbers are always picked at random in this competition, because it has instant prizes.</p>
+              ) : (
+                <label>
+                  Choose your own numbers (optional)
+                  <span className="hint">Leave blank and we will pick unsold numbers at random. Or list one number per ticket, between 1 and {c.maxTickets}, separated by commas.</span>
+                  <input name="numbers" inputMode="numeric" pattern="[0-9, ]*" autoComplete="off" />
+                </label>
+              )}
               {c.skillQuestion ? (
                 <fieldset>
                   <legend>{c.skillQuestion.question}</legend>

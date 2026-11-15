@@ -29,6 +29,7 @@ import { formatPence } from '../money';
 import type { PaymentEvent, PaymentProvider } from '../payments/types';
 import { creditCardCapPence } from '../site-config';
 import { creditUsedThisMonth, decideCredit } from './credit-card-rule';
+import { priceFor, splitPrice } from '../competitions/bundles';
 
 export class CheckoutError extends Error {}
 
@@ -112,7 +113,7 @@ export async function placeOrder(
       .for('update');
 
     const expiresAt = new Date(now.getTime() + opts.reservationMinutes * 60_000);
-    const plan: { comp: (typeof comps)[number]; numbers: number[]; allocation: 'random' | 'chosen'; answerCorrect: boolean | null }[] = [];
+    const plan: { comp: (typeof comps)[number]; numbers: number[]; allocation: 'random' | 'chosen'; answerCorrect: boolean | null; pricePence: number }[] = [];
     let total = 0;
 
     // Expire stale reservations first so their numbers are free again.
@@ -139,8 +140,10 @@ export async function placeOrder(
         throw e;
       }
       const answerCorrect = comp.skillQuestion ? item.answerIndex === comp.skillQuestion.correctIndex : null;
-      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length && !comp.instantPrizes.length ? 'chosen' : 'random', answerCorrect });
-      total += comp.ticketPricePence * item.quantity;
+      // The lowest price for this many tickets, using the competition's bundles (./competitions/bundles.ts).
+      const pricePence = priceFor(item.quantity, comp.ticketPricePence, comp.bundles);
+      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length && !comp.instantPrizes.length ? 'chosen' : 'random', answerCorrect, pricePence });
+      total += pricePence;
     }
 
     const spend = await checkSpend(tx, userId, total, now);
@@ -152,8 +155,9 @@ export async function placeOrder(
 
     const [order] = await tx.insert(orders).values({ userId, status: 'pending', totalPence: total, provider: opts.provider, createdAt: now, expiresAt }).returning();
     for (const p of plan) {
+      const shares = splitPrice(p.pricePence, p.numbers.length);
       await tx.insert(tickets).values(
-        p.numbers.map((n) => ({
+        p.numbers.map((n, i) => ({
           competitionId: p.comp.id,
           number: n,
           userId,
@@ -162,6 +166,7 @@ export async function placeOrder(
           allocation: p.allocation,
           status: 'reserved' as const,
           answerCorrect: p.answerCorrect,
+          pricePence: shares[i],
           reservedUntil: expiresAt,
           createdAt: now,
         })),
@@ -173,7 +178,11 @@ export async function placeOrder(
       totalPence: total,
       expiresAt,
       email: u.email,
-      lines: plan.map((p) => ({ name: `${p.comp.title}: ${p.numbers.length} ticket${p.numbers.length === 1 ? '' : 's'}`, quantity: p.numbers.length, unitPence: p.comp.ticketPricePence })),
+      lines: plan.map((p) =>
+        p.pricePence === p.numbers.length * p.comp.ticketPricePence
+          ? { name: `${p.comp.title}: ${p.numbers.length} ticket${p.numbers.length === 1 ? '' : 's'}`, quantity: p.numbers.length, unitPence: p.comp.ticketPricePence }
+          : { name: `${p.comp.title}: ${p.numbers.length} tickets (bundle price)`, quantity: 1, unitPence: p.pricePence },
+      ),
     };
   });
 }
@@ -271,7 +280,7 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
       }
       if (ok) {
         keep.push(t.id);
-        capturePence += comp.ticketPricePence;
+        capturePence += t.pricePence ?? comp.ticketPricePence;
       }
     }
 
@@ -345,7 +354,7 @@ export async function settleOrder(db: Db, provider: PaymentProvider, orderId: st
           const comp = comps.find((c) => c.id === t.competitionId)!;
           if (isOpen(comp, now)) {
             await tx.update(tickets).set({ status: 'active', reservedUntil: null }).where(eq(tickets.id, t.id));
-            enteredPence += comp.ticketPricePence;
+            enteredPence += t.pricePence ?? comp.ticketPricePence;
           } else await tx.update(tickets).set({ status: 'refunded' }).where(eq(tickets.id, t.id));
         }
         // Anything taken but not entered (a competition closed between the decision and the capture) is refunded.

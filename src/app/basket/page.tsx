@@ -20,6 +20,7 @@ import { formatPence } from '@/lib/money';
 import { playBlockReason } from '@/lib/checkout/service';
 import { creditAllowance } from '@/lib/checkout/credit-card-rule';
 import { checkoutAction, removeFromBasketAction } from './actions';
+import { priceFor } from '@/lib/competitions/bundles';
 
 export const metadata = { title: 'Basket' };
 
@@ -30,7 +31,7 @@ export default async function BasketPage({ searchParams }: { searchParams: Promi
     .from(basketItems)
     .innerJoin(competitions, eq(competitions.id, basketItems.competitionId))
     .where(eq(basketItems.userId, s.user.id));
-  const total = items.reduce((t, { b, c }) => t + b.quantity * c.ticketPricePence, 0);
+  const total = items.reduce((t, { b, c }) => t + priceFor(b.quantity, c.ticketPricePence, c.bundles), 0);
   const blocked = playBlockReason(s.user, new Date());
   const credit = await creditAllowance(getDb(), s.user.id);
   const instantWin = items.some(({ c }) => c.isInstantWin);
@@ -50,7 +51,7 @@ export default async function BasketPage({ searchParams }: { searchParams: Promi
                     <td><Link href={`/competitions/${c.slug}`}>{c.title}</Link></td>
                     <td className="num">{b.quantity}</td>
                     <td>{b.chosenNumbers?.length ? b.chosenNumbers.join(', ') : 'Random'}</td>
-                    <td className="num">{formatPence(b.quantity * c.ticketPricePence)}</td>
+                    <td className="num">{formatPence(priceFor(b.quantity, c.ticketPricePence, c.bundles))}</td>
                     <td>
                       <form action={removeFromBasketAction}>
                         <input type="hidden" name="competitionId" value={c.id} />
