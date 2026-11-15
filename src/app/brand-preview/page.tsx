@@ -57,6 +57,7 @@ const sample = (style: string): Competition => ({
   instantCommit: null,
   instantSalt: null,
   instantCommittedAt: null,
+  bundles: [],
   status: 'live',
   closedAt: null,
   drawnAt: null,

@@ -49,7 +49,7 @@ export async function issueRefund(db: Db, actor: AuditActor, input: { orderId: s
     if (input.releaseTickets) {
       // Only competitions still open: after the advertised close the entries are fixed (drizzle/0004).
       const open = await tx
-        .select({ id: tickets.id, price: competitions.ticketPricePence })
+        .select({ id: tickets.id, price: sql<number>`coalesce(${tickets.pricePence}, ${competitions.ticketPricePence})` })
         .from(tickets)
         .innerJoin(competitions, eq(competitions.id, tickets.competitionId))
         .where(
@@ -62,7 +62,7 @@ export async function issueRefund(db: Db, actor: AuditActor, input: { orderId: s
           ),
         );
       // Taking a player's tickets away must refund exactly what they paid for them, never 1p for the lot.
-      const value = open.reduce((s, t) => s + t.price, 0);
+      const value = open.reduce((s, t) => s + Number(t.price), 0);
       if (open.length && input.amountPence !== value) {
         throw new AdminError(`Releasing this order's ${open.length} open tickets means refunding their full value, ${value}p. Refund ${value}p, or do not release them.`);
       }

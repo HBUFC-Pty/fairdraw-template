@@ -204,3 +204,6 @@ blockquote { margin: calc(var(--space) * 0.75) 0; padding: calc(var(--space) * 0
   .reveal-scratch.playing .scratch-foil, .reveal-spin.playing .wheel, .reveal-coin.playing .coin { animation-duration: 0.01s; }
 }
 
+/* Bundle offers and lucky dip buttons on the competition page */
+.quick-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bundle-offers { border: 1px dashed var(--c-primary); border-radius: var(--radius); padding: 8px var(--space); }

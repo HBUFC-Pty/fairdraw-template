@@ -47,6 +47,11 @@ export function CompetitionForm({ c }: { c?: C }) {
         <label>Answers, one per line<textarea name="options" rows={4} defaultValue={c?.skillQuestion?.options.join('\n')} /></label>
         <label>Number of the correct answer (1 for the first line)<input name="correct" type="number" min={1} max={6} defaultValue={c?.skillQuestion ? c.skillQuestion.correctIndex + 1 : ''} /></label>
       </fieldset>
+      <label>
+        Bundles (optional): one per line, how many tickets and the price for them, in {moneyUnit()}
+        <span className="hint">For example &quot;10 | 8&quot; for 10 tickets for the price of 8. Players always pay the lowest price for the number they buy. A bundle must cost less than its tickets one by one, and be no bigger than the per-person cap. Fixed once published.</span>
+        <textarea name="bundles" rows={3} defaultValue={c?.bundles.map((b) => `${b.quantity} | ${moneyAsPoints() ? b.pricePence : (b.pricePence / 100).toFixed(2)}`).join('\n')} />
+      </label>
       <fieldset>
         <legend>Instant prizes (optional)</legend>
         <label>

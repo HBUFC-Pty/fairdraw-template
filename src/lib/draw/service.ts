@@ -58,11 +58,12 @@ export async function closeCompetition(db: Db, competitionId: string, now = new 
       .update(tickets)
       .set({ status: 'ineligible' })
       .where(and(eq(tickets.competitionId, c.id), eq(tickets.status, 'active'), eq(tickets.answerCorrect, false)))
-      .returning({ orderId: tickets.orderId });
+      .returning({ orderId: tickets.orderId, pricePence: tickets.pricePence });
+    // Refund what was paid for each ticket (bundles make it less than the ticket price).
     const perOrder = new Map<string, number>();
-    for (const w of wrong) if (w.orderId) perOrder.set(w.orderId, (perOrder.get(w.orderId) ?? 0) + 1);
-    for (const [orderId, count] of perOrder) {
-      await tx.insert(refunds).values({ orderId, amountPence: count * c.ticketPricePence, reason: 'Incorrect answer to the competition question: entry not included in the draw', createdAt: now });
+    for (const w of wrong) if (w.orderId) perOrder.set(w.orderId, (perOrder.get(w.orderId) ?? 0) + (w.pricePence ?? c.ticketPricePence));
+    for (const [orderId, amountPence] of perOrder) {
+      await tx.insert(refunds).values({ orderId, amountPence, reason: 'Incorrect answer to the competition question: entry not included in the draw', createdAt: now });
     }
 
     const list = (
