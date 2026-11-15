@@ -12,15 +12,14 @@
  */
 import { demoMode, TEMPLATE_REPO_URL } from '@/lib/demo';
 
-/** Shown on every page of a demo site (DEMO_MODE=true): nothing here is real. */
+/** Shown on every page of a demo site (DEMO_MODE=true): one line saying nothing here is real. */
 export function DemoBanner() {
   if (!demoMode()) return null;
   return (
-    <div className="demo-banner" role="note">
+    <aside className="demo-banner" aria-label="Demo notice">
       <p className="wrap">
-        <strong>Demo for operators: nothing here is real.</strong> Prices and prizes are points with no value, payments are test only, the
-        other players are made up, and accounts you create are deleted after 24 hours. <a href={TEMPLATE_REPO_URL}>Get the template</a>
+        <strong>Demo:</strong> points only, test payments, nothing here is real. <a href={TEMPLATE_REPO_URL}>Get the template</a>
       </p>
-    </div>
+    </aside>
   );
 }

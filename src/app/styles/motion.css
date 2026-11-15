@@ -32,7 +32,7 @@
 
   /* Buttons lift a pixel on hover; primaries get a sheen. */
   [data-motion][data-type='display'] :is(.button, button) { transition: box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
-  [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn)::after,
+  [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, .bare)::after,
   [data-motion] .tile-cta:not(.is-quiet)::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--c-text) 45%, transparent) 50%, transparent 70%);
@@ -41,7 +41,7 @@
 
   @media (hover: hover) {
     [data-motion][data-type='display'] :is(.button, button):not(:disabled):hover { transform: translateY(-1px); }
-    [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, :disabled):hover::after { animation: sheen 0.9s var(--ease-out) 1; }
+    [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, .bare, :disabled):hover::after { animation: sheen 0.9s var(--ease-out) 1; }
 
     /* Tiles lift, the prize image zooms and the call to action's sheen sweeps once. */
     [data-motion] .tile { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
@@ -52,5 +52,91 @@
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- Entrances (scroll-driven where supported; elsewhere everything is simply visible) ---------- */
+  @supports (animation-timeline: view()) {
+    [data-motion] :is(.tile, .iprize, .win, .step, .next-draw, .proof, .section-head) {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+    /* Inside sideways rows the view timeline is the row itself, which would hide items scrolled off to the side. */
+    [data-motion] :is(.snap-track, .mq-track) :is(.tile, .iprize, .win) { animation: none; }
+  }
+
+  /* ---------- Hero carousel ---------- */
+  [data-motion] .hero-slide { transition: opacity 0.3s var(--ease-out), visibility 0s linear 0.3s; }
+  [data-motion] .hero-slide.is-active { transition: opacity 0.4s var(--ease-out), visibility 0s; }
+  [data-motion] .hero-slide.is-active .hero-copy > * { animation: rise-in 0.5s var(--ease-pop) both; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(2) { animation-delay: 80ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(3) { animation-delay: 160ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(4) { animation-delay: 240ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(5) { animation-delay: 320ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(6) { animation-delay: 400ms; }
+  [data-motion] .hero-slide.is-active :is(.hero-frame-inner img, .hero-stage) { animation: settle 0.7s var(--ease-out) both; }
+  [data-motion] .hero-frame { animation: float 6s ease-in-out infinite alternate; }
+  [data-motion] .spark { animation: twinkle 2.8s ease-in-out infinite; }
+  [data-motion] .spark.s2 { animation-delay: 0.9s; }
+  [data-motion] .spark.s3 { animation-delay: 1.7s; }
+  [data-motion] .hero-cta { animation: glow-pulse 2.4s ease-in-out infinite alternate; }
+  [data-motion][data-type='display'] .hero-cta::after { animation: sheen-idle 6s var(--ease-out) 1s infinite; }
+  [data-motion] .hero-dots .hero-dot::before { transition: transform 0.3s var(--ease-out), background-color 0.3s var(--ease-out); }
+
+  /* ---------- Countdown digits: the changed digit drops in ---------- */
+  [data-motion] .cd-tick { animation: tick-in 0.28s var(--ease-out); }
+
+  /* ---------- Sold bars fill from the left; the fill carries slowly moving stripes ---------- */
+  [data-motion] :is(.tile-bar, .sold-bar, .iprize-line) > span {
+    transform-origin: left center;
+    background-image:
+      repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-text) 12%, transparent) 0 6px, transparent 6px 12px),
+      linear-gradient(90deg, var(--c-primary), var(--c-accent));
+    background-size: 24px 24px, 100% 100%;
+    animation: bar-fill 0.9s var(--ease-out) 0.15s both, stripes 1.2s linear infinite;
+  }
+
+  /* ---------- Winners marquee: 4s an item, at least 30s a loop; holds on hover, focus or the pause button ---------- */
+  [data-motion] .marquee.is-moving .mq-track { animation: marquee 30s linear infinite; }
+  [data-motion] .marquee:is(:hover, :focus-within, .is-paused) .mq-track { animation-play-state: paused; }
+  [data-motion] .marquee.mq-n8 .mq-track { animation-duration: 32s; }
+  [data-motion] .marquee.mq-n9 .mq-track { animation-duration: 36s; }
+  [data-motion] .marquee.mq-n10 .mq-track { animation-duration: 40s; }
+  [data-motion] .marquee.mq-n11 .mq-track { animation-duration: 44s; }
+  [data-motion] .marquee.mq-n12 .mq-track { animation-duration: 48s; }
+  [data-motion] .marquee.mq-n13 .mq-track { animation-duration: 52s; }
+  [data-motion] .marquee.mq-n14 .mq-track { animation-duration: 56s; }
+  [data-motion] .marquee.mq-n15 .mq-track { animation-duration: 60s; }
+  [data-motion] .marquee.mq-n16 .mq-track { animation-duration: 64s; }
+  [data-motion] .marquee.mq-n17 .mq-track { animation-duration: 68s; }
+  [data-motion] .marquee.mq-n18 .mq-track { animation-duration: 72s; }
+  [data-motion] .marquee.mq-n19 .mq-track { animation-duration: 76s; }
+  [data-motion] .marquee.mq-n20 .mq-track { animation-duration: 80s; }
+
+  /* ---------- Filter change: tiles that come back into view fade in ---------- */
+  [data-motion] .tile-grid[data-filter] > .tile > * { animation: fade-in 0.2s var(--ease-out); }
+
+  @media (hover: hover) {
+    [data-motion] .iprize { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
+    [data-motion] .iprize:hover { transform: translateY(-4px); }
+  }
+}
+
+@keyframes rise-in { from { opacity: 0; translate: 0 16px; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes settle { from { scale: 1.04; } }
+@keyframes float { from { translate: 0 0; } to { translate: 0 -6px; } }
+@keyframes twinkle { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.6; opacity: 0.3; } }
+@keyframes glow-pulse {
+  from { box-shadow: var(--shadow), 0 0 0 0 color-mix(in srgb, var(--c-primary) 45%, transparent); }
+  to { box-shadow: var(--shadow), 0 0 24px 4px color-mix(in srgb, var(--c-primary) 45%, transparent); }
+}
+@keyframes sheen-idle {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  15%, 100% { transform: translateX(120%) skewX(-20deg); }
+}
+@keyframes tick-in { from { transform: translateY(-40%); opacity: 0; } }
+@keyframes bar-fill { from { transform: scaleX(0); } }
+@keyframes stripes { from { background-position: 0 0, 0 0; } to { background-position: 24px 0, 0 0; } }
+@keyframes marquee { to { transform: translateX(-50%); } }
 @keyframes dot-ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.4); opacity: 0; } }
 @keyframes sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(120%) skewX(-20deg); } }

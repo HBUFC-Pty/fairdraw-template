@@ -94,3 +94,14 @@ export function ukMonthBounds(now: Date): { start: Date; end: Date; label: strin
   const nm = m === 12 ? 1 : m + 1;
   return { start: fromUkLocalInput(`${y}-${pad(m)}-01T00:00`), end: fromUkLocalInput(`${ny}-${pad(nm)}-01T00:00`), label: `${y}-${pad(m)}` };
 }
+
+/** "just now", "5 minutes ago", "2 hours ago", "yesterday" or "3 days ago": how long before `now` something happened. */
+export function formatAgo(d: Date, now: Date = new Date()): string {
+  const s = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 1000));
+  const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'} ago`;
+  if (s < 60) return 'just now';
+  if (s < 3600) return plural(Math.floor(s / 60), 'minute');
+  if (s < 86400) return plural(Math.floor(s / 3600), 'hour');
+  const days = Math.floor(s / 86400);
+  return days === 1 ? 'yesterday' : plural(days, 'day');
+}

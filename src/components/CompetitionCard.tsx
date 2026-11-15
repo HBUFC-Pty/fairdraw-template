@@ -37,6 +37,15 @@ export function cardBadges(c: { opensAt: Date; closesAt: Date; maxTickets: numbe
   return out;
 }
 
+/**
+ * Which home page filters a competition matches (the showcase filter pills): the same 24 hour rules as cardBadges,
+ * so a filter count always equals the number of tiles it shows.
+ */
+export function filterFlags(c: { opensAt: Date; closesAt: Date; maxTickets: number; instantPrizes: unknown[] }, sold: number, now: Date) {
+  const badges = cardBadges(c, sold, now);
+  return { ending: badges.includes('Ending soon'), instant: c.instantPrizes.length > 0, new: badges.includes('New') };
+}
+
 function Extras({ c, sold, now }: { c: Competition; sold: number; now: Date }) {
   const badges = brand.extras.badges ? cardBadges(c, sold, now) : [];
   return (
@@ -68,7 +77,8 @@ export function TileCard({ c, sold, now }: { c: Competition; sold: number; now: 
   const img = c.images[0];
   const facts = cardBadges(c, sold, now);
   const badges = brand.extras.badges ? facts : [];
-  const instant = c.instantPrizes.length > 0;
+  const flags = filterFlags(c, sold, now);
+  const instant = flags.instant;
   const chips = [...badges.map((b) => <span key={b} className={`chip ${CHIP[b] ?? 'chip-glass'}`}>{b === 'Ending soon' ? <span className="live-dot" aria-hidden="true" /> : null}{b}</span>)];
   if (instant) chips.push(<span key="instant" className="chip chip-glass"><Bolt className="ic-primary" />Instant wins</span>);
   const notOpen = now < c.opensAt;
@@ -78,9 +88,9 @@ export function TileCard({ c, sold, now }: { c: Competition; sold: number; now: 
   return (
     <article
       className="tile"
-      data-ending={facts.includes('Ending soon') ? '' : undefined}
-      data-instant={instant ? '' : undefined}
-      data-new={facts.includes('New') ? '' : undefined}
+      data-ending={flags.ending ? '' : undefined}
+      data-instant={flags.instant ? '' : undefined}
+      data-new={flags.new ? '' : undefined}
     >
       <div className="tile-media">
         <div className="tile-frame">

@@ -13,31 +13,17 @@
 import Link from 'next/link';
 import { TEMPLATE_REPO_URL } from '@/lib/demo';
 
-/** The home page's opening section on a demo site: what this is, who it is for, and how to try it. */
+/** The opening section of a demo site's home page in the hero, grid and featured layouts: what this is and how to try it. */
 export function DemoHero() {
   return (
     <section className="demo-hero" aria-labelledby="demo-title">
       <div>
-        <p className="demo-kicker">FairDraw competition site template: demo</p>
-        <h1 id="demo-title">Try a competition site where every draw can be checked</h1>
-        <p>
-          Thinking of running prize competitions? This demo lets you try what your players would see before you build your own site from
-          the template.
-        </p>
-        <ol className="demo-steps">
-          <li>Sign up with made-up details (we suggest some).</li>
-          <li>Enter a competition and pay with the test card. Prices are in points.</li>
-          <li>Watch it close and draw at the advertised time, then check the draw yourself.</li>
-        </ol>
+        <p className="demo-kicker">Template demo</p>
+        <h1 id="demo-title">Prize draws anyone can check</h1>
+        <p>Sign up with made-up details, pay with the test card, then check the draw.</p>
         <p className="demo-actions">
           <Link className="button" href="/signup">Try it as a player</Link>
-          <Link className="button secondary" href="/results">See finished draws</Link>
           <a className="button secondary" href={TEMPLATE_REPO_URL}>Get the template</a>
-        </p>
-        <p className="muted">
-          Nothing here is real: prices and prizes are points with no value, so there is nothing to win or claim, payments are test only, and
-          the other players are made up. A short competition draws every few hours, and every draw is a real one made with public drand
-          randomness.
         </p>
       </div>
       <div className="hero">

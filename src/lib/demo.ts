@@ -103,7 +103,7 @@ function pointsPrize(
   return {
     key: `points-${points}`,
     title: `${shown} demo points`,
-    summary: 'Made-up points with no value: nothing to claim.',
+    summary: 'Demo points with no value.',
     prizeDescription: `${shown} demo points. The points are made up for this demo: they have no value and cannot be claimed, exchanged or withdrawn. Everything else runs exactly as it would on a real site: the close, the commitment, the draw and the record anyone can check.`,
     prizeValuePence: points,
     image: { url: image, alt },
