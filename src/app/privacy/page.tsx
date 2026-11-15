@@ -13,6 +13,7 @@
 import { TemplateWarning } from '@/components/TemplateWarning';
 import { renderMarkdown, fillPlaceholders } from '@/lib/content/markdown';
 import { loadContent, placeholderValues } from '@/lib/content/load';
+import { privacyMarkdown, statsEnabled } from '@/lib/stats';
 
 export const metadata = { title: 'Privacy notice' };
 
@@ -25,7 +26,7 @@ export default function PrivacyPage() {
   return (
     <article>
       <TemplateWarning />
-      {renderMarkdown(fillPlaceholders(loadContent('privacy'), placeholderValues()))}
+      {renderMarkdown(fillPlaceholders(privacyMarkdown(loadContent('privacy'), statsEnabled()), placeholderValues()))}
     </article>
   );
 }

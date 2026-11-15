@@ -62,6 +62,10 @@ const schema = z.object({
   // Public demo sites only (src/lib/demo.ts): a demo banner and hero, sign-up with made-up details and no email,
   // visitors deleted after 24 hours, and fresh demo competitions. Needs PAYMENT_PROVIDER=test. Never on a real site.
   DEMO_MODE: bool.default(false),
+  // Optional visit counter (src/lib/stats.ts): unset, nothing is counted and GET /api/stats does not exist. Set, the
+  // site counts page views and visitors without cookies, says so in the privacy notice, and answers GET /api/stats
+  // with "Authorization: Bearer <STATS_TOKEN>".
+  STATS_TOKEN: z.string().min(32, 'STATS_TOKEN must be at least 32 characters').optional(),
 });
 
 export type Env = z.infer<typeof schema>;

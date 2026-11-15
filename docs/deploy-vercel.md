@@ -77,6 +77,7 @@ assistant.
 | `DATABASE_POOL_MAX` | `2` (each Vercel instance opens its own connections) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Your email provider. Without one, new players cannot confirm their email address. |
 | `DEMO_MODE` | `true` only for a public demo of the template (see "A public demo" below) |
+| `STATS_TOKEN` | Optional: a fourth secret from `openssl rand -hex 32` to turn on live traffic figures (see "Live traffic figures" below). Leave it out to count nothing. |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1`, so Vercel builds with the pnpm version named in `package.json` |
 
 From the command line, `printf '%s' "$(openssl rand -hex 32)" | pnpm dlx vercel@latest env add APP_SECRET production`
@@ -142,6 +143,28 @@ who want to try the player experience. It looks after itself:
 The first call to the scheduled work sets it all up, so a demo database needs only the first deploy. Sign-ups skip
 email in demo mode, so create any owner account (step 8) before turning it on. Never run `pnpm db:seed` against a
 public database: its accounts have passwords published in this repository.
+
+## Live traffic figures (optional)
+
+Set `STATS_TOKEN` (at least 32 characters, from `openssl rand -hex 32`) to turn on a first-party visit counter. It
+is off unless you set it. When it is on:
+
+- each page a visitor opens is counted per minute, with the page's path and the host name of the site that sent them;
+- unique visitors are counted with a keyed hash of IP address and browser whose key changes every day. The IP
+  address and browser are never stored, no cookie is set, and nothing is stored on the visitor's device;
+- prefetches, bots and browsers sending Global Privacy Control or Do Not Track are not counted;
+- each connection can report at most 120 views in 10 minutes, and each minute keeps at most 100 page and referring
+  site rows (further views count under `(other)`) and 500 visitors, so faked reports cannot fill the database;
+- the rows are deleted after 48 hours, and the privacy notice and cookies page say what is counted;
+- `GET /api/stats` with `Authorization: Bearer <STATS_TOKEN>` returns the totals as JSON: views and visitors for each
+  minute of the last 24 hours, visitors active in the last 5 minutes, today's views, visitors, sign-ups and tickets
+  (UK day), and the top pages and referring sites of the last hour. Without the token it answers 401; with
+  `STATS_TOKEN` unset, 404.
+
+Call the endpoint only from a server (your own dashboard's back end), never from a browser, so the token stays
+secret. Each counted page view is one small database write, so on a free database the counter keeps it awake while
+people are on the site. Each call to `GET /api/stats` also wakes the database, so on a free database plan poll it
+only while you are looking at your dashboard, not around the clock.
 
 `vercel.json` runs the site in London (`lhr1`), next to a London database. Every page makes several database
 queries, so a site in another region from its database is slow, and the scheduled work can time out.

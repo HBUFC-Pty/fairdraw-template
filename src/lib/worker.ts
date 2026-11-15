@@ -16,7 +16,7 @@
  *
  * runTick: expire unpaid orders, close competitions at their close time (or when sold out) and publish the commitment,
  * make due draws once the committed drand round exists, settle authorised payments and send pending refunds, and (demo
- * sites only) remove old visitor accounts and keep demo competitions open.
+ * sites only) remove old visitor accounts and keep demo competitions open, and delete visit counts older than 48 hours.
  * runRetention: the nightly retention job. retentionIfDue runs it when it last ran over 23 hours ago.
  * A Postgres advisory lock means two cycles never overlap, whichever process starts them.
  */
@@ -32,6 +32,7 @@ import { env } from '@/lib/env';
 import { configuredRelays, fetchBeacon } from '@/lib/fairdraw/beacon';
 import { formatUk } from '@/lib/time';
 import { demoNextDueAt, demoUpkeep } from '@/lib/demo';
+import { pruneVisitCounts } from '@/lib/stats';
 
 const LOCK_KEY = 727275;
 
@@ -100,6 +101,8 @@ export async function runTick(): Promise<boolean> {
       await processRefunds(db, getPaymentProvider()).catch((e) => errors.push(`refunds: ${e.message}`));
       // Demo sites only (DEMO_MODE): remove old visitor accounts and keep competitions open. A no-op elsewhere.
       await demoUpkeep(db).catch((e) => errors.push(`demo: ${e.message}`));
+      // The optional visit counter keeps its rows for 48 hours (src/lib/stats.ts). A no-op when it holds none.
+      await pruneVisitCounts(db).catch((e) => errors.push(`visit counts: ${e.message}`));
       if (errors.length) console.error(errors.join('\n'));
       await record('tick', errors.length === 0, errors.join('\n').slice(0, 2000) || undefined);
       return true;
