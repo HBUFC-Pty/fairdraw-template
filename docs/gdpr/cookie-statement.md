@@ -47,6 +47,10 @@ Control or Do Not Track. While it is on, the privacy notice adds a "Visit counts
 mentions it, so keep this statement in step. Because the visitor hash is made from details the browser sends, take
 advice on whether PECR rules on "similar technologies" apply to your use, and record it in your ROPA.
 
+The counter's privacy wording covers the counter only. Your host's own access logs (Caddy's request log in the
+self-hosted set-up, or Vercel's request logs) record IP addresses and browser details for every request, including
+each visit report, so describe them separately in your ROPA and privacy notice, with how long they are kept.
+
 ## If you add analytics (for operators)
 
 Adding analytics, advertising pixels, chat widgets, embedded videos or anything else that stores or reads information

@@ -153,6 +153,8 @@ is off unless you set it. When it is on:
 - unique visitors are counted with a keyed hash of IP address and browser whose key changes every day. The IP
   address and browser are never stored, no cookie is set, and nothing is stored on the visitor's device;
 - prefetches, bots and browsers sending Global Privacy Control or Do Not Track are not counted;
+- each connection can report at most 120 views in 10 minutes, and each minute keeps at most 100 page and referring
+  site rows (further views count under `(other)`) and 500 visitors, so faked reports cannot fill the database;
 - the rows are deleted after 48 hours, and the privacy notice and cookies page say what is counted;
 - `GET /api/stats` with `Authorization: Bearer <STATS_TOKEN>` returns the totals as JSON: views and visitors for each
   minute of the last 24 hours, visitors active in the last 5 minutes, today's views, visitors, sign-ups and tickets
@@ -161,7 +163,8 @@ is off unless you set it. When it is on:
 
 Call the endpoint only from a server (your own dashboard's back end), never from a browser, so the token stays
 secret. Each counted page view is one small database write, so on a free database the counter keeps it awake while
-people are on the site.
+people are on the site. Each call to `GET /api/stats` also wakes the database, so on a free database plan poll it
+only while you are looking at your dashboard, not around the clock.
 
 `vercel.json` runs the site in London (`lhr1`), next to a London database. Every page makes several database
 queries, so a site in another region from its database is slow, and the scheduled work can time out.

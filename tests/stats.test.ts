@@ -3,7 +3,11 @@ import { addPaidTickets, makeCompetition, makeUser, testDb } from './helpers/db'
 import type { Db } from '../src/lib/db';
 import { pageViews, pageVisitors } from '../src/lib/db/schema';
 import { env, resetEnvCache } from '../src/lib/env';
+import { sql } from 'drizzle-orm';
 import {
+  MAX_PAGE_ROWS_PER_MINUTE,
+  MAX_VISITORS_PER_MINUTE,
+  OTHER_PAGE,
   STATS_PRIVACY_SECTION,
   floorMinute,
   normalisePath,
@@ -13,8 +17,10 @@ import {
   referrerHost,
   skipReason,
   statsSnapshot,
+  viewRateKey,
   visitorHash,
 } from '../src/lib/stats';
+import { RATE_RULES } from '../src/lib/rate-limit';
 import { runRetention } from '../src/lib/retention';
 import { loadContent } from '../src/lib/content/load';
 
@@ -37,6 +43,7 @@ beforeEach(async () => {
 afterEach(() => {
   delete process.env.STATS_TOKEN;
   resetEnvCache();
+  vi.useRealTimers();
 });
 
 function statsOn() {
@@ -57,15 +64,20 @@ async function getStats(auth?: string) {
   return GET(new Request('http://localhost/api/stats', { headers: auth ? { authorization: auth } : {} }));
 }
 
-async function postView(body: unknown, headers: Record<string, string> = {}) {
+async function postView(body: unknown, headers: Record<string, string> = {}, init: RequestInit = {}) {
   const { POST } = await import('@/app/api/stats/view/route');
   return POST(
     new Request('http://localhost:3000/api/stats/view', {
       method: 'POST',
       body: typeof body === 'string' ? body : JSON.stringify(body),
       headers: { origin: 'http://localhost:3000', 'user-agent': UA, ...headers },
+      ...init,
     }),
   );
+}
+
+async function totalViews() {
+  return (await db.select().from(pageViews)).reduce((n, r) => n + r.views, 0);
 }
 
 describe('visit counter: counting', () => {
@@ -155,6 +167,69 @@ describe('visit counter: counting', () => {
     expect(referrerHost('https://www.demo.example.co.uk/', 'demo.example.co.uk')).toBe('');
     expect(referrerHost('not a url', 'demo.example.co.uk')).toBe('');
     expect(referrerHost(undefined, 'demo.example.co.uk')).toBe('');
+  });
+});
+
+describe('visit counter: limits on faked reports', () => {
+  it(`keeps at most ${MAX_PAGE_ROWS_PER_MINUTE} page rows a minute and counts the rest under ${OTHER_PAGE}`, async () => {
+    const now = new Date('2026-11-15T12:00:00Z');
+    for (let i = 0; i < 250; i++) await recordPageView(db, view({ path: `/p${i}`, referrerHost: i % 2 ? 'spam.example' : '' }), now);
+    // A page that already has a row this minute keeps counting there.
+    await recordPageView(db, view({ path: '/p0' }), now);
+    const rows = await db.select().from(pageViews);
+    expect(rows.length).toBeLessThanOrEqual(MAX_PAGE_ROWS_PER_MINUTE + 1);
+    expect(rows.find((r) => r.path === '/p0')!.views).toBe(2);
+    expect(rows.find((r) => r.path === OTHER_PAGE)).toMatchObject({ referrerHost: '', views: 150 });
+    expect(await totalViews()).toBe(251);
+    expect(normalisePath(OTHER_PAGE)).toBeNull();
+    // The next minute starts afresh.
+    await recordPageView(db, view({ path: '/p200' }), new Date(now.getTime() + MIN));
+    expect((await db.select().from(pageViews)).some((r) => r.path === '/p200')).toBe(true);
+  });
+
+  it(`counts at most ${MAX_VISITORS_PER_MINUTE} visitors a minute`, async () => {
+    const now = new Date('2026-11-15T12:00:00Z');
+    for (let i = 0; i < 600; i++) await recordPageView(db, view({ ip: `198.51.100.${i % 250}`, userAgent: `${UA} ${i}` }), now);
+    expect(await db.select().from(pageVisitors)).toHaveLength(MAX_VISITORS_PER_MINUTE);
+    expect(await totalViews()).toBe(600);
+  });
+
+  it(`stores at most ${RATE_RULES.pageView.limit} views from one connection in 10 minutes, keyed by a hash`, async () => {
+    statsOn();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-15T12:01:00Z'));
+    for (let i = 0; i < 130; i++) await postView({ p: `/page-${i}` });
+    expect(await totalViews()).toBe(RATE_RULES.pageView.limit);
+    const keys = (await db.execute(sql`SELECT key FROM rate_limits`)) as unknown as { rows: { key: string }[] };
+    expect(keys.rows.map((r) => r.key)).toEqual([viewRateKey(env().APP_SECRET, new Date(), IP)]);
+    expect(JSON.stringify(keys.rows)).not.toContain(IP);
+    // Another connection still counts.
+    state.ip = '198.51.100.9';
+    await postView({ p: '/' });
+    expect(await totalViews()).toBe(RATE_RULES.pageView.limit + 1);
+  });
+
+  it('does not share one limit between visitors when the address is unknown', async () => {
+    statsOn();
+    state.ip = 'unknown';
+    for (let i = 0; i < RATE_RULES.pageView.limit + 5; i++) await postView({ p: '/' });
+    expect(await totalViews()).toBe(RATE_RULES.pageView.limit + 5);
+  });
+
+  it('does not read a body over 4096 bytes', async () => {
+    statsOn();
+    const big = JSON.stringify({ p: '/', r: `https://www.google.com/${'x'.repeat(5000)}` });
+    expect((await postView({ p: '/' }, { 'content-length': '5000' })).status).toBe(204);
+    expect((await postView(big)).status).toBe(204);
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        c.enqueue(new TextEncoder().encode(' '.repeat(1024)));
+      },
+    });
+    expect((await postView(stream, {}, { body: stream, duplex: 'half' } as RequestInit)).status).toBe(204);
+    expect(await db.select().from(pageViews)).toHaveLength(0);
+    expect((await postView({ p: '/' })).status).toBe(204);
+    expect(await db.select().from(pageViews)).toHaveLength(1);
   });
 });
 
@@ -272,7 +347,9 @@ describe('privacy notice', () => {
     expect(on).toContain(STATS_PRIVACY_SECTION);
     expect(on.indexOf('### Visit counts')).toBeGreaterThan(on.indexOf('### Cookies'));
     expect(on.indexOf('### Visit counts')).toBeLessThan(on.indexOf('### Public entry lists'));
-    for (const words of ['no cookie', 'IP address', 'deleted after 48 hours', 'never shared', 'Global Privacy']) expect(STATS_PRIVACY_SECTION).toContain(words);
+    for (const words of ['no cookie', 'IP address', 'deleted after 48 hours', 'never shared', 'Global Privacy', 'up to a day']) expect(STATS_PRIVACY_SECTION).toContain(words);
+    // The claim is about the counter only: a host's own access logs are the operator's to describe.
+    expect(STATS_PRIVACY_SECTION).toContain('The visit counter never stores your IP');
     expect(privacyMarkdown('# Notice', true)).toBe(`# Notice\n\n${STATS_PRIVACY_SECTION}`);
   });
 });

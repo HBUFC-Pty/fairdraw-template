@@ -12,7 +12,8 @@
  */
 /**
  * Postgres-backed fixed-window rate limiting. Used on login, sign-up, password reset, email verification resend,
- * 2FA and checkout. Works across several app instances because the counter lives in the database.
+ * 2FA, checkout and the optional visit counter. Works across several app instances because the counter lives in the
+ * database.
  */
 import { sql } from 'drizzle-orm';
 import type { Db } from './db';
@@ -30,6 +31,8 @@ export const RATE_RULES = {
   verifyResend: { limit: 5, windowSeconds: 60 * 60 },
   totp: { limit: 10, windowSeconds: 15 * 60 },
   checkout: { limit: 20, windowSeconds: 10 * 60 },
+  // The optional visit counter (src/lib/stats.ts), keyed by a daily keyed hash of the IP address, never the address.
+  pageView: { limit: 120, windowSeconds: 10 * 60 },
   // Demo sites only: every visitor sign-up on the whole site, per day (src/lib/demo.ts).
   demoSignupsSiteWide: { limit: 300, windowSeconds: 24 * 60 * 60 },
 } satisfies Record<string, RateRule>;

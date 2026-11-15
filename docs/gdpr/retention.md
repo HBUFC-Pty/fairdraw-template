@@ -28,7 +28,7 @@ this file and the privacy notice together.
 | Payment webhook event ids | 90 days | Deleted | `RETENTION.webhookEventDays` |
 | Sessions | On expiry (30 days players, 12 hours staff) | Deleted | `pruneTokensAndSessions` |
 | Email verification and password reset tokens | On expiry (48 hours, 1 hour) | Deleted | `pruneTokensAndSessions` |
-| Rate limit counters | 1 day | Deleted | `pruneRateLimits` |
+| Rate limit counters (with the visit counter on, these include a daily keyed hash of each visitor's IP address, never the address) | 1 day | Deleted | `pruneRateLimits` |
 | Visit counts and daily visitor hashes (only when `STATS_TOKEN` is set) | 48 hours | Deleted | `pruneVisitCounts` in `src/lib/stats.ts` |
 | Self-exclusion fingerprint (keyed hash of email) | Until the exclusion ends | Deleted | `exclusions` table |
 | Orders, payments, refunds | 6 years from the end of the financial year | Kept, linked to an anonymous id once the account is anonymised. The template does not delete them automatically: review yearly with your accountant | `RETENTION.financialRecordYears` |

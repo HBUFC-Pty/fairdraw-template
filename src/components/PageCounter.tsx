@@ -17,11 +17,29 @@ import { usePathname } from 'next/navigation';
 
 let referrerSent = false;
 
+function report(pathname: string) {
+  const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
+  if (nav.globalPrivacyControl === true || nav.doNotTrack === '1') return;
+  const r = referrerSent ? undefined : document.referrer || undefined;
+  referrerSent = true;
+  fetch('/api/stats/view', {
+    method: 'POST',
+    body: JSON.stringify({ p: pathname, r }),
+    headers: { 'Content-Type': 'text/plain' },
+    credentials: 'omit',
+    keepalive: true,
+    cache: 'no-store',
+  }).catch(() => undefined);
+}
+
 /**
  * The optional visit counter (src/lib/stats.ts). Rendered by the root layout only when the operator sets STATS_TOKEN.
  * Reports each page shown (the first load and every move within the site) to this site's own /api/stats/view: the
  * path, and on the first page only the address of the site the visitor came from. No cookies are sent or set, nothing
  * is stored in the browser, and nothing is sent when the browser asks not to be tracked.
+ *
+ * A page the browser prerenders (from the address bar or speculation rules) reports only once the visitor actually
+ * opens it, and a page brought back by the back and forward buttons from the browser's cache is counted again.
  */
 export function PageCounter() {
   const pathname = usePathname();
@@ -29,18 +47,17 @@ export function PageCounter() {
   useEffect(() => {
     if (!pathname || last.current === pathname) return;
     last.current = pathname;
-    const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
-    if (nav.globalPrivacyControl === true || nav.doNotTrack === '1') return;
-    const r = referrerSent ? undefined : document.referrer || undefined;
-    referrerSent = true;
-    fetch('/api/stats/view', {
-      method: 'POST',
-      body: JSON.stringify({ p: pathname, r }),
-      headers: { 'Content-Type': 'text/plain' },
-      credentials: 'omit',
-      keepalive: true,
-      cache: 'no-store',
-    }).catch(() => undefined);
+    const d = document as Document & { prerendering?: boolean };
+    // A prerendered page's request carries Sec-Purpose: prefetch and is not counted, so wait until it is shown.
+    if (d.prerendering) document.addEventListener('prerenderingchange', () => report(pathname), { once: true });
+    else report(pathname);
   }, [pathname]);
+  useEffect(() => {
+    const restored = (e: PageTransitionEvent) => {
+      if (e.persisted && last.current) report(last.current);
+    };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
   return null;
 }

@@ -13,17 +13,42 @@
 import { z } from 'zod';
 import { env } from '@/lib/env';
 import { getDb } from '@/lib/db';
+import { RATE_RULES, hit } from '@/lib/rate-limit';
 import { clientIp } from '@/lib/web/request';
-import { normalisePath, recordPageView, referrerHost, skipReason } from '@/lib/stats';
+import { normalisePath, recordPageView, referrerHost, skipReason, viewRateKey } from '@/lib/stats';
 
 /**
  * Counts one page view for the optional visit counter (src/lib/stats.ts), sent by src/components/PageCounter.tsx.
  * 404 unless STATS_TOKEN is set. Only this site's own pages can report (Origin check), nothing is returned, no cookie is
- * read or set, and a failure is ignored so counting never affects a visitor.
+ * read or set, and a failure is ignored so counting never affects a visitor. The Origin check only stops browsers, so
+ * the body is read only up to MAX_BODY bytes, each connection is rate limited (by a daily keyed hash of its IP
+ * address, never the address) and recordPageView caps the rows each minute can add.
  */
 export const dynamic = 'force-dynamic';
 
+const MAX_BODY = 4096;
 const body = z.object({ p: z.string().max(512), r: z.string().max(2048).optional() });
+
+/** The body as text, or null when it is larger than `max` bytes. Stops reading at the limit, so nothing larger is held. */
+async function readCapped(req: Request, max: number): Promise<string | null> {
+  const declared = req.headers.get('content-length');
+  if (declared !== null && !(Number(declared) <= max)) return null;
+  if (!req.body) return '';
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
 
 export async function POST(req: Request) {
   const headers = { 'Cache-Control': 'no-store' };
@@ -33,15 +58,21 @@ export async function POST(req: Request) {
   if (req.headers.get('origin') !== app.origin) return new Response(null, { status: 403, headers });
   try {
     if (skipReason(req.headers)) return new Response(null, { status: 204, headers });
-    const text = await req.text();
-    if (text.length > 4096) return new Response(null, { status: 204, headers });
+    const text = await readCapped(req, MAX_BODY);
+    if (text === null) return new Response(null, { status: 204, headers });
     const parsed = body.safeParse(JSON.parse(text));
     const path = parsed.success ? normalisePath(parsed.data.p) : null;
     if (!parsed.success || !path) return new Response(null, { status: 204, headers });
-    await recordPageView(getDb(), {
+    const db = getDb();
+    const ip = await clientIp();
+    // Without a known address every visitor would share one limit, so then only the per-minute row caps apply.
+    if (ip !== 'unknown' && !(await hit(db, viewRateKey(e.APP_SECRET, new Date(), ip), RATE_RULES.pageView))) {
+      return new Response(null, { status: 204, headers });
+    }
+    await recordPageView(db, {
       path,
       referrerHost: referrerHost(parsed.data.r, app.hostname),
-      ip: await clientIp(),
+      ip,
       userAgent: (req.headers.get('user-agent') ?? '').slice(0, 512),
     });
   } catch {

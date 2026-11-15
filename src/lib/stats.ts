@@ -20,6 +20,10 @@
  *   UK date, so it changes every day) of the IP address and browser. Only the hash is stored, never the IP address,
  *   the browser or anything else about the visitor, and no cookie is set;
  * - prefetches, bots and browsers that send Global Privacy Control or Do Not Track are not counted;
+ * - the table size has a hard limit, because anyone outside a browser can fake a report: each connection may report
+ *   RATE_RULES.pageView views per 10 minutes (keyed by viewRateKey, a daily keyed hash of the IP address alone), and each
+ *   minute keeps at most MAX_PAGE_ROWS_PER_MINUTE page rows (the rest are counted as OTHER_PAGE) and at most
+ *   MAX_VISITORS_PER_MINUTE visitors;
  * - rows are deleted after 48 hours (pruneVisitCounts, from the scheduled work);
  * - GET /api/stats (bearer STATS_TOKEN) returns totals only, built by statsSnapshot.
  */
@@ -44,15 +48,24 @@ address (never anything after a "?"), the minute, and the name of the website th
 www.google.com).
 
 To count how many different people visit without using a cookie, we also store a scrambled code made from your IP
-address and your browser's details, using a secret key that changes every day. We never store your IP address or your
-browser's details themselves, and codes from different days cannot be linked to each other. We set no cookie and store
-nothing on your device for this.
+address and your browser's details, using a secret key that changes every day. The visit counter never stores your IP
+address or your browser's details themselves, and codes from different days cannot be linked to each other. To stop
+anyone flooding the counter, we also keep a scrambled code made the same way from your IP address alone,
+for up to a day, to limit how many visits one connection can report. We set no cookie and store nothing on your device
+for this.
 
 These counts are deleted after 48 hours, are never shared with anyone, and are used only for our own traffic figures.
 Our lawful basis is our legitimate interest in knowing how busy our site is. If your browser sends a Global Privacy
 Control or Do Not Track signal, we do not count your visits at all.
 `;
 const MIN = 60_000;
+
+/** Page and referring site rows kept per minute. Views beyond them still count, under OTHER_PAGE. */
+export const MAX_PAGE_ROWS_PER_MINUTE = 100;
+/** Distinct visitors counted per minute. Busier minutes show this many. */
+export const MAX_VISITORS_PER_MINUTE = 500;
+/** Where views go once a minute has MAX_PAGE_ROWS_PER_MINUTE rows. Never a real path: normalisePath refuses "(". */
+export const OTHER_PAGE = '(other)';
 
 /** The notice, with the visit counter section after the cookies section while the counter is on (src/lib/stats.ts). */
 export function privacyMarkdown(source: string, counting: boolean): string {
@@ -73,6 +86,12 @@ export function floorMinute(d: Date): Date {
 export function visitorHash(secret: string, now: Date, ip: string, userAgent: string): string {
   const key = hmacHex(secret, `visit-counter:${ukDate(now)}`);
   return hmacHex(key, `${ip}\n${userAgent}`).slice(0, 32);
+}
+
+/** The rate limit key for one connection's reports: a daily keyed hash of the IP address alone, never the address. */
+export function viewRateKey(secret: string, now: Date, ip: string): string {
+  const key = hmacHex(secret, `visit-counter-rate:${ukDate(now)}`);
+  return `view:${hmacHex(key, ip).slice(0, 32)}`;
 }
 
 const BOT = /bot|crawl|spider|slurp|scrap|headless|lighthouse|pagespeed|preview|facebookexternalhit|embedly|curl|wget|python|httpclient|okhttp|go-http|java\/|axios|node-fetch|undici|monitor|uptime|pingdom|scan/i;
@@ -126,15 +145,34 @@ export interface PageView {
   userAgent: string;
 }
 
-/** Count one page view and its visitor, in one statement. Callers must catch errors: counting never breaks a page. */
+/**
+ * Count one page view and its visitor, in one statement. Callers must catch errors: counting never breaks a page.
+ * Each minute keeps at most MAX_PAGE_ROWS_PER_MINUTE page rows (a new page or referring site after that is counted
+ * under OTHER_PAGE) and MAX_VISITORS_PER_MINUTE visitors, so faked reports cannot grow the tables without limit. Both
+ * counts use the primary key index on minute. Concurrent reports can pass a limit by a few rows, never more.
+ */
 export async function recordPageView(db: Db, v: PageView, now = new Date(), secret = env().APP_SECRET) {
   const minute = floorMinute(now).toISOString();
   const visitor = visitorHash(secret, now, v.ip, v.userAgent);
   await db.execute(sql`
     WITH visitor AS (
-      INSERT INTO page_visitors (minute, visitor) VALUES (${minute}, ${visitor}) ON CONFLICT DO NOTHING
+      INSERT INTO page_visitors (minute, visitor)
+      SELECT ${minute}::timestamptz, ${visitor}
+      WHERE (SELECT count(*) FROM page_visitors WHERE minute = ${minute}::timestamptz) < ${MAX_VISITORS_PER_MINUTE}
+      ON CONFLICT DO NOTHING
+    ),
+    target AS (
+      SELECT EXISTS (
+        SELECT 1 FROM page_views
+        WHERE minute = ${minute}::timestamptz AND path = ${v.path} AND referrer_host = ${v.referrerHost}
+      ) OR (SELECT count(*) FROM page_views WHERE minute = ${minute}::timestamptz) < ${MAX_PAGE_ROWS_PER_MINUTE} AS keep
     )
-    INSERT INTO page_views (minute, path, referrer_host, views) VALUES (${minute}, ${v.path}, ${v.referrerHost}, 1)
+    INSERT INTO page_views (minute, path, referrer_host, views)
+    SELECT ${minute}::timestamptz,
+      CASE WHEN keep THEN ${v.path} ELSE ${OTHER_PAGE} END,
+      CASE WHEN keep THEN ${v.referrerHost} ELSE '' END,
+      1
+    FROM target
     ON CONFLICT (minute, path, referrer_host) DO UPDATE SET views = page_views.views + 1`);
 }
 
