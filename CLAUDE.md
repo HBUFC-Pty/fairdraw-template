@@ -59,10 +59,13 @@ The FairDraw link and every fairness feature look and work the same under every 
 2. **The commitment.** The ticket list is frozen at the close and published before the randomness exists. Never draw
    before the committed drand round exists, never change a committed list, never redo a draw, never pick winners any
    other way, never let anyone (admin included) trigger, delay or choose a draw. `src/lib/draw/service.ts` and the
-   triggers in `drizzle/0001_fairness_guards.sql` enforce this. Do not edit or drop those triggers; do not add
-   migrations that disable them.
-3. **At least two drand relays must agree** (`src/lib/fairdraw/beacon.ts`). Do not lower `minAgreeing` or skip the
-   signature hash check.
+   triggers in `drizzle/0001_fairness_guards.sql` and `drizzle/0004_draw_integrity_guards.sql` enforce this (0004:
+   the committed drand round must be the one the rules give and must not exist yet; entries are fixed at the
+   advertised close; ticket and winner owners never change; prize text is fixed from the close). Do not edit or drop
+   those triggers; do not add migrations that disable them; never make `fd_clock()` return anything but `now()` outside tests.
+3. **At least two drand relays must agree** (`src/lib/fairdraw/beacon.ts`). Do not lower `minAgreeing`, skip the
+   signature hash check, or remove `verifyBeaconSignature` (every beacon is checked against drand quicknet's public
+   key). The browser verifier always asks the public relays, never the site's own `DRAND_RELAYS`.
 4. **Drawn at the advertised time whatever sells.** No extensions, rollovers, reduced prizes, or cash alternatives
    because a competition undersold. Published competitions keep their price, maximum, cap, prize value, question and
    times. Do not add features that change these after publishing.
@@ -95,6 +98,13 @@ The FairDraw link and every fairness feature look and work the same under every 
     check, never treat "unknown" funding as debit, never raise `creditCardMonthlyCapPounds` above 250 or switch off
     `instantWinCreditCardBan`, and never drop the `orders_credit_card_rule` trigger (`drizzle/0003_instant_win_guard.sql`).
     Any new payment adapter must authorise only and report the funding type.
+
+15. **Instant wins** (`src/lib/competitions/instant.ts`, `drizzle/0005_instant_wins.sql`): the winning numbers are
+    chosen at random and committed when a competition is published, the database awards a prize the moment a winning
+    number is entered, and the salt and full list are published at the close. Never let anyone choose, add, move or
+    remove an instant-win number, award an instant prize by hand, let players choose numbers in a competition with
+    instant prizes, or release a winning ticket. Never build a separate paid game of chance (that is gaming under the
+    Gambling Act 2005): reveal games only show the result of a ticket already bought.
 
 ## Before you commit
 

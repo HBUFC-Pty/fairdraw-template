@@ -10,7 +10,12 @@ exist until the advertised draw time, and the full record is published so anyone
 with FairDraw's own tools. The database itself refuses to change a committed list or redo a draw.
 
 **New here and not technical?** Start with [docs/start-here.md](docs/start-here.md): it walks you (and your AI
-assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server.
+assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosting.md) helps you pick a server. To try it
+without a server, [docs/deploy-vercel.md](docs/deploy-vercel.md) puts it on Vercel and Neon's free plans.
+
+**See it running:** [demo.fairdraw.partyofone.quest](https://demo.fairdraw.partyofone.quest) is a public demo in test
+mode (prices and prizes are points with no value, and no real payments or people), set up exactly as in that guide
+with `DEMO_MODE=true`.
 
 > **Status:** a template. The legal and GDPR documents are built from published precedents (listed in
 > [docs/legal/SOURCES.md](docs/legal/SOURCES.md)) but are not legal advice: have them reviewed if you can. See "What has and has not been tested" below.
@@ -24,6 +29,9 @@ assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosti
 - **Drawn whatever sells**: every competition is drawn at its advertised time for the full prize. No extensions,
   rollovers or reduced prizes. Published terms and times are locked by database triggers.
 - **Free entry by post**: recorded by staff, same chance, same cap, shown in the entry list.
+- **Instant wins anyone can check**: winning numbers chosen at random and committed publicly before anything is sold,
+  awarded by the database the moment a winning number is entered, and published in full at the close, with a scratch
+  card, prize wheel or coin drop to reveal them. See [docs/instant-wins.md](docs/instant-wins.md).
 - **Verifiable draws**: commitment at close, drand randomness confirmed by at least two relays, winners picked with
   HMAC-SHA256 and rejection sampling, records as JSON at stable URLs, and a "verify this draw" page that re-runs the
   draw in the browser. A scheduled worker closes and draws on time and records scheduled and actual times.
@@ -45,7 +53,8 @@ assistant) from buying a domain to a live site, and [docs/hosting.md](docs/hosti
   nonce-based Content-Security-Policy and strict security headers, Server Action origin checks, Zod validation on every
   input, Postgres-backed rate limiting on login, sign-up, reset, 2FA and checkout.
 - **Privacy by default**: no trackers, no analytics, one strictly necessary cookie, so no cookie banner. A scheduled
-  retention job deletes or anonymises data on schedule. Templates for the privacy notice, ROPA, DPIA, DSAR and breach
+  retention job deletes or anonymises data on schedule. An optional first-party, cookieless visit counter (off unless
+  you set `STATS_TOKEN`) gives live traffic figures at `/api/stats` and is described in the privacy notice when on. Templates for the privacy notice, ROPA, DPIA, DSAR and breach
   procedures and the cookie statement are in [docs/gdpr/](docs/gdpr/).
 - **Legal templates** in [docs/legal/](docs/legal/): competition terms (prize competition and free draw exemptions),
   responsible play, complaints, and a checklist for the DCMS voluntary code for prize draw operators.
@@ -98,8 +107,8 @@ pnpm worker         # in another terminal: closes and draws competitions on sche
 
 Emails (sign-up confirmation, password reset) appear in Mailpit at http://localhost:8025. Demo logins (all data is
 fictional): `owner@example.test` / `demo-owner-password` (you will be asked to set up 2FA) and `player@example.test` /
-`demo-player-password`. The seed includes a competition already drawn with a real drand round: open it and press
-"Verify this draw".
+`demo-player-password`. The seed includes a competition that closes five minutes later: keep `pnpm worker` running to
+watch it close, commit to a future drand round and draw at the advertised time, then press "Verify this draw".
 
 No Docker? Any PostgreSQL 16 works: create a database and point `DATABASE_URL` at it.
 

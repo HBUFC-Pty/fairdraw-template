@@ -31,27 +31,35 @@ export default async function TestPayPage({ params }: { params: Promise<{ orderI
   const [o] = await getDb().select().from(orders).where(eq(orders.id, orderId));
   if (!o || o.userId !== s.user.id) notFound();
   return (
-    <>
+    <div className="checkout-page">
       <h1>Test payment</h1>
-      <p className="notice warn">This is the test payment provider for local development. No money moves.</p>
-      <p>Order total: <strong>{formatPence(o.totalPence)}</strong>. Status: {o.status}.</p>
-      {o.status === 'pending' ? (
-        <>
-          <p>Choose the kind of card to simulate. Credit and unknown cards are subject to the DCMS credit card rule.</p>
-          {(['debit', 'credit', 'prepaid', 'unknown'] as const).map((f) => (
-            <form action={testPayAction} key={f}>
+      <div className="checkout-panel">
+        <p className="notice warn">This is the test payment provider for local development. No money moves.</p>
+        <div className="checkout-total">
+          <p className="micro-label">Order total</p>
+          <p className="checkout-amount num">{formatPence(o.totalPence)}</p>
+          <p className="checkout-status">Status: <span className="chip chip-glass">{o.status}</span></p>
+        </div>
+        {o.status === 'pending' ? (
+          <>
+            <p className="micro-hint">Choose the kind of card to simulate. Credit and unknown cards are subject to the DCMS credit card rule.</p>
+            <div className="pay-options">
+              {(['debit', 'credit', 'prepaid', 'unknown'] as const).map((f) => (
+                <form action={testPayAction} key={f}>
+                  <input type="hidden" name="orderId" value={o.id} />
+                  <input type="hidden" name="outcome" value={f} />
+                  <button type="submit" className={f === 'debit' ? 'lg' : 'secondary'}>Pay with a {f === 'unknown' ? 'card of unknown type' : `${f} card`} (test)</button>
+                </form>
+              ))}
+            </div>
+            <form action={testPayAction} className="pay-fail">
               <input type="hidden" name="orderId" value={o.id} />
-              <input type="hidden" name="outcome" value={f} />
-              <button type="submit">Pay with a {f === 'unknown' ? 'card of unknown type' : `${f} card`} (test)</button>
+              <input type="hidden" name="outcome" value="fail" />
+              <button type="submit" className="secondary sm">Simulate a failed payment</button>
             </form>
-          ))}
-          <form action={testPayAction}>
-            <input type="hidden" name="orderId" value={o.id} />
-            <input type="hidden" name="outcome" value="fail" />
-            <button type="submit" className="secondary">Simulate a failed payment</button>
-          </form>
-        </>
-      ) : null}
-    </>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }

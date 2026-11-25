@@ -1,0 +1,186 @@
+/*
+ * The contents of this file are subject to the Common Public Attribution License Version 1.0 (the “License”); you may
+ * not use this file except in compliance with the License. You may obtain a copy of the License at
+ * https://opensource.org/license/CPAL-1.0. The License is based on the Mozilla Public License Version 1.1 but Sections
+ * 14 and 15 have been added to cover use of software over a computer network and provide for limited attribution for
+ * the Original Developer. In addition, Exhibit A has been modified to be consistent with Exhibit B.
+ * Software distributed under the License is distributed on an “AS IS” basis, WITHOUT WARRANTY OF ANY KIND, either
+ * express or implied. See the License for the specific language governing rights and limitations under the License.
+ * The Original Code is FairDraw operator template.
+ * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
+ * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
+ */
+/*
+ * Motion, for brands with extras.motion (data-motion on <body>). Rules:
+ * - every rule sits under [data-motion] and inside prefers-reduced-motion: no-preference, and globals.css switches all
+ *   animation and transition off under reduce;
+ * - every element's resting style is its final state: keyframes animate only the "from" or passing frames, so with
+ *   motion off nothing is hidden;
+ * - transform and opacity only (plus background-position for stripes). No animation library, no canvas;
+ * - nothing that starts on its own loops for more than five seconds (WCAG 2.2.2): decorative loops run a few times
+ *   and stop. The two things that keep moving, the hero autoplay and the winners strip, each have a pause button.
+ */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Live dot: a ring pings out from real live states (ending soon, under an hour, next draw). */
+  [data-motion] .live-dot::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor;
+    animation: dot-ping 1.6s var(--ease-out) 3;
+  }
+
+  /* Buttons lift a pixel on hover; primaries get a sheen. */
+  [data-motion][data-type='display'] :is(.button, button) { transition: box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+  [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, .bare)::after,
+  [data-motion] .tile-cta:not(.is-quiet)::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--c-text) 45%, transparent) 50%, transparent 70%);
+    transform: translateX(-120%) skewX(-20deg);
+  }
+
+  @media (hover: hover) {
+    [data-motion][data-type='display'] :is(.button, button):not(:disabled):hover { transform: translateY(-1px); }
+    [data-motion][data-type='display'] :is(.button, button):not(.secondary, .danger, .icon-btn, .bare, :disabled):hover::after { animation: sheen 0.9s var(--ease-out) 1; }
+
+    /* Tiles lift, the prize image zooms and the call to action's sheen sweeps once. */
+    [data-motion] .tile { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
+    [data-motion] .tile:hover { transform: translateY(-4px); }
+    [data-motion] .tile-frame img { transition: transform 0.6s var(--ease-out); }
+    [data-motion] .tile:hover .tile-frame img { transform: scale(1.06); }
+    [data-motion] .tile:hover .tile-cta::after { animation: sheen 0.9s var(--ease-out) 1; }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- Entrances (scroll-driven where supported; elsewhere everything is simply visible) ---------- */
+  @supports (animation-timeline: view()) {
+    [data-motion] :is(.tile, .iprize, .win, .step, .next-draw, .proof, .section-head) {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+    /* Inside sideways rows the view timeline is the row itself, which would hide items scrolled off to the side. */
+    [data-motion] :is(.snap-track, .mq-track) :is(.tile, .iprize, .win) { animation: none; }
+  }
+
+  /* ---------- Hero carousel ---------- */
+  [data-motion] .hero-slide { transition: opacity 0.3s var(--ease-out), visibility 0s linear 0.3s; }
+  [data-motion] .hero-slide.is-active { transition: opacity 0.4s var(--ease-out), visibility 0s; }
+  [data-motion] .hero-slide.is-active .hero-copy > * { animation: rise-in 0.5s var(--ease-pop) both; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(2) { animation-delay: 80ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(3) { animation-delay: 160ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(4) { animation-delay: 240ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(5) { animation-delay: 320ms; }
+  [data-motion] .hero-slide.is-active .hero-copy > :nth-child(6) { animation-delay: 400ms; }
+  [data-motion] .hero-slide.is-active :is(.hero-frame-inner img, .hero-stage) { animation: settle 0.7s var(--ease-out) both; }
+  /* Each runs a short while when its slide comes in, then rests (under five seconds). */
+  [data-motion] .hero-slide.is-active .hero-frame { animation: float 4.8s ease-in-out 1; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark { animation: twinkle 2.8s ease-in-out 1; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark.s2 { animation-delay: 0.9s; }
+  [data-motion] :is(.hero-slide.is-active, .proof) .spark.s3 { animation-delay: 1.7s; }
+  [data-motion] .hero-slide.is-active .hero-cta { animation: glow-pulse 2.4s ease-in-out 2 alternate; }
+  [data-motion][data-type='display'] .hero-slide.is-active .hero-cta::after { animation: sheen 0.9s var(--ease-out) 0.8s 1; }
+  [data-motion] .hero-dots .hero-dot::before { transition: transform 0.3s var(--ease-out), background-color 0.3s var(--ease-out); }
+
+  /* ---------- Countdown digits: the changed digit drops in ---------- */
+  [data-motion] .cd-tick { animation: tick-in 0.28s var(--ease-out); }
+
+  /* ---------- Sold bars fill from the left; the fill carries slowly moving stripes ---------- */
+  [data-motion] :is(.tile-bar, .sold-bar, .iprize-line, .iw-bar) > span {
+    transform-origin: left center;
+    background-image:
+      repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-text) 12%, transparent) 0 6px, transparent 6px 12px),
+      linear-gradient(90deg, var(--c-primary), var(--c-accent));
+    background-size: 24px 24px, 100% 100%;
+    animation: bar-fill 0.9s var(--ease-out) 0.15s both, stripes 1.2s linear 4;
+  }
+
+  /* ---------- Winners marquee: 4s an item, at least 30s a loop; holds on hover, focus or the pause button ---------- */
+  [data-motion] .marquee.is-moving .mq-track { animation: marquee 30s linear infinite; }
+  [data-motion] .marquee:is(:hover, :focus-within, .is-paused) .mq-track { animation-play-state: paused; }
+  [data-motion] .marquee.mq-n8 .mq-track { animation-duration: 32s; }
+  [data-motion] .marquee.mq-n9 .mq-track { animation-duration: 36s; }
+  [data-motion] .marquee.mq-n10 .mq-track { animation-duration: 40s; }
+  [data-motion] .marquee.mq-n11 .mq-track { animation-duration: 44s; }
+  [data-motion] .marquee.mq-n12 .mq-track { animation-duration: 48s; }
+  [data-motion] .marquee.mq-n13 .mq-track { animation-duration: 52s; }
+  [data-motion] .marquee.mq-n14 .mq-track { animation-duration: 56s; }
+  [data-motion] .marquee.mq-n15 .mq-track { animation-duration: 60s; }
+  [data-motion] .marquee.mq-n16 .mq-track { animation-duration: 64s; }
+  [data-motion] .marquee.mq-n17 .mq-track { animation-duration: 68s; }
+  [data-motion] .marquee.mq-n18 .mq-track { animation-duration: 72s; }
+  [data-motion] .marquee.mq-n19 .mq-track { animation-duration: 76s; }
+  [data-motion] .marquee.mq-n20 .mq-track { animation-duration: 80s; }
+
+  /* ---------- Filter change: tiles that come back into view fade in ---------- */
+  [data-motion] .tile-grid[data-filter] > .tile > * { animation: fade-in 0.2s var(--ease-out); }
+
+  /* ---------- Accordions: the chevron turns ---------- */
+  [data-motion] .panel-chevron { transition: transform 0.2s var(--ease-out); }
+
+  @media (hover: hover) {
+    [data-motion] .iprize { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
+    [data-motion] .iprize:hover { transform: translateY(-4px); }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- The stage lights come up once as the page opens (stage.css draws them) ---------- */
+  [data-motion][data-type='display']::before { animation: lights-up 2.4s var(--ease-out) 1; }
+
+  /* ---------- Instant win reveal: the result pops in and confetti falls once (never on a loss) ---------- */
+  [data-motion] .reveal.done.is-win .reveal-result strong { display: inline-block; animation: pop-in 0.4s var(--ease-pop) both; }
+  [data-motion] .reveal.done.is-win .confetti { display: block; }
+  [data-motion] .confetti-piece { animation: confetti-fall 1.8s var(--ease-out) var(--cf-delay, 0s) both; }
+}
+
+/* Confetti pieces: hidden unless the rule above shows them, and invisible at rest (their final state). */
+.reveal { position: relative; }
+.confetti { display: none; position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; z-index: 2; }
+.confetti-piece {
+  position: absolute; top: -16px; left: var(--cf-x, 50%); width: 8px; height: 8px; opacity: 0;
+  background: var(--c-primary); border-radius: 1px;
+}
+.confetti-piece:nth-child(4n + 2) { background: var(--c-accent); }
+.confetti-piece:nth-child(4n + 3) { background: var(--c-success); }
+.confetti-piece:nth-child(4n + 4) { background: var(--c-warning); }
+.confetti-piece:nth-child(7n + 1) { --cf-x: 6%; --cf-dx: 18px; --cf-r: 520deg; }
+.confetti-piece:nth-child(7n + 2) { --cf-x: 20%; --cf-dx: -14px; --cf-r: -440deg; width: 6px; height: 12px; }
+.confetti-piece:nth-child(7n + 3) { --cf-x: 34%; --cf-dx: 26px; --cf-r: 610deg; border-radius: 50%; }
+.confetti-piece:nth-child(7n + 4) { --cf-x: 50%; --cf-dx: -22px; --cf-r: -560deg; width: 4px; height: 14px; }
+.confetti-piece:nth-child(7n + 5) { --cf-x: 64%; --cf-dx: 12px; --cf-r: 480deg; width: 10px; height: 9px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.confetti-piece:nth-child(7n + 6) { --cf-x: 78%; --cf-dx: -30px; --cf-r: -680deg; width: 9px; height: 6px; border-radius: 3px; }
+.confetti-piece:nth-child(7n + 7) { --cf-x: 92%; --cf-dx: -10px; --cf-r: 400deg; width: 7px; height: 7px; }
+.confetti-piece:nth-child(3n + 2) { --cf-y: 300px; }
+.confetti-piece:nth-child(3n + 3) { --cf-y: 260px; }
+.confetti-piece:nth-child(5n + 2) { --cf-delay: 0.08s; }
+.confetti-piece:nth-child(5n + 3) { --cf-delay: 0.17s; }
+.confetti-piece:nth-child(5n + 4) { --cf-delay: 0.26s; }
+.confetti-piece:nth-child(5n + 5) { --cf-delay: 0.35s; }
+.confetti-piece:nth-child(n + 15) { margin-left: 4%; }
+
+@keyframes rise-in { from { opacity: 0; translate: 0 16px; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes settle { from { scale: 1.04; } }
+@keyframes float { 50% { translate: 0 -6px; } }
+@keyframes twinkle { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.6; opacity: 0.3; } }
+@keyframes glow-pulse {
+  from { box-shadow: var(--shadow), 0 0 0 0 color-mix(in srgb, var(--c-primary) 45%, transparent); }
+  to { box-shadow: var(--shadow), 0 0 24px 4px color-mix(in srgb, var(--c-primary) 45%, transparent); }
+}
+@keyframes tick-in { from { transform: translateY(-40%); opacity: 0; } }
+@keyframes bar-fill { from { transform: scaleX(0); } }
+@keyframes stripes { from { background-position: 0 0, 0 0; } to { background-position: 24px 0, 0 0; } }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes dot-ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(120%) skewX(-20deg); } }
+@keyframes lights-up { from { opacity: 0; transform: translate3d(-3vw, 2vh, 0) scale(1.08); } }
+@keyframes pop-in { from { transform: scale(0.8); opacity: 0; } }
+@keyframes confetti-fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--cf-dx, 0px), var(--cf-y, 340px)) rotate(var(--cf-r, 360deg)); }
+}

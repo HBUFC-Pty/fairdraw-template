@@ -13,19 +13,86 @@
 import Link from 'next/link';
 import { env } from '@/lib/env';
 import type { Brand } from '@/brand';
+import { Account, Basket, Close, LogoTicket, Menu } from './icons';
+import { MenuDetails, NavLink } from './HeaderNav';
 
-export function BrandMark({ brand }: { brand: Brand }) {
+/**
+ * The site name or logo, linking home. Under the bar header and display type a brand with no logo gets the ticket
+ * monogram beside its name.
+ */
+export function BrandMark({ brand, monogramId }: { brand: Brand; monogramId?: string }) {
   const name = env().SITE_NAME;
   return (
     <Link className="brand-mark" href="/">
-      {brand.logo ? <img src={brand.logo.src} alt={brand.logo.showName ? '' : brand.logo.alt} /> : null}
-      {!brand.logo || brand.logo.showName ? <span>{name}</span> : null}
+      {brand.logo ? <img src={brand.logo.src} alt={brand.logo.showName ? '' : brand.logo.alt} /> : monogramId ? <LogoTicket gradientId={monogramId} /> : null}
+      {!brand.logo || brand.logo.showName ? <span className="brand-name">{name}</span> : null}
     </Link>
   );
 }
 
-/** Header: "simple" or "centred" (brand.layout.header, styled through the data-header attribute on <body>). */
-export function SiteHeader({ brand, loggedIn, staff }: { brand: Brand; loggedIn: boolean; staff: boolean }) {
+const NAV = [
+  ['/', 'Competitions'],
+  ['/results', 'Results'],
+  ['/fairness', 'How draws work'],
+] as const;
+
+/** The compact sticky header (brand.layout.header "bar"): icons, a basket count and a menu on small screens. */
+function BarHeader({ brand, loggedIn, staff, basket }: { brand: Brand; loggedIn: boolean; staff: boolean; basket: number }) {
+  const basketLabel = `Basket, ${basket} ${basket === 1 ? 'ticket' : 'tickets'}`;
+  return (
+    <header className="site bar">
+      <div className="wrap bar-inner">
+        <BrandMark brand={brand} monogramId="logo-grad-header" />
+        <nav className="bar-nav" aria-label="Main">
+          <ul>
+            {NAV.map(([href, label]) => <li key={href}><NavLink href={href}>{label}</NavLink></li>)}
+          </ul>
+        </nav>
+        <div className="bar-actions">
+          {loggedIn ? (
+            <>
+              {staff ? <Link className="bar-admin wide-only" href="/admin">Admin</Link> : null}
+              <Link className="icon-btn" href="/basket" aria-label={basketLabel}>
+                <Basket />
+                {basket > 0 ? <span className="count-badge num" aria-hidden="true">{basket > 99 ? '99+' : basket}</span> : null}
+              </Link>
+              <Link className="icon-btn wide-only" href="/account" aria-label="Account"><Account /></Link>
+            </>
+          ) : (
+            <>
+              <Link className="button secondary sm wide-only" href="/login">Log in</Link>
+              <Link className="button sm wide-only" href="/signup">Sign up</Link>
+            </>
+          )}
+          <MenuDetails summary={<summary className="icon-btn" aria-label="Menu"><Menu className="ic-open" /><Close className="ic-close" /></summary>}>
+            <div className="menu-panel">
+              <ul>
+                {NAV.map(([href, label]) => <li key={href}><NavLink href={href}>{label}</NavLink></li>)}
+                {loggedIn ? (
+                  <>
+                    <li><NavLink href="/basket">Basket</NavLink></li>
+                    <li><NavLink href="/account">Account</NavLink></li>
+                    {staff ? <li><NavLink href="/admin">Admin</NavLink></li> : null}
+                  </>
+                ) : null}
+              </ul>
+              {loggedIn ? null : (
+                <p className="menu-auth">
+                  <Link className="button secondary" href="/login">Log in</Link>
+                  <Link className="button" href="/signup">Sign up</Link>
+                </p>
+              )}
+            </div>
+          </MenuDetails>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/** Header: "simple", "centred" (styled through the data-header attribute on <body>) or "bar" (brand.layout.header). */
+export function SiteHeader({ brand, loggedIn, staff, basket = 0 }: { brand: Brand; loggedIn: boolean; staff: boolean; basket?: number }) {
+  if (brand.layout.header === 'bar') return <BarHeader brand={brand} loggedIn={loggedIn} staff={staff} basket={basket} />;
   return (
     <header className="site">
       <div className="wrap">

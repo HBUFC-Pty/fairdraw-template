@@ -28,6 +28,10 @@ const SHADOW = {
   none: ['none', 'none'],
   soft: ['0 1px 3px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.06)', '0 8px 24px rgb(0 0 0 / 0.12)'],
   crisp: ['2px 2px 0 rgb(0 0 0 / 0.85)', '4px 4px 0 rgb(0 0 0 / 0.85)'],
+  glow: [
+    '0 1px 0 rgb(255 255 255 / 0.04) inset, 0 10px 30px -14px rgb(0 0 0 / 0.7)',
+    '0 18px 44px -18px color-mix(in srgb, var(--c-primary) 55%, transparent)',
+  ],
 } as const;
 
 export function brandCss(b: Brand, scope = ':root'): string {
@@ -46,5 +50,14 @@ export function brandCss(b: Brand, scope = ':root'): string {
 
 /** Data attributes on <body> that select structural styles in globals.css. */
 export function brandAttributes(b: Brand) {
-  return { 'data-buttons': b.buttons, 'data-cards': b.cards, 'data-header': b.layout.header, 'data-card-style': b.layout.card } as const;
+  return {
+    'data-buttons': b.buttons,
+    'data-cards': b.cards,
+    'data-header': b.layout.header,
+    'data-card-style': b.layout.card,
+    'data-home': b.layout.home,
+    ...(b.typeScale === 'display' ? { 'data-type': 'display' } : {}),
+    ...(b.extras.glow ? { 'data-glow': 'on' } : {}),
+    ...(b.extras.motion ? { 'data-motion': 'on' } : {}),
+  } as const;
 }

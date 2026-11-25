@@ -38,6 +38,7 @@ say() { printf '\n==> %s\n' "$*"; }
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || die "run as root (or with sudo)"
+# shellcheck source=/dev/null # the server's own file, read at run time
 [ -r /etc/os-release ] && . /etc/os-release
 [ "${ID:-}" = "ubuntu" ] || die "this script supports Ubuntu LTS only (found ${ID:-unknown})"
 case "$PUBKEY" in

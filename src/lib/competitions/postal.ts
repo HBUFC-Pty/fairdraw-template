@@ -11,9 +11,11 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 /**
- * Free entry by post. An admin records each postal entry received before the close. A free entry gets a randomly
- * allocated ticket with exactly the same chance as a paid one, counts towards the same per-person cap (matched by
- * email address), and appears in the public entry list like any other ticket.
+ * Free entry by post. Staff record each postal entry received before the close, and must record it before the close:
+ * the entries are fixed then. A free entry gets a randomly allocated ticket with exactly the same chance as a paid one,
+ * counts towards the same per-person cap (matched by email address), and appears in the public entry list like any
+ * other ticket. The entrant is emailed their ticket and entry code, or why the entry was not accepted, so an envelope
+ * cannot silently go missing, and each competition publishes how many postal entries were received and accepted.
  */
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -22,6 +24,9 @@ import { competitions, postalEntries, tickets, users } from '../db/schema';
 import { appendAudit, type AuditActor } from '../audit';
 import { allocateRandom, cryptoRandomInt, withinCap, type RandomIntFn } from './allocation';
 import { entriesHeld, takenNumbers } from './queries';
+import { fairdrawEntryCode } from '../fairdraw/entry-codes';
+import { env } from '../env';
+import { postalEntryMail, trySendMail } from '../mail';
 
 export const postalEntrySchema = z.object({
   competitionId: z.uuid(),
@@ -34,18 +39,20 @@ export const postalEntrySchema = z.object({
 
 export type PostalEntryInput = z.infer<typeof postalEntrySchema>;
 
-export type PostalResult = { status: 'accepted'; ticket: number; entryId: string } | { status: 'rejected'; reason: string; entryId: string };
+export type PostalResult = { status: 'accepted'; ticket: number; entryId: string; title: string } | { status: 'rejected'; reason: string; entryId: string; title: string };
 
 export async function recordPostalEntry(db: Db, actor: AuditActor, input: PostalEntryInput, opts: { now?: Date; rand?: RandomIntFn } = {}): Promise<PostalResult> {
   const now = opts.now ?? new Date();
   const data = postalEntrySchema.parse(input);
+  if (data.receivedAt.getTime() > now.getTime() + 5 * 60_000) throw new Error('The date received cannot be in the future.');
   const email = data.email.trim().toLowerCase();
   const result = await db.transaction(async (tx) => {
     const [c] = await tx.select().from(competitions).where(eq(competitions.id, data.competitionId)).for('update');
     if (!c) throw new Error('competition not found');
     let reason: string | null = null;
-    if (c.status !== 'live') reason = 'The competition has closed.';
+    if (c.status !== 'live' || now >= c.closesAt) reason = 'The competition has closed: postal entries must be recorded before the close.';
     else if (data.receivedAt >= c.closesAt) reason = 'Received after the close time.';
+    else if (data.receivedAt < c.opensAt) reason = 'Received before the competition opened.';
     else if (c.skillQuestion && data.answerIndex === null) reason = 'No answer to the competition question.';
     const held = reason ? 0 : await entriesHeld(tx, c.id, { email });
     if (!reason && !withinCap(held, 1, c.perPersonCap)) reason = `This person already holds ${held} entries, the per-person cap.`;
@@ -70,7 +77,7 @@ export async function recordPostalEntry(db: Db, actor: AuditActor, input: Postal
         createdAt: now,
       })
       .returning({ id: postalEntries.id });
-    if (reason || ticket === null) return { status: 'rejected', reason: reason ?? 'unknown', entryId: entry!.id } as const;
+    if (reason || ticket === null) return { status: 'rejected', reason: reason ?? 'unknown', entryId: entry!.id, title: c.title } as const;
     const [u] = await tx.select({ id: users.id }).from(users).where(eq(users.email, email));
     await tx.insert(tickets).values({
       competitionId: c.id,
@@ -83,8 +90,10 @@ export async function recordPostalEntry(db: Db, actor: AuditActor, input: Postal
       answerCorrect: c.skillQuestion ? data.answerIndex === c.skillQuestion.correctIndex : null,
       createdAt: now,
     });
-    return { status: 'accepted', ticket, entryId: entry!.id } as const;
+    return { status: 'accepted', ticket, entryId: entry!.id, title: c.title } as const;
   });
+  const code = result.status === 'accepted' ? fairdrawEntryCode(env().ENTRY_CODE_SECRET, data.competitionId, result.ticket, result.entryId) : null;
+  await trySendMail(postalEntryMail(email, result.title, result.status === 'accepted' ? { ticket: result.ticket, code: code! } : { reason: result.reason }));
   await appendAudit(db, actor, {
     action: 'postal_entry.record',
     targetType: 'postal_entry',

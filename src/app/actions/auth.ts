@@ -38,9 +38,10 @@ import {
 import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
 import { isValidDateOfBirth } from '@/lib/auth/age';
 import { accountExistsMail, resetMail, trySendMail, verifyEmailMail } from '@/lib/mail';
-import { parsePounds } from '@/lib/money';
+import { moneyAsPoints, parsePounds } from '@/lib/money';
 import { checkTotp } from '@/lib/auth/totp';
 import { decryptSecret } from '@/lib/crypto';
+import { demoMode, DEMO_NO_EMAIL, DEMO_WELCOME } from '@/lib/demo';
 
 const password = z.string().min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters.`).max(256);
 
@@ -66,6 +67,7 @@ export async function signUpAction(fd: FormData) {
   await assertSameOrigin();
   const db = getDb();
   if (!(await hit(db, `signup:${await clientIp()}`, RATE_RULES.signup))) redirect(flashUrl('/signup', { error: 'Too many sign-ups from this connection. Try again later.' }));
+  if (demoMode() && !(await hit(db, 'demo-signups', RATE_RULES.demoSignupsSiteWide))) redirect(flashUrl('/signup', { error: 'The demo has had a lot of visitors today. Please try again tomorrow.' }));
   const parsed = signUpSchema.safeParse(Object.fromEntries(['email', 'password', 'confirm', 'firstName', 'lastName', 'dateOfBirth', 'monthlyLimit', 'over18', 'terms'].map((k) => [k, field(fd, k)])));
   if (!parsed.success) redirect(flashUrl('/signup', { error: firstError(parsed.error) }));
   let monthlyLimitPence: number | null = null;
@@ -73,13 +75,23 @@ export async function signUpAction(fd: FormData) {
     try {
       monthlyLimitPence = parsePounds(parsed.data.monthlyLimit);
     } catch {
-      redirect(flashUrl('/signup', { error: 'Enter the monthly limit in pounds, for example 50.' }));
+      redirect(flashUrl('/signup', { error: moneyAsPoints() ? 'Enter the monthly limit in points, for example 5000.' : 'Enter the monthly limit in pounds, for example 50.' }));
     }
   }
   const r = await signUp(db, { ...parsed.data, monthlyLimitPence });
   const base = env().APP_URL;
   if (r.status === 'underage') redirect(flashUrl('/signup', { error: r.reason }));
   if (r.status === 'excluded') redirect(flashUrl('/signup', { error: 'This email address is self-excluded. You cannot open an account until the exclusion ends.' }));
+  if (demoMode()) {
+    // A demo sends no email, so the confirmation step is skipped and the visitor is logged in straight away.
+    if (r.status === 'exists') redirect(flashUrl('/signup', { error: 'That made-up email is already in use here. Change it a little and try again.' }));
+    await verifyEmail(db, r.verifyToken);
+    const old = await sessionToken();
+    if (old) await deleteSession(db, old);
+    const s = await createSession(db, r.userId, 'player');
+    await setSessionCookie(s.token, s.expiresAt);
+    redirect(flashUrl('/', { notice: DEMO_WELCOME }));
+  }
   if (r.status === 'created') await trySendMail(verifyEmailMail(normaliseEmail(parsed.data.email), `${base}/verify-email?token=${r.verifyToken}`));
   if (r.status === 'exists') await trySendMail(accountExistsMail(normaliseEmail(parsed.data.email), `${base}/login`, `${base}/forgot-password`));
   // The same message either way, so the form does not reveal which emails have accounts.
@@ -94,6 +106,7 @@ export async function verifyEmailAction(fd: FormData) {
 
 export async function resendVerificationAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const db = getDb();
   const email = normaliseEmail(field(fd, 'email'));
   if (await hit(db, `verify:${email}`, RATE_RULES.verifyResend)) {
@@ -149,6 +162,7 @@ export async function logoutAction() {
 
 export async function forgotPasswordAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const db = getDb();
   const email = normaliseEmail(field(fd, 'email')).slice(0, 254);
   if ((await hit(db, `reset:${await clientIp()}`, RATE_RULES.reset)) && (await hit(db, `reset-email:${email}`, RATE_RULES.reset))) {
@@ -160,6 +174,7 @@ export async function forgotPasswordAction(fd: FormData) {
 
 export async function resetPasswordAction(fd: FormData) {
   await assertSameOrigin();
+  if (demoMode()) redirect(flashUrl('/login', { error: DEMO_NO_EMAIL }));
   const token = field(fd, 'token');
   const parsed = z.object({ password, confirm: z.string() }).refine((v) => v.password === v.confirm, 'The passwords do not match.').safeParse({ password: field(fd, 'password'), confirm: field(fd, 'confirm') });
   if (!parsed.success) redirect(flashUrl(`/reset-password?token=${encodeURIComponent(token)}`, { error: firstError(parsed.error) }));

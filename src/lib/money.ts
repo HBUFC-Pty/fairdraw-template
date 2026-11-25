@@ -10,12 +10,49 @@
  * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
+import { env } from './env';
+
+/**
+ * Demo sites (DEMO_MODE) show every amount as points, one point per penny, so no price looks like real money and no
+ * prize looks like something to claim. Amounts are still stored and checked in pence, exactly as on a real site.
+ */
+export function moneyAsPoints(): boolean {
+  return env().DEMO_MODE;
+}
+
+/** "pounds", or "points" on a demo site: for labels such as "New limit in pounds". */
+export function moneyUnit(): 'pounds' | 'points' {
+  return moneyAsPoints() ? 'points' : 'pounds';
+}
+
+/** "£0", or "0 points" on a demo site. */
+export function zeroAmount(): string {
+  return moneyAsPoints() ? '0 points' : '£0';
+}
+
 export function formatPence(pence: number): string {
+  if (moneyAsPoints()) return `${new Intl.NumberFormat('en-GB').format(pence)} ${Math.abs(pence) === 1 ? 'point' : 'points'}`;
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
 }
 
-/** Parse "12.50" or "12" (pounds) into pence. Rejects anything else. */
+/**
+ * A short price for chips and tiles: "£2.99", "£5", "99p", or "5 pts" on a demo site. formatPence stays the one for
+ * sentences, the basket and checkout.
+ */
+export function formatPriceShort(pence: number): string {
+  if (moneyAsPoints()) return `${new Intl.NumberFormat('en-GB').format(pence)} pts`;
+  if (pence < 100) return `${pence}p`;
+  const whole = pence % 100 === 0;
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(pence / 100);
+}
+
+/** Parse "12.50" or "12" (pounds) into pence, or on a demo site "1200" (points, one per penny). Rejects anything else. */
 export function parsePounds(input: string): number {
+  if (moneyAsPoints()) {
+    const p = /^\s*(\d{1,9})\s*(?:points?|pts?)?\s*$/i.exec(input);
+    if (!p) throw new Error('enter a whole number of points, for example 500');
+    return Number(p[1]);
+  }
   const m = /^\s*£?\s*(\d{1,7})(?:\.(\d{1,2}))?\s*$/.exec(input);
   if (!m) throw new Error('enter an amount in pounds, for example 2.50');
   return Number(m[1]) * 100 + Number((m[2] ?? '0').padEnd(2, '0'));

@@ -59,6 +59,13 @@ const schema = z.object({
   TRUST_PROXY_HEADERS: bool.default(true),
   // Serverless hosts only (Vercel): the bearer secret for POST /api/cron/tick. Unset, the endpoint does not exist.
   CRON_SECRET: z.string().min(32, 'CRON_SECRET must be at least 32 characters').optional(),
+  // Public demo sites only (src/lib/demo.ts): a demo banner and hero, sign-up with made-up details and no email,
+  // visitors deleted after 24 hours, and fresh demo competitions. Needs PAYMENT_PROVIDER=test. Never on a real site.
+  DEMO_MODE: bool.default(false),
+  // Optional visit counter (src/lib/stats.ts): unset, nothing is counted and GET /api/stats does not exist. Set, the
+  // site counts page views and visitors without cookies, says so in the privacy notice, and answers GET /api/stats
+  // with "Authorization: Bearer <STATS_TOKEN>".
+  STATS_TOKEN: z.string().min(32, 'STATS_TOKEN must be at least 32 characters').optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -73,6 +80,7 @@ export function env(): Env {
   if (!parsed.success) {
     throw new Error(`Invalid configuration: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
   }
+  if (parsed.data.DEMO_MODE && parsed.data.PAYMENT_PROVIDER !== 'test') throw new Error('DEMO_MODE needs PAYMENT_PROVIDER=test');
   if (parsed.data.NODE_ENV === 'production') {
     const local = ['localhost', '127.0.0.1'].includes(new URL(parsed.data.APP_URL).hostname);
     if (!parsed.data.APP_URL.startsWith('https://') && !local) throw new Error('APP_URL must use https in production');

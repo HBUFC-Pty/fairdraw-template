@@ -11,15 +11,107 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 import Link from 'next/link';
-import { formatPence } from '@/lib/money';
-import { formatUk } from '@/lib/time';
+import { formatPence, formatPriceShort } from '@/lib/money';
+import { formatUk, formatUkShort } from '@/lib/time';
 import type { Competition } from '@/lib/public/queries';
-import { progressClass } from './CompetitionFacts';
+import { formatPercent, percentSold, progressClass, ticketsLeft } from './CompetitionFacts';
+import { Countdown } from './Countdown';
+import { Bolt, Clock } from './icons';
+import { PrizePlaceholder } from './illustrations';
+import { cardBadges, filterFlags } from './badges';
+import { brand } from '@/brand';
 
-export type CardStyle = 'classic' | 'compact' | 'poster';
+export type CardStyle = 'classic' | 'compact' | 'poster' | 'tile';
 
-/** A live competition in a list. Three structural styles, chosen by brand.layout.card. */
+// Pure badge rules live in ./badges (no brand import), so client components can use them without bundling the brand.
+export { cardBadges, filterFlags } from './badges';
+
+function Extras({ c, sold, now }: { c: Competition; sold: number; now: Date }) {
+  const badges = brand.extras.badges ? cardBadges(c, sold, now) : [];
+  return (
+    <>
+      {badges.length ? (
+        <p className="badges">
+          {badges.map((b) => <span key={b} className="badge-pill">{b}</span>)}
+        </p>
+      ) : null}
+      {brand.extras.countdown && c.opensAt <= now ? <Countdown to={c.closesAt.toISOString()} label="Closes in" /> : null}
+    </>
+  );
+}
+
+const CHIP: Record<string, string> = {
+  'Ending soon': 'chip-accent',
+  'Almost sold out': 'chip-primary',
+  'Sold out': 'chip-muted',
+  New: 'chip-success',
+  'Coming soon': 'chip-glass',
+};
+
+/**
+ * The compact image-led card (brand.layout.card "tile"): a square image with the price, factual badges and the real
+ * close time on it, then the title, the exact share sold and one call to action. The title link covers the whole card,
+ * so the card is a single tab stop. No sentences: numbers and chips only.
+ */
+export function TileCard({ c, sold, now }: { c: Competition; sold: number; now: Date }) {
+  const img = c.images[0];
+  const facts = cardBadges(c, sold, now);
+  const badges = brand.extras.badges ? facts : [];
+  const flags = filterFlags(c, sold, now);
+  const instant = flags.instant;
+  const chips = [...badges.map((b) => <span key={b} className={`chip ${CHIP[b] ?? 'chip-glass'}`}>{b === 'Ending soon' ? <span className="live-dot" aria-hidden="true" /> : null}{b}</span>)];
+  if (instant) chips.push(<span key="instant" className="chip chip-glass"><Bolt className="ic-primary" />Instant wins</span>);
+  const notOpen = now < c.opensAt;
+  const soldOut = sold >= c.maxTickets;
+  const pct = percentSold(sold, c.maxTickets);
+  const cta = c.status === 'drawn' ? 'View result' : notOpen ? 'Opens soon' : soldOut ? 'Sold out' : 'Enter now';
+  return (
+    <article
+      className="tile"
+      data-ending={flags.ending ? '' : undefined}
+      data-instant={flags.instant ? '' : undefined}
+      data-new={flags.new ? '' : undefined}
+    >
+      <div className="tile-media">
+        <div className="tile-frame">
+          {img ? <img src={img.url} alt={img.alt} loading="lazy" width={600} height={600} /> : <PrizePlaceholder />}
+        </div>
+        {chips.length ? <div className="tile-chips">{chips.slice(0, 2)}</div> : null}
+        <span className="chip chip-primary tile-price num">
+          {formatPriceShort(c.ticketPricePence)}
+          <span className="sr-only"> per ticket</span>
+        </span>
+        <span className="chip chip-glass tile-time">
+          <Clock />
+          {notOpen ? (
+            <span className="countdown">Opens {formatUkShort(c.opensAt, now)}</span>
+          ) : (
+            <Countdown to={c.closesAt.toISOString()} variant="compact" fallback={formatUkShort(c.closesAt, now)} />
+          )}
+        </span>
+      </div>
+      <div className="tile-body">
+        <h3 className="tile-title"><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h3>
+        <div className="tile-bar" aria-hidden="true"><span className={progressClass(sold, c.maxTickets)} /></div>
+        <p className="tile-meta num">
+          {soldOut ? (
+            <span className="tile-sold">Sold out</span>
+          ) : (
+            <>
+              <span className="tile-sold">{formatPercent(pct)}% sold</span>
+              <span className="tile-left">{ticketsLeft(sold, c.maxTickets).toLocaleString('en-GB')} left</span>
+            </>
+          )}
+        </p>
+        <span className={`tile-cta${cta === 'Enter now' ? '' : ' is-quiet'}`} aria-hidden="true">{cta}</span>
+      </div>
+    </article>
+  );
+}
+
+/** A live competition in a list. Four structural styles, chosen by brand.layout.card. */
 export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold: number; style: CardStyle; now: Date }) {
+  if (style === 'tile') return <TileCard c={c} sold={sold} now={now} />;
   const img = c.images[0];
   const when = c.opensAt > now ? `Opens ${formatUk(c.opensAt)}.` : `Closes ${formatUk(c.closesAt)}.`;
   const progress = (
@@ -35,6 +127,7 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
         <div>
           <h3><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h3>
           <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
+          <Extras c={c} sold={sold} now={now} />
           {progress}
         </div>
       </article>
@@ -49,7 +142,10 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
           <p>{c.summary}</p>
           <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
         </div>
-        <div className="card">{progress}</div>
+        <div className="card">
+          <Extras c={c} sold={sold} now={now} />
+          {progress}
+        </div>
       </article>
     );
   }
@@ -59,6 +155,7 @@ export function CompetitionCard({ c, sold, style, now }: { c: Competition; sold:
       <h3><Link href={`/competitions/${c.slug}`}>{c.title}</Link></h3>
       <p className="muted">{c.summary}</p>
       <p>{formatPence(c.ticketPricePence)} a ticket. {when}</p>
+      <Extras c={c} sold={sold} now={now} />
       {progress}
     </article>
   );

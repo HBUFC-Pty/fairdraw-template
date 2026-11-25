@@ -29,6 +29,7 @@ import { formatPence } from '../money';
 import type { PaymentEvent, PaymentProvider } from '../payments/types';
 import { creditCardCapPence } from '../site-config';
 import { creditUsedThisMonth, decideCredit } from './credit-card-rule';
+import { priceFor, splitPrice } from '../competitions/bundles';
 
 export class CheckoutError extends Error {}
 
@@ -52,6 +53,9 @@ export function playBlockReason(u: typeof users.$inferSelect, now: Date): string
 export async function addToBasket(db: Db, userId: string, item: BasketAdd, now = new Date()) {
   const [c] = await db.select().from(competitions).where(eq(competitions.id, item.competitionId));
   if (!c || !isOpen(c, now)) throw new CheckoutError('This competition is not open for entries.');
+  if (item.chosenNumbers?.length && c.instantPrizes.length) {
+    throw new CheckoutError('Ticket numbers are always picked at random in competitions with instant prizes, so nobody can choose a winning number.');
+  }
   if (!Number.isInteger(item.quantity) || item.quantity < 1) throw new CheckoutError('Choose at least one ticket.');
   if (item.quantity > c.perPersonCap) throw new CheckoutError(`The maximum is ${c.perPersonCap} tickets per person.`);
   if (item.chosenNumbers && item.chosenNumbers.length !== item.quantity) throw new CheckoutError('Choose one number for each ticket.');
@@ -109,7 +113,7 @@ export async function placeOrder(
       .for('update');
 
     const expiresAt = new Date(now.getTime() + opts.reservationMinutes * 60_000);
-    const plan: { comp: (typeof comps)[number]; numbers: number[]; allocation: 'random' | 'chosen'; answerCorrect: boolean | null }[] = [];
+    const plan: { comp: (typeof comps)[number]; numbers: number[]; allocation: 'random' | 'chosen'; answerCorrect: boolean | null; pricePence: number }[] = [];
     let total = 0;
 
     // Expire stale reservations first so their numbers are free again.
@@ -129,14 +133,17 @@ export async function placeOrder(
       const taken = await takenNumbers(tx, comp.id);
       let numbers: number[];
       try {
-        numbers = item.chosenNumbers?.length ? allocateChosen(comp.maxTickets, taken, item.chosenNumbers) : allocateRandom(comp.maxTickets, taken, item.quantity, rand);
+        const chosen = item.chosenNumbers?.length && !comp.instantPrizes.length ? item.chosenNumbers : null;
+        numbers = chosen ? allocateChosen(comp.maxTickets, taken, chosen) : allocateRandom(comp.maxTickets, taken, item.quantity, rand);
       } catch (e) {
         if (e instanceof AllocationError) throw new CheckoutError(`"${comp.title}": ${e.message}.`);
         throw e;
       }
       const answerCorrect = comp.skillQuestion ? item.answerIndex === comp.skillQuestion.correctIndex : null;
-      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length ? 'chosen' : 'random', answerCorrect });
-      total += comp.ticketPricePence * item.quantity;
+      // The lowest price for this many tickets, using the competition's bundles (./competitions/bundles.ts).
+      const pricePence = priceFor(item.quantity, comp.ticketPricePence, comp.bundles);
+      plan.push({ comp, numbers, allocation: item.chosenNumbers?.length && !comp.instantPrizes.length ? 'chosen' : 'random', answerCorrect, pricePence });
+      total += pricePence;
     }
 
     const spend = await checkSpend(tx, userId, total, now);
@@ -148,8 +155,9 @@ export async function placeOrder(
 
     const [order] = await tx.insert(orders).values({ userId, status: 'pending', totalPence: total, provider: opts.provider, createdAt: now, expiresAt }).returning();
     for (const p of plan) {
+      const shares = splitPrice(p.pricePence, p.numbers.length);
       await tx.insert(tickets).values(
-        p.numbers.map((n) => ({
+        p.numbers.map((n, i) => ({
           competitionId: p.comp.id,
           number: n,
           userId,
@@ -158,6 +166,7 @@ export async function placeOrder(
           allocation: p.allocation,
           status: 'reserved' as const,
           answerCorrect: p.answerCorrect,
+          pricePence: shares[i],
           reservedUntil: expiresAt,
           createdAt: now,
         })),
@@ -169,7 +178,11 @@ export async function placeOrder(
       totalPence: total,
       expiresAt,
       email: u.email,
-      lines: plan.map((p) => ({ name: `${p.comp.title}: ${p.numbers.length} ticket${p.numbers.length === 1 ? '' : 's'}`, quantity: p.numbers.length, unitPence: p.comp.ticketPricePence })),
+      lines: plan.map((p) =>
+        p.pricePence === p.numbers.length * p.comp.ticketPricePence
+          ? { name: `${p.comp.title}: ${p.numbers.length} ticket${p.numbers.length === 1 ? '' : 's'}`, quantity: p.numbers.length, unitPence: p.comp.ticketPricePence }
+          : { name: `${p.comp.title}: ${p.numbers.length} tickets (bundle price)`, quantity: 1, unitPence: p.pricePence },
+      ),
     };
   });
 }
@@ -186,7 +199,7 @@ export async function abandonOrder(db: Db, orderId: string) {
   });
 }
 
-export type Decision = 'capture' | 'decline_credit_cap' | 'decline_instant_win_credit' | 'decline_unavailable' | 'decline_amount';
+export type Decision = 'capture' | 'decline_credit_cap' | 'decline_instant_win_credit' | 'decline_unavailable' | 'decline_amount' | 'decline_play_blocked' | 'decline_spend_limit';
 
 export type EventOutcome =
   | { kind: 'decided'; orderId: string; decision: Decision; capturePence: number; creditUsedPence: number; creditCapPence: number }
@@ -203,6 +216,10 @@ export function declineMessage(decision: Decision, creditCapPence: number, credi
       return 'We have not taken this payment: your reserved tickets were no longer available (the reservation lapsed or the competition closed). The hold on your card has been released.';
     case 'decline_amount':
       return 'We have not taken this payment because the amount did not match your order. The hold on your card has been released. Please try again.';
+    case 'decline_play_blocked':
+      return 'We have not taken this payment: your account cannot enter competitions at the moment (for example during a break or self-exclusion). The hold on your card has been released.';
+    case 'decline_spend_limit':
+      return 'We have not taken this payment: it would take you over one of your spend limits. The hold on your card has been released.';
     default:
       return null;
   }
@@ -247,7 +264,8 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
     for (const t of ts) {
       const comp = comps.find((c) => c.id === t.competitionId)!;
       let ok = false;
-      if (comp.status === 'live' && (t.status === 'reserved' || t.status === 'expired')) {
+      // Open, not merely 'live': the entries are fixed at the advertised close, even before the worker commits them.
+      if (isOpen(comp, now) && (t.status === 'reserved' || t.status === 'expired')) {
         if (t.status === 'reserved') ok = true;
         else {
           // The reservation lapsed: take the number back only if nobody else holds it and the cap still allows it.
@@ -262,7 +280,7 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
       }
       if (ok) {
         keep.push(t.id);
-        capturePence += comp.ticketPricePence;
+        capturePence += t.pricePence ?? comp.ticketPricePence;
       }
     }
 
@@ -270,8 +288,15 @@ export async function applyPaymentEvent(db: Db, provider: string, ev: PaymentEve
     const hasInstantWin = comps.some((c) => c.isInstantWin && ts.some((t) => t.competitionId === c.id && keep.includes(t.id)));
     const used = await creditUsedThisMonth(tx, order.userId, now);
     let decision: Decision;
+    // Re-check the player when the money arrives, not only at checkout: a break, a self-exclusion or a spend limit
+    // that applies by now wins over an order placed earlier (including a lapsed order paid late).
+    const [player] = await tx.select().from(users).where(eq(users.id, order.userId));
+    const blocked = player ? playBlockReason(player, now) : 'Account not found.';
+    const spend = capturePence > 0 ? await checkSpend(tx, order.userId, capturePence, now, order.id) : { ok: true };
     if (ev.amountPence !== order.totalPence) decision = 'decline_amount';
     else if (capturePence === 0) decision = 'decline_unavailable';
+    else if (blocked) decision = 'decline_play_blocked';
+    else if (!spend.ok) decision = 'decline_spend_limit';
     else {
       const credit = decideCredit({ funding, hasInstantWin, usedPence: used, amountPence: capturePence, capPence });
       decision = credit.ok ? 'capture' : credit.reason === 'instant_win' ? 'decline_instant_win_credit' : 'decline_credit_cap';
@@ -327,9 +352,9 @@ export async function settleOrder(db: Db, provider: PaymentProvider, orderId: st
         let enteredPence = 0;
         for (const t of ts) {
           const comp = comps.find((c) => c.id === t.competitionId)!;
-          if (comp.status === 'live') {
+          if (isOpen(comp, now)) {
             await tx.update(tickets).set({ status: 'active', reservedUntil: null }).where(eq(tickets.id, t.id));
-            enteredPence += comp.ticketPricePence;
+            enteredPence += t.pricePence ?? comp.ticketPricePence;
           } else await tx.update(tickets).set({ status: 'refunded' }).where(eq(tickets.id, t.id));
         }
         // Anything taken but not entered (a competition closed between the decision and the capture) is refunded.

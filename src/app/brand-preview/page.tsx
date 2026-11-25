@@ -21,6 +21,7 @@ import { FONT_PAIRINGS } from '@/brand/fonts';
 import { cspNonce } from '@/lib/web/request';
 import { CompetitionCard } from '@/components/CompetitionCard';
 import { FairDrawLink } from '@/components/SiteFooter';
+import { SiteHeader } from '@/components/SiteHeader';
 import type { Competition } from '@/lib/public/queries';
 
 export const metadata = { title: 'Brand preview', robots: { index: false } };
@@ -52,6 +53,12 @@ const sample = (style: string): Competition => ({
   drawAt: new Date(Date.now() + 5 * 86400_000),
   skillQuestion: null,
   isInstantWin: false,
+  instantPrizes: [],
+  instantReveal: 'scratch',
+  instantCommit: null,
+  instantSalt: null,
+  instantCommittedAt: null,
+  bundles: [],
   status: 'live',
   closedAt: null,
   drawnAt: null,
@@ -71,16 +78,28 @@ function Components({ b }: { b: Brand }) {
       <div className="notice warn">A warning.</div>
       <div className="flash err">An error message.</div>
       <form className="stack"><label>A form field<span className="hint">With a hint.</span><input defaultValue="Sample" /></label></form>
-      <div className="progress" aria-hidden="true"><span className="p60" /></div>
+      <div className="progress" aria-hidden="true"><span className="pc60" /></div>
+      <p className="chip-row">
+        <span className="chip chip-primary">5 pts</span> <span className="chip chip-accent">Ending soon</span> <span className="chip chip-glass">Instant wins</span>{' '}
+        <span className="chip chip-success">New</span> <span className="chip chip-muted">Sold out</span>
+      </p>
+      <h3>Header ({b.layout.header})</h3>
+      <div className="preview-header" data-header={b.layout.header}>
+        <SiteHeader brand={b} loggedIn={false} staff={false} />
+      </div>
       <h3>Card styles</h3>
       <div className="grid">
         {(['classic', 'compact', 'poster'] as const).map((s) => (
           <div key={s}><p className="muted">{s}{s === b.layout.card ? ' (selected)' : ''}</p><CompetitionCard c={sample(s)} sold={1200} style={s} now={new Date()} /></div>
         ))}
       </div>
+      <h3>Tile cards{b.layout.card === 'tile' ? ' (selected)' : ''}</h3>
+      <div className="tile-grid">
+        {[0, 1200, 1990].map((sold) => <CompetitionCard key={sold} c={{ ...sample(`tile-${sold}`), title: sold ? 'Sample prize: weekend away for two' : 'Sample prize' }} sold={sold} style="tile" now={new Date()} />)}
+      </div>
       <h3>Colours</h3>
       <div className="swatches">
-        {keys.map((k) => <div className="swatch" key={k}><div className={`chip sw-${kebab(k)}`} />{k}</div>)}
+        {keys.map((k) => <div className="swatch" key={k}><div className={`sw-chip sw-${kebab(k)}`} />{k}</div>)}
       </div>
       <p><FairDrawLink /> (identical under every brand)</p>
     </>
@@ -120,7 +139,14 @@ export default async function BrandPreview({ searchParams }: { searchParams: Pro
         radius {b.radius}, density {b.density}, shadow {b.shadow}. Home layout, header and footer show on the real pages once this brand is in config/brand.json.
       </p>
       {(['light', 'dark'] as const).map((mode) => (
-        <section key={mode} className={`preview-pane theme-${mode}`} data-buttons={b.buttons} data-cards={b.cards} aria-label={`${mode} mode`}>
+        <section
+          key={mode}
+          className={`preview-pane theme-${mode}`}
+          data-buttons={b.buttons}
+          data-cards={b.cards}
+          data-type={b.typeScale === 'display' ? 'display' : undefined}
+          aria-label={`${mode} mode`}
+        >
           <p className="muted">{mode} mode</p>
           <Components b={b} />
         </section>

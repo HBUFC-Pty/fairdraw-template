@@ -23,7 +23,7 @@ import { flashUrl } from '@/lib/web/flash';
 import { clearSessionCookie, requirePasswordSession, requireUser } from '@/lib/web/session';
 import { cancelPendingIncrease, PERIOD_LABEL, setLimit } from '@/lib/limits/spend';
 import { BREAK_OPTIONS, deleteAccount, EXCLUSION_OPTIONS, selfExclude, setWinnerConsent, takeBreak } from '@/lib/account/service';
-import { parsePounds, formatPence } from '@/lib/money';
+import { parsePounds, formatPence, moneyAsPoints } from '@/lib/money';
 import { formatUk } from '@/lib/time';
 import { verifyPassword } from '@/lib/auth/password';
 import { checkTotp } from '@/lib/auth/totp';
@@ -45,7 +45,7 @@ export async function setLimitAction(fd: FormData) {
     try {
       next = parsePounds(raw);
     } catch {
-      redirect(flashUrl('/account/limits', { error: 'Enter the limit in pounds, for example 20, or leave it blank for no limit.' }));
+      redirect(flashUrl('/account/limits', { error: moneyAsPoints() ? 'Enter the limit in points, for example 2000, or leave it blank for no limit.' : 'Enter the limit in pounds, for example 20, or leave it blank for no limit.' }));
     }
   }
   const r = await setLimit(getDb(), s.user.id, p.data, next);

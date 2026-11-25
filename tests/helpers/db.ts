@@ -12,7 +12,15 @@ export async function testDb(): Promise<{ db: Db; client: PGlite }> {
   const client = new PGlite();
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: path.resolve(import.meta.dirname, '../../drizzle') });
+  // Tests simulate closes and draws at any time, so the time-based guards in drizzle/0004 are off unless a test turns
+  // them on with useRealClock(). Every other guard stays on.
+  await client.exec(`CREATE OR REPLACE FUNCTION fd_clock() RETURNS timestamptz LANGUAGE sql STABLE AS $$ SELECT NULL::timestamptz $$`);
   return { db: db as unknown as Db, client };
+}
+
+/** Turn the time-based guards back on (the database clock, as in production). */
+export async function useRealClock(client: PGlite) {
+  await client.exec(`CREATE OR REPLACE FUNCTION fd_clock() RETURNS timestamptz LANGUAGE sql STABLE AS $$ SELECT now() $$`);
 }
 
 let pwHash: string | undefined;

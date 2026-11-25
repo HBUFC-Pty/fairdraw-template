@@ -12,21 +12,46 @@
  */
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { bls12_381 } from '@noble/curves/bls12-381.js';
 import { FAIRDRAW_DRAND_CHAIN, fairdrawRoundTime } from './draw';
 
-/** Public drand HTTP relays run by different organisations. Override with DRAND_RELAYS (comma separated). */
-/** Relays from DRAND_RELAYS (comma separated), or the defaults. */
+/**
+ * Relays from DRAND_RELAYS (comma separated), or the defaults. Safe to change: every beacon's signature is checked
+ * against drand's public key, so no relay can supply randomness drand did not sign.
+ */
 export function configuredRelays(value = process.env.DRAND_RELAYS): string[] {
   const list = (value ?? '').split(',').map((r) => r.trim()).filter((r) => /^https:\/\/[^\s/]+/.test(r));
   return list.length ? list : DEFAULT_DRAND_RELAYS;
 }
 
+/** Public drand HTTP relays run by different organisations. The browser verifier always uses these. */
 export const DEFAULT_DRAND_RELAYS = [
   'https://api.drand.sh',
   'https://api2.drand.sh',
   'https://api3.drand.sh',
   'https://drand.cloudflare.com',
 ];
+
+/**
+ * The drand quicknet group public key, from the chain's /info at every relay (scheme bls-unchained-g1-rfc9380).
+ * Every beacon's signature is checked against it, so a relay, or a "relay" the operator runs, cannot make up
+ * randomness: only the drand network can sign a round.
+ */
+export const DRAND_QUICKNET_PUBLIC_KEY =
+  '83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a';
+
+/** True when `signatureHex` is the drand quicknet signature for `round` (BLS on G1, message sha256 of the round). */
+export function verifyBeaconSignature(round: number, signatureHex: string): boolean {
+  try {
+    const sigs = bls12_381.shortSignatures;
+    const m = Buffer.alloc(8);
+    m.writeBigUInt64BE(BigInt(round));
+    const message = sigs.hash(createHash('sha256').update(m).digest());
+    return sigs.verify(Buffer.from(signatureHex, 'hex'), message, Buffer.from(DRAND_QUICKNET_PUBLIC_KEY, 'hex'));
+  } catch {
+    return false;
+  }
+}
 
 const beaconSchema = z.object({
   round: z.number().int().positive(),
@@ -62,6 +87,7 @@ async function fetchFromRelay(fetchImpl: FetchLike, relay: string, round: number
   if (b.round !== round) throw new Error(`${relay} returned round ${b.round}, asked for ${round}`);
   const expected = createHash('sha256').update(Buffer.from(b.signature, 'hex')).digest('hex');
   if (expected !== b.randomness) throw new Error(`${relay} returned randomness that is not the hash of its signature`);
+  if (!verifyBeaconSignature(round, b.signature)) throw new Error(`${relay} returned a signature that is not drand quicknet's for round ${round}`);
   return b;
 }
 

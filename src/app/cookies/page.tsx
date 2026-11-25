@@ -10,6 +10,9 @@
  * The Initial Developer of the Original Code is Harrison Jones. All portions of the code written by Harrison Jones are
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
+import Link from 'next/link';
+import { statsEnabled } from '@/lib/stats';
+
 export const metadata = { title: 'Cookies' };
 
 /* Fuller statement, including what changes if you add analytics: docs/gdpr/cookie-statement.md. */
@@ -26,7 +29,14 @@ export default function CookiesPage() {
           </tbody>
         </table>
       </div>
-      <p>We use no analytics, advertising or tracking cookies, and no similar technologies. That is why there is no cookie banner.</p>
+      {statsEnabled() ? (
+        <p>
+          We use no analytics, advertising or tracking cookies, and store nothing else on your device. That is why there is no cookie banner. We count
+          visits ourselves without cookies: our <Link href="/privacy">privacy notice</Link> explains how.
+        </p>
+      ) : (
+        <p>We use no analytics, advertising or tracking cookies, and no similar technologies. That is why there is no cookie banner.</p>
+      )}
     </article>
   );
 }

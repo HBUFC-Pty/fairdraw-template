@@ -15,7 +15,7 @@
  * 4.5:1; form field outlines and focus indicators need 3:1 (WCAG 1.4.11). A brand that fails is refused.
  */
 import type { Brand, Palette } from './schema';
-import { contrastRatio, nearestPassing } from './contrast';
+import { contrastRatio, mixHex, nearestPassing } from './contrast';
 
 type Key = keyof Palette;
 export const CONTRAST_PAIRS: { fg: Key; bg: Key; min: number; what: string }[] = [
@@ -37,10 +37,24 @@ export const CONTRAST_PAIRS: { fg: Key; bg: Key; min: number; what: string }[] =
   { fg: 'warning', bg: 'bg', min: 4.5, what: 'warning text' },
 ];
 
+/**
+ * Extra pairs for brands with typeScale "display", whose look builds colours with color-mix(in srgb, ...) (stage.css,
+ * home.css): the background is `bg` mixed with `mixWith` at `weight`% of `bg` (no mixWith: `bg` as it is).
+ */
+export const DISPLAY_CONTRAST_PAIRS: { fg: Key; bg: Key; mixWith?: Key; weight?: number; min: number; what: string }[] = [
+  { fg: 'onPrimary', bg: 'primary', mixWith: 'text', weight: 85, min: 4.5, what: 'button text on the top of the button gradient' },
+  { fg: 'onPrimary', bg: 'primary', mixWith: 'accent', weight: 85, min: 4.5, what: 'button text on the foot of the button gradient' },
+  { fg: 'accent', bg: 'surface', min: 4.5, what: 'accent labels on cards (next draw, under an hour)' },
+  { fg: 'accent', bg: 'bg', min: 4.5, what: 'accent labels on the page (step numbers)' },
+  { fg: 'accent', bg: 'primary', mixWith: 'surface', weight: 16, min: 4.5, what: 'accent text on the tinted instant prize tiles' },
+];
+
 export interface ContrastProblem {
   mode: 'light' | 'dark';
   fg: Key;
   bg: Key;
+  /** Set when the background is bg mixed with another token (display brands). */
+  mix?: { with: Key; weight: number };
   ratio: number;
   min: number;
   what: string;
@@ -57,12 +71,26 @@ export function checkBrandContrast(brand: Brand): ContrastProblem[] {
         problems.push({ mode, ...pair, ratio: Math.round(ratio * 100) / 100, suggestion: nearestPassing(p[pair.fg], p[pair.bg], pair.min) });
       }
     }
+    if (brand.typeScale !== 'display') continue;
+    for (const { mixWith, weight = 100, ...pair } of DISPLAY_CONTRAST_PAIRS) {
+      const back = mixWith ? mixHex(p[pair.bg], p[mixWith], weight) : p[pair.bg];
+      const ratio = contrastRatio(p[pair.fg], back);
+      if (ratio < pair.min) {
+        problems.push({
+          mode,
+          ...pair,
+          ...(mixWith ? { mix: { with: mixWith, weight } } : {}),
+          ratio: Math.round(ratio * 100) / 100,
+          suggestion: nearestPassing(p[pair.fg], back, pair.min),
+        });
+      }
+    }
   }
   return problems;
 }
 
 export function describeProblems(problems: ContrastProblem[]): string {
   return problems
-    .map((p) => `${p.mode} ${p.fg} on ${p.bg} (${p.what}): ${p.ratio}:1, needs ${p.min}:1.${p.suggestion ? ` Nearest passing ${p.fg}: ${p.suggestion}` : ''}`)
+    .map((p) => `${p.mode} ${p.fg} on ${p.mix ? `${p.bg} mixed ${p.mix.weight}% with ${p.mix.with}` : p.bg} (${p.what}): ${p.ratio}:1, needs ${p.min}:1.${p.suggestion ? ` Nearest passing ${p.fg}: ${p.suggestion}` : ''}`)
     .join('\n');
 }

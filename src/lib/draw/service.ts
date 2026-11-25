@@ -58,11 +58,12 @@ export async function closeCompetition(db: Db, competitionId: string, now = new 
       .update(tickets)
       .set({ status: 'ineligible' })
       .where(and(eq(tickets.competitionId, c.id), eq(tickets.status, 'active'), eq(tickets.answerCorrect, false)))
-      .returning({ orderId: tickets.orderId });
+      .returning({ orderId: tickets.orderId, pricePence: tickets.pricePence });
+    // Refund what was paid for each ticket (bundles make it less than the ticket price).
     const perOrder = new Map<string, number>();
-    for (const w of wrong) if (w.orderId) perOrder.set(w.orderId, (perOrder.get(w.orderId) ?? 0) + 1);
-    for (const [orderId, count] of perOrder) {
-      await tx.insert(refunds).values({ orderId, amountPence: count * c.ticketPricePence, reason: 'Incorrect answer to the competition question: entry not included in the draw', createdAt: now });
+    for (const w of wrong) if (w.orderId) perOrder.set(w.orderId, (perOrder.get(w.orderId) ?? 0) + (w.pricePence ?? c.ticketPricePence));
+    for (const [orderId, amountPence] of perOrder) {
+      await tx.insert(refunds).values({ orderId, amountPence, reason: 'Incorrect answer to the competition question: entry not included in the draw', createdAt: now });
     }
 
     const list = (
@@ -161,10 +162,13 @@ export async function runDraw(db: Db, competitionId: string, opts: { beacon?: Be
       ? await tx
           .select({ number: tickets.number, userId: tickets.userId, postalEntryId: tickets.postalEntryId })
           .from(tickets)
-          .where(and(eq(tickets.competitionId, competitionId), inArray(tickets.number, won), inArray(tickets.status, ['active', 'refunded'])))
+          .where(and(eq(tickets.competitionId, competitionId), inArray(tickets.number, won), eq(tickets.status, 'active')))
       : [];
     const ws = won.map((ticket, i) => {
-      const o = owners.find((x) => x.number === ticket);
+      // Only the active ticket owns a number in the committed list (a refunded holder of the same number does not).
+      const mine = owners.filter((x) => x.number === ticket);
+      if (mine.length !== 1) throw new Error(`winning ticket ${ticket} has ${mine.length} active owners`);
+      const o = mine[0];
       return { position: i + 1, ticket, userId: o?.userId ?? null, postalEntryId: o?.postalEntryId ?? null };
     });
     if (ws.length) {

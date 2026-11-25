@@ -38,7 +38,15 @@ const addSchema = z.object({
 export async function addToBasketAction(fd: FormData) {
   await assertSameOrigin();
   const s = await requireUser();
-  const parsed = addSchema.safeParse({ competitionId: field(fd, 'competitionId'), slug: field(fd, 'slug'), quantity: field(fd, 'quantity'), numbers: field(fd, 'numbers'), answer: field(fd, 'answer') });
+  // A lucky dip or bundle button sends "quick": that many tickets, numbers picked at random.
+  const quick = field(fd, 'quick');
+  const parsed = addSchema.safeParse({
+    competitionId: field(fd, 'competitionId'),
+    slug: field(fd, 'slug'),
+    quantity: quick || field(fd, 'quantity'),
+    numbers: quick ? '' : field(fd, 'numbers'),
+    answer: field(fd, 'answer'),
+  });
   if (!parsed.success) redirect(flashUrl(`/competitions/${encodeURIComponent(field(fd, 'slug').slice(0, 80))}`, { error: parsed.error.issues[0]?.message ?? 'Please check the form.' }));
   const { competitionId, slug, quantity, numbers, answer } = parsed.data;
   const chosen = numbers.split(/[\s,]+/).filter(Boolean).map(Number);
@@ -104,7 +112,8 @@ export async function testPayAction(fd: FormData) {
   const id = z.uuid().safeParse(field(fd, 'orderId'));
   if (!id.success) redirect('/basket');
   const [o] = await getDb().select().from(orders).where(eq(orders.id, id.data));
-  if (!o || o.userId !== s.user.id) redirect('/basket');
+  // Only an order still waiting for payment (a lapsed or decided order is never paid from this page).
+  if (!o || o.userId !== s.user.id || o.status !== 'pending') redirect('/basket');
   const choice = z.enum(['debit', 'credit', 'prepaid', 'unknown', 'fail']).catch('debit').parse(field(fd, 'outcome'));
   const { body, signature } =
     choice === 'fail' ? provider.makeEvent(o.id, o.totalPence, { type: 'payment_failed' }) : provider.makeEvent(o.id, o.totalPence, { funding: choice });

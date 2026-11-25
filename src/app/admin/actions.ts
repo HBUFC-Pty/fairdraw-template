@@ -62,7 +62,36 @@ function readCompetitionForm(fd: FormData): CompetitionInput {
     drawAt: fromUkLocalInput(field(fd, 'drawAt')),
     skillQuestion: question ? { question, options, correctIndex: Number(field(fd, 'correct')) - 1 } : null,
     isInstantWin: field(fd, 'isInstantWin') === 'yes',
+    instantPrizes: parseInstantPrizes(field(fd, 'instantPrizes')),
+    instantReveal: field(fd, 'instantReveal') || 'scratch',
+    bundles: parseBundles(field(fd, 'bundles')),
   });
+}
+
+/** "10 | 8" per line: how many tickets, the price for them. */
+function parseBundles(text: string) {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [quantity, price] = l.split('|').map((x) => x.trim());
+      if (!quantity || !price) throw new Error(`Bundle line "${l}": write how many tickets and the price, separated by |.`);
+      return { quantity: Number(quantity), pricePence: parsePounds(price) };
+    });
+}
+
+/** "5 | £10 voucher | 10" per line: how many, the prize, its value. */
+function parseInstantPrizes(text: string) {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [count, title, value] = l.split('|').map((x) => x.trim());
+      if (!count || !title || !value) throw new Error(`Instant prize line "${l}": write how many, the prize and its value, separated by |.`);
+      return { count: Number(count), title, valuePence: parsePounds(value) };
+    });
 }
 
 function errorText(e: unknown): string {

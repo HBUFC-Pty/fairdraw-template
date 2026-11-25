@@ -15,7 +15,8 @@ import { resetEnvCache } from '@/lib/env';
 
 const runTick = vi.fn(async () => true);
 const retentionIfDue = vi.fn(async () => false);
-vi.mock('@/lib/worker', () => ({ runTick: () => runTick(), retentionIfDue: () => retentionIfDue() }));
+const nextDueAt = vi.fn(async () => new Date('2026-11-20T18:00:00Z'));
+vi.mock('@/lib/worker', () => ({ runTick: () => runTick(), retentionIfDue: () => retentionIfDue(), nextDueAt: () => nextDueAt() }));
 
 const SECRET = 'c'.repeat(40);
 
@@ -51,7 +52,7 @@ describe('serverless trigger /api/cron/tick', () => {
     resetEnvCache();
     const r = await call(`Bearer ${SECRET}`);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ ok: true, ran: true, retention: false });
+    expect(await r.json()).toEqual({ ok: true, ran: true, retention: false, next_due_at: '2026-11-20T18:00:00.000Z' });
     expect(runTick).toHaveBeenCalledTimes(1);
   });
 

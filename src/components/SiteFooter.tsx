@@ -12,6 +12,9 @@
  */
 import Link from 'next/link';
 import { env } from '@/lib/env';
+import type { Brand } from '@/brand';
+import { BrandMark } from './SiteHeader';
+import { EighteenPlus, Envelope, Info, ShieldCheck } from './icons';
 
 /**
  * The attribution the template's licence requires (CPAL-1.0 section 14 and Exhibit B, see docs/licence.md): it appears
@@ -19,18 +22,31 @@ import { env } from '@/lib/env';
  */
 export const FAIRDRAW_URL = 'https://fairdraw.partyofone.quest';
 
-export function FairDrawLink() {
+export function FairDrawLink({ icon = false }: { icon?: boolean }) {
   return (
     <a className="fairdraw-link" href={FAIRDRAW_URL} rel="noopener">
+      {icon ? <ShieldCheck size={20} /> : null}
       Draw checks by FairDraw
     </a>
+  );
+}
+
+/** Four short promises above the operator line, in every footer style. The FairDraw link is the same size as the rest. */
+function TrustRow() {
+  return (
+    <ul className="trust-row" aria-label="Playing safely and fairly">
+      <li><Link href="/responsible-play"><EighteenPlus size={20} />18+ only</Link></li>
+      <li><Link href="/free-entry"><Envelope size={20} />Free entry by post</Link></li>
+      <li><Link href="/responsible-play"><Info size={20} />Play responsibly</Link></li>
+      <li><FairDrawLink icon /></li>
+    </ul>
   );
 }
 
 function OperatorLine() {
   const e = env();
   return (
-    <p>
+    <p className="operator-line">
       {e.SITE_NAME} is run by {e.OPERATOR_LEGAL_NAME}, company number {e.OPERATOR_COMPANY_NUMBER}, registered office {e.OPERATOR_REGISTERED_ADDRESS}.
       Contact: <a href={`mailto:${e.CONTACT_EMAIL}`}>{e.CONTACT_EMAIL}</a>. Players must be 18 or over.
       {e.VOLUNTARY_CODE_SIGNATORY ? ' We have signed the voluntary code of good practice for prize draw operators.' : ''}
@@ -53,8 +69,11 @@ const LINKS = {
   ],
 } as const;
 
-/** Footer: "columns" or "minimal" (brand.layout.footer). Both carry the FairDraw link and the operator details. */
-export function SiteFooter({ style }: { style: 'columns' | 'minimal' }) {
+/**
+ * Footer: "columns" or "minimal" (brand.layout.footer). Both carry the FairDraw link, the trust row and the operator
+ * details. A brand with display type also gets its brand mark above the columns.
+ */
+export function SiteFooter({ style, brand }: { style: 'columns' | 'minimal'; brand?: Brand }) {
   if (style === 'minimal') {
     return (
       <footer className="site">
@@ -63,6 +82,7 @@ export function SiteFooter({ style }: { style: 'columns' | 'minimal' }) {
             {[...LINKS.play, ...LINKS.rules].map(([href, label]) => <li key={href}><Link href={href}>{label}</Link></li>)}
             <li><FairDrawLink /></li>
           </ul>
+          <TrustRow />
           <OperatorLine />
         </div>
       </footer>
@@ -71,6 +91,7 @@ export function SiteFooter({ style }: { style: 'columns' | 'minimal' }) {
   return (
     <footer className="site">
       <div className="wrap">
+        {brand?.typeScale === 'display' ? <div className="footer-brand"><BrandMark brand={brand} monogramId="logo-grad-footer" /></div> : null}
         <div className="columns">
           <section aria-labelledby="f-play">
             <h2 id="f-play">Play</h2>
@@ -88,6 +109,7 @@ export function SiteFooter({ style }: { style: 'columns' | 'minimal' }) {
             </ul>
           </section>
         </div>
+        <TrustRow />
         <OperatorLine />
       </div>
     </footer>

@@ -13,8 +13,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { drawBySlug } from '@/lib/public/draw-files';
-import { configuredRelays } from '@/lib/fairdraw/beacon';
+import { DEFAULT_DRAND_RELAYS } from '@/lib/fairdraw/beacon';
 import { FairDrawLink } from '@/components/SiteFooter';
+import { formatUk } from '@/lib/time';
 import { VerifyDraw } from './VerifyDraw';
 
 export const metadata = { title: 'Verify this draw' };
@@ -22,10 +23,15 @@ export const metadata = { title: 'Verify this draw' };
 export default async function VerifyPage({ params }: { params: Promise<{ slug: string }> }) {
   const r = await drawBySlug((await params).slug);
   if (!r) notFound();
-  const relays = configuredRelays();
+  // Always the public relays, never this site's own setting: the check must not depend on the operator.
+  const relays = DEFAULT_DRAND_RELAYS;
   return (
     <>
       <h1>Verify this draw: {r.c.title}</h1>
+      <dl className="facts num">
+        <dt>Scheduled draw</dt><dd><time dateTime={r.d.scheduledDrawAt.toISOString()}>{formatUk(r.d.scheduledDrawAt, true)}</time></dd>
+        <dt>Actual draw</dt><dd>{r.d.drawnAt ? <time dateTime={r.d.drawnAt.toISOString()}>{formatUk(r.d.drawnAt, true)}</time> : 'Not yet'}</dd>
+      </dl>
       <p>
         This page re-runs the draw in your browser. It downloads the published record and ticket list from this site, fetches the randomness for the
         committed round straight from the public drand network (not from us), and repeats the winner selection step by step.
