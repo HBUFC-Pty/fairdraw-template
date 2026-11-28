@@ -278,6 +278,13 @@ main.wrap:has(> .comp-page) { overflow-x: clip; }
   background: color-mix(in srgb, var(--c-bg) 50%, var(--c-surface));
 }
 .buy-commitment p { margin: 0; font-size: var(--fs-small); line-height: 1.5; }
+.buy-plan { display: flex; gap: var(--s2); align-items: flex-start; margin: 0; font-size: var(--fs-small); line-height: 1.5; }
+.buy-plan svg { flex: none; margin-top: 2px; color: var(--c-primary); }
+.buy-left-out { margin: 0; font-size: var(--fs-small); line-height: 1.5; }
+.live-draw { display: grid; gap: var(--s2); }
+.live-draw p { margin: 0; }
+.live-draw .micro-label { display: inline-flex; align-items: center; gap: var(--s2); }
+.how-decided { margin: var(--s3) 0; padding-left: 1.25rem; display: grid; gap: var(--s2); }
 .comp-page h2.panel-title { margin: 0; font-size: 1.25rem; line-height: 1.1; }
 [data-type='display'] .comp-page h2.panel-title { font-size: 1.375rem; }
 

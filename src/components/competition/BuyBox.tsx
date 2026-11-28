@@ -23,6 +23,9 @@ import { Countdown } from '../Countdown';
 import { FairDrawLink } from '../SiteFooter';
 import { Bolt, Calendar, Clock, Envelope, Info, ShieldCheck, Trophy, Users } from '../icons';
 import { QuantityStepper } from './QuantityStepper';
+import { LiveDraw } from './LiveDraw';
+import { plannedRound } from '@/lib/competitions/planned-round';
+import { exclusionsSentence, type Exclusions } from '@/lib/public/exclusions';
 
 export type Draw = typeof draws.$inferSelect;
 export type Winner = { position: number; ticket: number; name: string | null };
@@ -156,8 +159,9 @@ export function EntryForm({ c, action }: { c: Competition; action: FormAction })
 }
 
 /** A drawn competition: the winning ticket numbers, both draw times and the ways to check the draw. */
-function ResultPanel({ c, draw, winners }: { c: Competition; draw: Draw; winners: Winner[] }) {
+function ResultPanel({ c, draw, winners, exclusions }: { c: Competition; draw: Draw; winners: Winner[]; exclusions: Exclusions | null }) {
   const named = winners.filter((w) => w.name);
+  const leftOut = exclusions ? exclusionsSentence(exclusions) : null;
   return (
     <section className="buy-result" aria-labelledby="result">
       <h2 className="micro-label" id="result">Winning ticket{winners.length === 1 ? '' : 's'}</h2>
@@ -167,6 +171,7 @@ function ResultPanel({ c, draw, winners }: { c: Competition; draw: Draw; winners
         <p className="win-none">No entries, so no winner</p>
       )}
       {named.length ? <p className="win-names">{named.map((w) => `Ticket ${w.ticket}: ${w.name}`).join(', ')}</p> : null}
+      {leftOut ? <p className="buy-left-out">{leftOut} <a href={`/draws/${c.slug}/excluded.json`}>Details (JSON)</a></p> : null}
       <FactTiles
         className="is-two"
         items={[
@@ -178,6 +183,7 @@ function ResultPanel({ c, draw, winners }: { c: Competition; draw: Draw; winners
       <ul className="link-row">
         <li><a href={`/draws/${c.slug}/record.json`}>Draw record (JSON)</a></li>
         <li><a href={`/draws/${c.slug}/tickets.txt`}>Ticket list</a></li>
+        <li><a href={`/draws/${c.slug}/excluded.json`}>Tickets left out</a></li>
         <li><Link href={`/competitions/${c.slug}/entries`}>Entry list</Link></li>
       </ul>
       <p className="buy-fairdraw"><FairDrawLink icon /></p>
@@ -186,7 +192,9 @@ function ResultPanel({ c, draw, winners }: { c: Competition; draw: Draw; winners
 }
 
 /** Closed, awaiting the draw: the commitment, in its original words, with its three links. */
-function CommitmentPanel({ c, draw }: { c: Competition; draw: Draw }) {
+function CommitmentPanel({ c, draw, exclusions }: { c: Competition; draw: Draw; exclusions: Exclusions | null }) {
+  const planned = plannedRound(c.closesAt, c.drawAt);
+  const leftOut = exclusions ? exclusionsSentence(exclusions) : null;
   return (
     <section className="buy-commitment" aria-labelledby="commitment">
       <h2 id="commitment" className="panel-title">Closed: the draw is committed</h2>
@@ -195,9 +203,19 @@ function CommitmentPanel({ c, draw }: { c: Competition; draw: Draw }) {
         winner will be picked with drand round {draw.drandRound}, which does not exist until {formatUk(draw.scheduledDrawAt, true)}, so nobody,
         including us, can know the result before then.
       </p>
+      {planned && planned.round !== draw.drandRound ? (
+        <p>
+          Before the close this page named drand round {planned.round}. The competition could only be closed at{' '}
+          {formatUk(new Date(draw.closeUnix * 1000), true)}, less than 30 seconds before its draw time, so the rules moved the draw to round{' '}
+          {draw.drandRound}, the first at least 30 seconds after the close. It still did not exist when the list was frozen.
+        </p>
+      ) : null}
+      {leftOut ? <p>{leftOut}</p> : null}
+      <LiveDraw slug={c.slug} drawAt={draw.scheduledDrawAt.toISOString()} round={draw.drandRound} fallback={`Draw ${formatUk(draw.scheduledDrawAt, true)}`} />
       <ul className="link-row">
         <li><a href={`/draws/${c.slug}/commitment.json`}>Commitment (JSON)</a></li>
         <li><a href={`/draws/${c.slug}/tickets.txt`}>Frozen ticket list</a></li>
+        <li><a href={`/draws/${c.slug}/excluded.json`}>Tickets left out</a></li>
         <li><Link href={`/competitions/${c.slug}/entries`}>Entry list</Link></li>
       </ul>
     </section>
@@ -209,6 +227,8 @@ type BuyBoxProps = {
   sold: number;
   draw: Draw | null;
   winners: Winner[];
+  /** Tickets left out of the committed list, once closed (src/lib/public/exclusions.ts). */
+  exclusions?: Exclusions | null;
   now: Date;
   open: boolean;
   loggedIn: boolean;
@@ -217,11 +237,36 @@ type BuyBoxProps = {
 };
 
 /**
+ * On a live competition: which drand round will decide the draw, fixed now by the advertised draw time
+ * (src/lib/competitions/planned-round.ts), so players can see the randomness was chosen before anyone bought a ticket.
+ */
+export function DrawPlan({ c }: { c: Competition }) {
+  const planned = plannedRound(c.closesAt, c.drawAt);
+  return (
+    <p className="buy-plan">
+      <ShieldCheck size={20} />
+      {planned ? (
+        <span>
+          Fixed in advance: the winner will be picked with drand round <span className="num">{planned.round}</span>, which is published at{' '}
+          {formatUk(planned.publishedAt, true)}. Nobody, including us, can know or choose its randomness before then.{' '}
+          <a href="#checks">How the draw works</a>
+        </span>
+      ) : (
+        <span>
+          The winner will be picked with the first drand round at least 30 seconds after the close, named when the ticket list is frozen and
+          published, before its randomness exists. <a href="#checks">How the draw works</a>
+        </span>
+      )}
+    </p>
+  );
+}
+
+/**
  * The buy box: status, title, price, the real close time, the exact share sold, key facts and the entry form. For a
  * drawn competition it becomes the result panel; once closed, the commitment panel. `buy-head` and `buy-body` are
  * separate so that on phones the title can sit above the image and the rest below it.
  */
-export function BuyBox({ c, sold, draw, winners, now, open, loggedIn, badges, action }: BuyBoxProps) {
+export function BuyBox({ c, sold, draw, winners, exclusions = null, now, open, loggedIn, badges, action }: BuyBoxProps) {
   const status = statusLabel(c, open, now);
   const facts = badges && c.status === 'live' ? cardBadges(c, sold, now).filter((b) => b !== 'Coming soon') : [];
   const notOpen = c.status === 'live' && c.opensAt > now;
@@ -240,7 +285,7 @@ export function BuyBox({ c, sold, draw, winners, now, open, loggedIn, badges, ac
         <h1 className="comp-title">{c.title}</h1>
       </div>
       <div className="buy-body">
-        {drawn ? <ResultPanel c={c} draw={drawn} winners={winners} /> : null}
+        {drawn ? <ResultPanel c={c} draw={drawn} winners={winners} exclusions={exclusions} /> : null}
         <div className="buy-price">
           <p className="price-row">
             <span className="price-num num">{formatPence(c.ticketPricePence)}</span>
@@ -272,7 +317,7 @@ export function BuyBox({ c, sold, draw, winners, now, open, loggedIn, badges, ac
           />
         )}
 
-        {c.status === 'closed' && draw ? <CommitmentPanel c={c} draw={draw} /> : null}
+        {c.status === 'closed' && draw ? <CommitmentPanel c={c} draw={draw} exclusions={exclusions} /> : null}
 
         {c.isInstantWin ? <p className="notice has-icon"><Info size={20} /><span>{INSTANT_WIN_CARD_NOTICE}</span></p> : null}
 
@@ -303,6 +348,7 @@ export function BuyBox({ c, sold, draw, winners, now, open, loggedIn, badges, ac
           <ShieldCheck size={20} />
           <DrawnWhateverSold c={c} />
         </div>
+        {live ? <DrawPlan c={c} /> : null}
         {live ? <p className="buy-entries"><Link href={`/competitions/${c.slug}/entries`}>See the entry list</Link></p> : null}
       </div>
     </div>

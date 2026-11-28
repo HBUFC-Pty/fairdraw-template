@@ -35,6 +35,12 @@ with `DEMO_MODE=true`.
 - **Verifiable draws**: commitment at close, drand randomness confirmed by at least two relays, winners picked with
   HMAC-SHA256 and rejection sampling, records as JSON at stable URLs, and a "verify this draw" page that re-runs the
   draw in the browser. A scheduled worker closes and draws on time and records scheduled and actual times.
+- **The draw decided in advance, and watched live**: every live competition names the drand round that will decide
+  its draw (worked out from the advertised draw time, exactly as the close will commit to it), so players can see the
+  randomness was fixed before anyone bought a ticket. Once closed, the page counts down to the draw and shows the
+  winning ticket as soon as it is made. Tickets left out of the draw (a wrong answer, or refunded before the close)
+  are counted with the reason on the competition page and entry list and in `/draws/<slug>/excluded.json`, beside
+  the unchanged draw record.
 - **Public pages, no login**: competitions stay online after they finish; results with tickets sold, maximum,
   winning tickets and both draw times; entry lists with ticket numbers and codes, never names; winners shown as first
   name and initial only with their consent.

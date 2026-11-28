@@ -13,6 +13,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { competitionBySlug, postalEntryCounts, publicEntryList } from '@/lib/public/queries';
+import { getDb } from '@/lib/db';
+import { exclusionsFor, exclusionsSentence } from '@/lib/public/exclusions';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -25,6 +27,7 @@ export default async function EntriesPage({ params }: Props) {
   const list = await publicEntryList(r.c, r.draw?.ticketList ?? null);
   const free = list.filter((e) => e.free).length;
   const postal = await postalEntryCounts(r.c.id);
+  const leftOut = r.draw ? exclusionsSentence(await exclusionsFor(getDb(), r.c.id)) : null;
   return (
     <>
       <h1>Entry list: {r.c.title}</h1>
@@ -37,6 +40,11 @@ export default async function EntriesPage({ params }: Props) {
         {postal.rejected.length ? <> Not entered: {postal.rejected.map((x) => `${x.n} (${x.reason.replace(/\.$/, '')})`).join('; ')}.</> : null} Every
         postal entrant is emailed their ticket and code, or the reason.
       </p>
+      {leftOut ? (
+        <p>
+          {leftOut} <a href={`/draws/${r.c.slug}/excluded.json`}>Details (JSON)</a>
+        </p>
+      ) : null}
       <p><Link href={`/competitions/${r.c.slug}`}>Back to the competition</Link>{r.draw ? <> · <a href={`/draws/${r.c.slug}/tickets.txt`}>Plain ticket list</a></> : null}</p>
       <div className="table-wrap">
         <table>
