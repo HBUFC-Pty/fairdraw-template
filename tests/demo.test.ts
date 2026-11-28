@@ -11,6 +11,7 @@
  * Copyright (c) 2026 Harrison Jones. All Rights Reserved.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { plannedRound } from '../src/lib/competitions/planned-round';
 import { and, eq, isNull } from 'drizzle-orm';
 import { makeUser, testDb } from './helpers/db';
 import type { Db } from '../src/lib/db';
@@ -96,7 +97,9 @@ describe('demo mode', () => {
       expect(c.closesAt.getUTCMinutes()).toBe(0);
     }
     for (const c of open) {
-      expect(c.drawAt.getTime()).toBe(c.closesAt.getTime());
+      // Drawn five minutes after the close, so each live page can name its drand round in advance.
+      expect(c.drawAt.getTime()).toBe(c.closesAt.getTime() + 5 * 60_000);
+      expect(plannedRound(c.closesAt, c.drawAt)).not.toBeNull();
       const sold = await db.select().from(tickets).where(and(eq(tickets.competitionId, c.id), eq(tickets.status, 'active')));
       expect(sold.length).toBeGreaterThan(0);
     }
