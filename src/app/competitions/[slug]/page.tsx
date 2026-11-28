@@ -21,6 +21,8 @@ import { addToBasketAction } from '../../basket/actions';
 import { publicInstant } from '@/lib/public/instant';
 import { CompetitionView } from '@/components/competition/CompetitionView';
 import { brand } from '@/brand';
+import { getDb } from '@/lib/db';
+import { exclusionsFor } from '@/lib/public/exclusions';
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -36,6 +38,8 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
   const s = await currentSession();
   const inst = await publicInstant(c);
   const now = new Date();
+  // Once closed, the tickets left out of the committed list and why (shown beside the commitment and the result).
+  const exclusions = draw ? await exclusionsFor(getDb(), c.id) : null;
   return (
     <>
       <FlashMessage searchParams={await searchParams} />
@@ -44,6 +48,7 @@ export default async function CompetitionPage({ params, searchParams }: Props) {
         sold={sold}
         draw={draw}
         winners={winners}
+        exclusions={exclusions}
         inst={inst}
         now={now}
         open={isOpen(c, now)}

@@ -26,6 +26,9 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* The live draw's winning ticket: it arrives once, from a real draw record (components/competition/LiveDraw.tsx). */
+  [data-motion] .live-reveal { animation: reveal-in 0.7s var(--ease-pop) 1; }
+
   /* Live dot: a ring pings out from real live states (ending soon, under an hour, next draw). */
   [data-motion] .live-dot::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor;
@@ -164,6 +167,7 @@
 
 @keyframes rise-in { from { opacity: 0; translate: 0 16px; } }
 @keyframes fade-in { from { opacity: 0; } }
+@keyframes reveal-in { from { opacity: 0; transform: scale(0.85); } }
 @keyframes settle { from { scale: 1.04; } }
 @keyframes float { 50% { translate: 0 -6px; } }
 @keyframes twinkle { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.6; opacity: 0.3; } }

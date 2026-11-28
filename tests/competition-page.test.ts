@@ -201,3 +201,46 @@ describe('competition page: drawn and closed', () => {
     expect(html).toContain('drand round 12345');
   });
 });
+
+describe('competition page: the draw decided in advance, live, and what was left out', () => {
+  const closed = {
+    competitionId: 'x',
+    closeUnix: Math.floor(new Date('2026-11-16T19:45:00Z').getTime() / 1000),
+    ticketsSold: 46,
+    maxTickets: 200,
+    drandRound: 12345,
+    scheduledDrawAt: new Date('2026-11-16T19:45:00Z'),
+    drawnAt: null,
+    randomness: null,
+  } as unknown as Draw;
+
+  it('names the fixed drand round on a live competition whose draw is two minutes or more after the close', () => {
+    const html = render({ c: comp({ drawAt: new Date('2026-11-16T20:00:00Z') }) });
+    expect(visibleOutsideDetails(html, 'Fixed in advance: the winner will be picked with drand round')).toBe(true);
+    expect(html).toMatch(/drand round <span class="num">\d+<\/span>, which is published at/);
+  });
+
+  it('promises no number when the draw is at the close, and says when the round is named', () => {
+    const html = render();
+    expect(visibleOutsideDetails(html, 'the first drand round at least 30 seconds after the close, named when the ticket list is frozen')).toBe(true);
+    expect(html).not.toContain('Fixed in advance');
+  });
+
+  it('shows the live draw countdown and the tickets left out once closed', () => {
+    const html = render({
+      c: comp({ status: 'closed' }),
+      open: false,
+      draw: closed,
+      exclusions: { wrongAnswer: [7], refundedBeforeClose: 2 },
+    });
+    expect(visibleOutsideDetails(html, 'Draw in')).toBe(true);
+    expect(visibleOutsideDetails(html, 'Not in the draw: 1 ticket answered the question wrongly')).toBe(true);
+    expect(visibleOutsideDetails(html, 'href="/draws/sample/excluded.json"')).toBe(true);
+  });
+
+  it('says so if the close came too late and the round moved from the one named in advance', () => {
+    const c = comp({ status: 'closed', drawAt: new Date('2026-11-16T20:00:00Z') });
+    const html = render({ c, open: false, draw: { ...closed, closeUnix: Math.floor(new Date('2026-11-16T19:59:50Z').getTime() / 1000) } as Draw });
+    expect(visibleOutsideDetails(html, 'Before the close this page named drand round')).toBe(true);
+  });
+});

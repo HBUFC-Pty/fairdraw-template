@@ -14,8 +14,8 @@ score: scores come from what your live site actually publishes and does, measure
 | --- | --- | --- | --- |
 | Draw results pass the draw-position test | 20 | Uniform draws with HMAC-SHA256 and rejection sampling over the committed list | Run draws; points come with time and sample size |
 | Coverage | 5 | Publishes sold, maximum and winning tickets for every draw | Nothing, unless you hide results |
-| The draw mechanism can be verified | 10 | drand public randomness, every input published, records re-run with FairDraw's tools | Keep records online |
-| The draw's inputs can be verified | 3 | Ticket list frozen at the close, published and kept after the draw | Keep lists online |
+| The draw mechanism can be verified | 10 | drand public randomness, named on the competition page from the moment it opens; every input published; records re-run with FairDraw's tools | Keep records online; set draw times two minutes or more after the close so the round can be named in advance |
+| The draw's inputs can be verified | 3 | Ticket list frozen at the close, published and kept after the draw; tickets left out counted with the reason (`excluded.json`) | Keep lists online |
 | Drawn on time | 2 | Worker draws at the advertised time; scheduled and actual times published | Keep the worker running and monitored |
 | Full results published | 8 | Results page shows sold, maximum and every winning ticket | Nothing |
 | Finished competitions stay up | 4 | Finished pages stay; the database refuses to delete published competitions | Do not remove them |

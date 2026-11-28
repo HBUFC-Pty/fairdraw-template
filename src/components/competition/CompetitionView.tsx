@@ -20,6 +20,8 @@ import { InstantPrizes } from '../InstantPrizes';
 import { ChevronDown } from '../icons';
 import { PostalEntryArt } from '../illustrations';
 import { BuyBox, type Draw, type Winner } from './BuyBox';
+import type { Exclusions } from '@/lib/public/exclusions';
+import { plannedRound } from '@/lib/competitions/planned-round';
 import { Gallery } from './Gallery';
 import { SectionNav } from './SectionNav';
 
@@ -30,6 +32,8 @@ export type CompetitionViewProps = {
   sold: number;
   draw: Draw | null;
   winners: Winner[];
+  /** Tickets left out of the committed list, once closed. */
+  exclusions?: Exclusions | null;
   inst: Instant | null;
   now: Date;
   open: boolean;
@@ -88,6 +92,25 @@ export function FreeEntry({ c, postalAddress }: { c: Competition; postalAddress:
   );
 }
 
+/**
+ * How the winner is decided, in order: the round fixed in advance, the list frozen at the close, the draw at the
+ * advertised time. Shown on every competition, live or finished.
+ */
+function HowDecided({ c }: { c: Competition }) {
+  const planned = plannedRound(c.closesAt, c.drawAt);
+  return (
+    <ol className="how-decided">
+      <li>
+        {planned
+          ? `The randomness is fixed before anyone buys a ticket: the draw uses drand round ${planned.round}, published at ${formatUk(planned.publishedAt, true)}. drand is a public randomness network run by independent organisations, so nobody, including us, can know or choose that number in advance.`
+          : 'The draw uses the first drand round at least 30 seconds after the close, named when the ticket list is frozen. drand is a public randomness network run by independent organisations, so nobody, including us, can know or choose that number in advance.'}
+      </li>
+      <li>At the close the list of tickets in the draw is frozen and its fingerprint published, together with the round, before the randomness exists.</li>
+      <li>At the draw time the winner is picked from the frozen list with that round&apos;s randomness, and the record lets anyone re-run the draw.</li>
+    </ol>
+  );
+}
+
 /** The competition page body (src/app/competitions/[slug]/page.tsx loads the data). Every preset uses this layout. */
 export function CompetitionView(p: CompetitionViewProps) {
   const { c, sold, draw, inst, postalAddress, promoter } = p;
@@ -104,7 +127,7 @@ export function CompetitionView(p: CompetitionViewProps) {
         <div className="comp-gallery">
           <Gallery images={c.images} />
         </div>
-        <BuyBox c={c} sold={sold} draw={draw} winners={p.winners} now={p.now} open={p.open} loggedIn={p.loggedIn} badges={p.badges} action={p.action} />
+        <BuyBox c={c} sold={sold} draw={draw} winners={p.winners} exclusions={p.exclusions ?? null} now={p.now} open={p.open} loggedIn={p.loggedIn} badges={p.badges} action={p.action} />
         <div className="comp-main">
           <SectionNav items={nav} />
           <div className="comp-sections">
@@ -119,6 +142,7 @@ export function CompetitionView(p: CompetitionViewProps) {
             ) : null}
             <Panel id="checks" title="Draw and checks">
               <CompetitionFacts c={c} sold={sold} />
+              <HowDecided c={c} />
               {draw && c.status === 'drawn' ? (
                 <dl className="facts">
                   <dt>Scheduled draw</dt><dd>{formatUk(draw.scheduledDrawAt, true)}</dd>

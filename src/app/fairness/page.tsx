@@ -22,12 +22,18 @@ export default function FairnessPage() {
       <p>You should not have to take our word that a draw was fair. Every draw on this site can be checked by anyone, without an account.</p>
       <ol>
         <li>
+          <strong>From the moment a competition opens</strong> its page names the drand round that will decide the draw, worked out from the
+          advertised draw time, so you can see the randomness was fixed before anyone bought a ticket. (When the draw is less than two minutes after
+          the close, the round is named at the close instead.)
+        </li>
+        <li>
           <strong>At the close</strong> we freeze the list of entered tickets and publish it, with its SHA-256 fingerprint and the number of a future
           round of <a href="https://drand.love" rel="noopener">drand</a>, a public randomness beacon run by independent organisations. That round is timed
           for the advertised draw, so its randomness does not exist yet and nobody, including us, can know it.
         </li>
         <li>
           <strong>At the draw time</strong> we fetch that round&apos;s randomness from at least two independent drand servers and check they agree.
+          You can watch it happen on the competition page: it counts down to the draw and shows the winning ticket as soon as the draw is made.
         </li>
         <li>
           <strong>We pick the winner</strong> with HMAC-SHA256 and rejection sampling, so every ticket in the frozen list has exactly the same chance, and
@@ -44,6 +50,10 @@ export default function FairnessPage() {
         <li>Free entry by post, with the same chance as a paid entry.</li>
         <li>A maximum number of tickets per person on every competition.</li>
         <li>Public entry lists with ticket numbers and codes, never names.</li>
+        <li>
+          If a ticket is entered but left out of the draw (a wrong answer to the question, refunded, or an order refunded before the close), the
+          competition page and its entry list say how many and why, so the count never changes without a reason.
+        </li>
         <li>Results with tickets sold, the maximum, the winning tickets and the scheduled and actual draw times, kept online for good.</li>
         <li>Nobody can change a frozen list or redo a draw: our database refuses it, and every staff action is recorded in a tamper-evident log.</li>
       </ul>
