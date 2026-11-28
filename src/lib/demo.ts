@@ -185,6 +185,12 @@ async function buy(db: Db, provider: TestProvider, competitionId: string, userId
   await processPaymentEvent(db, provider, { kind: 'payment_authorised', eventId: `demo_${o.orderId}`, orderId: o.orderId, providerRef: `demo_${o.orderId}`, paymentRef: `demo_pay_${o.orderId}`, amountPence: o.totalPence, funding: 'debit', brand: 'testcard' }, at);
 }
 
+/**
+ * Demo draws run five minutes after the close, so the demo shows the drand round named in advance on every live
+ * competition (src/lib/competitions/planned-round.ts) and the live countdown and reveal between close and draw.
+ */
+export const DEMO_DRAW_GAP_MS = 5 * 60_000;
+
 async function openDemoCompetition(db: Db, prize: DemoPrize, closes: Date, now: Date, players: string[], random: () => number) {
   const c = await createCompetition(
     db,
@@ -202,7 +208,7 @@ async function openDemoCompetition(db: Db, prize: DemoPrize, closes: Date, now: 
       winnerCount: 1,
       opensAt: now,
       closesAt: closes,
-      drawAt: closes,
+      drawAt: new Date(closes.getTime() + DEMO_DRAW_GAP_MS),
       skillQuestion: prize.skillQuestion,
       instantPrizes: prize.instantPrizes,
       instantReveal: prize.instantReveal,
