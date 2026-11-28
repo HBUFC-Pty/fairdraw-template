@@ -156,7 +156,7 @@ backups with a restore test, logs, updating and rolling back.
 | Claims hold up (2) | No unverifiable claims by default |
 | The promoter is who it says it is (3) | Company name, number and address in footer and terms (must match Companies House) |
 | Privacy notice (3) | Names the payment processor from settings; privacy contact configurable |
-| Voluntary code (2) | Checklist provided; you must sign the code yourself |
+| Voluntary code (2) | The four points a player can see are built in: a complaints process with a review step (terms clause 17), self-exclusion of 6 months to 5 years and account deletion, support services named on the responsible play page, and the maximum tickets on every competition. Signing the code is noted on your audit but earns no points |
 | Age and spending controls (3) | Date of birth 18+ check at sign-up; daily, weekly and monthly limits |
 | Engagement (4) | Up to you: reply to FairDraw's audit email |
 

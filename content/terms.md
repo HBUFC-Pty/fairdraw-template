@@ -241,8 +241,8 @@ reasons outside our control, we refund every paid entry in full.
 
 ## 17. Complaints
 
-Email {{CONTACT_EMAIL}} or write to us at the address in clause 1. We aim to reply within 14 days. If you are not
-happy with our answer, tell us and we will review it at a more senior level.
+To make a complaint, email {{CONTACT_EMAIL}} or write to us at the address in clause 1. We aim to reply within 14
+days. If you are not happy with our answer, tell us and we will review it at a more senior level.
 
 ## 18. Keeping a copy of these terms
 

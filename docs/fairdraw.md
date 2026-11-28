@@ -28,7 +28,7 @@ score: scores come from what your live site actually publishes and does, measure
 | Claims hold up | 2 | No ratings or "certified RNG" claims by default | Only make claims a reader can check; never reward reviews |
 | The promoter is who it says it is | 3 | Company name, number and address from settings, shown in terms and footer | Match Companies House exactly |
 | Privacy notice | 3 | Notice names the processor from `PAYMENT_PROCESSOR_NAME` | Set it to the processor you actually use; check the privacy address receives mail |
-| Voluntary code | 2 | Checklist in `docs/legal/` | Sign the DCMS voluntary code so you appear on the gov.uk list |
+| Voluntary code | 2 | The four clauses a player can see (1.2, 1.5, 1.8, 2.3): a complaints process with a review step (terms clause 17, `docs/legal/complaints.md`), self-exclusion of 6 months to 5 years and account deletion, Citizens Advice, Money Advice Trust, National Debtline, Samaritans, Mind, GamCare and BeGambleAware on the responsible play page, and the maximum tickets on every competition | Keep those pages published. Signing the code (checklist in `docs/legal/`) is shown on your audit but earns no points |
 | Age and spending controls | 3 | DOB 18+ check at sign-up; daily, weekly and monthly limits | Nothing |
 | Engagement | 4 | | Reply to FairDraw's audit email within 14 days |
 
